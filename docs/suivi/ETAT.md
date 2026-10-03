@@ -33,3 +33,5 @@ La clôture de P1 est achevée dans le périmètre convenu. Aucune partie 2, cam
 ## Livraison en PR
 
 À la demande explicite de l'utilisateur, le socle complet est préparé sur gus-rlin/p1-delivery, issue du main GitHub e277840. La qualification ci-dessus porte sur les sources avant normalisation Git des fins de ligne ; leur archive exacte reste fournie. Voir SUIVI-0013 dans le journal.
+
+[PR #1](https://github.com/gus-rlin/Kyro/pull/1) ouverte sur main, branche gus-rlin/p1-delivery poussée. Contrôles GitHub en cours au dernier relevé ; aucun merge ni déploiement.
