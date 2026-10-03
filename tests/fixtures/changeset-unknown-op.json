@@ -1,0 +1,8 @@
+{
+  "operations": [
+    {
+      "op": "run_shell",
+      "command": "must never execute"
+    }
+  ]
+}

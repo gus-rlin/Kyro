@@ -1,0 +1,35 @@
+{
+  "source_sha256": "8da46273d2f17bb9abef667e05c7de7af54babdac8c203e089e5464d00a1fd4d",
+  "commit": "d2d7fbafec5b1e3d50d4b6324ad3f40e836c8cc2",
+  "source_unchanged": true,
+  "database": "kyro_p1_test_close_final_o",
+  "container": "kyro-p1-close-ci-13",
+  "container_exit_code": 0,
+  "versions": {
+    "rustc": "1.96.1 (31fca3adb 2026-06-26)",
+    "cargo": "1.96.1 (356927216 2026-06-26)",
+    "node": "v24.18.0",
+    "docker_server": "29.8.0",
+    "postgresql": "18.6",
+    "compose": "v5.5.1"
+  },
+  "commands": [
+    "cargo fmt --all -- --check",
+    "cargo check --locked --workspace --all-targets",
+    "cargo run --locked -p kyro-store --bin kyro-migrate",
+    "cargo test --locked --workspace -- --include-ignored"
+  ],
+  "tests_passed": 74,
+  "tests_failed": 0,
+  "tests_ignored": 0,
+  "rust_image": "rust:1.96.1-bookworm@sha256:a339861ae23e9abb272cea45dfafde21760d2ce6577a70f8a926153677902663",
+  "environment_role_mapping": {
+    "KYRO_DATABASE_ADMIN_URL": "kyro_admin",
+    "KYRO_TEST_DATABASE_ADMIN_URL": "kyro_admin",
+    "KYRO_TEST_DATABASE_URL": "kyro_api",
+    "KYRO_TEST_WORKER_DATABASE_URL": "kyro_worker"
+  },
+  "log": "part1-close-ci-13-20261003.txt",
+  "source_before": "part1-close-ci-13-source-before.json",
+  "source_after": "part1-close-ci-13-source-after.json"
+}

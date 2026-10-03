@@ -1,0 +1,8 @@
+node=v24.18.0
+rustc=rustc 1.96.1 (31fca3adb 2026-06-26)
+cargo=cargo 1.96.1 (356927216 2026-06-26)
+cargo_audit=cargo-audit-audit 0.22.0
+audit_exit=1
+tree_exit=0
+inverse_exit=0
+checker_exit=0

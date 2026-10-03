@@ -1,0 +1,14 @@
+Linux-container audit fetch failure (2026-10-03)
+
+Command: cargo audit --json
+Tool: cargo-audit-audit 0.22.0
+Exit code: 1
+stdout: empty; the corresponding raw stdout file is retained separately.
+
+stderr:
+error: couldn't fetch advisory database: git operation failed: failed to prepare fetch
+Caused by:
+  -> An IO error occurred when talking to the server
+  -> error sending request for url (https://github.com/RustSec/advisory-db.git/info/refs?service=git-upload-pack)
+
+The first checker invocation consequently failed closed with failureCode=invalid_audit_json. A later Linux run used the host's existing local RustSec Git database with --no-fetch; the source commit and timestamp are recorded in the task report and corroborated by a separate host cargo-audit JSON capture.

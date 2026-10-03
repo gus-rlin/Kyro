@@ -1,0 +1,10 @@
+{
+  "operations": [
+    {
+      "op": "set_property",
+      "node_id": "synthetic-panel-1",
+      "key": "title",
+      "value": "Synthetic summary"
+    }
+  ]
+}

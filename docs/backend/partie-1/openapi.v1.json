@@ -1,0 +1,3530 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Kyro Control API",
+    "version": "1.0.0",
+    "description": "Versioned P1 control-plane API. Runtime calls are actor-scoped; provider credentials never appear in request or response schemas."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8080",
+      "description": "Synthetic local development only"
+    }
+  ],
+  "paths": {
+    "/health/live": {
+      "get": {
+        "operationId": "healthLive",
+        "summary": "Process liveness",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Health"
+          }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "operationId": "healthReady",
+        "summary": "Database and role readiness",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Health"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/metrics": {
+      "get": {
+        "operationId": "prometheusMetrics",
+        "summary": "Bounded-cardinality HTTP counters and latency histogram",
+        "responses": {
+          "200": {
+            "description": "Prometheus text exposition; labels are limited to a fixed HTTP method set and status class.",
+            "content": {
+              "text/plain; version=0.0.4; charset=utf-8": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/login": {
+      "get": {
+        "operationId": "authLogin",
+        "summary": "Start the OIDC login flow",
+        "responses": {
+          "303": {
+            "description": "Redirect to the configured identity provider."
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/auth/callback": {
+      "get": {
+        "operationId": "authCallback",
+        "summary": "Complete the OIDC login flow",
+        "responses": {
+          "303": {
+            "description": "Redirect to the configured UI after setting session cookies."
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/auth/session": {
+      "get": {
+        "operationId": "authSession",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Session"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/auth/refresh": {
+      "post": {
+        "operationId": "authRefresh",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Session rotated and cookies refreshed."
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/auth/logout": {
+      "post": {
+        "operationId": "authLogout",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Session revoked."
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/organizations": {
+      "get": {
+        "operationId": "listOrganizations",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Organizations"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createOrganization",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/CreateOrganization"
+        },
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/Organization"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/organizations/{organization_id}/members": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/OrganizationId"
+        }
+      ],
+      "get": {
+        "operationId": "listOrganizationMembers",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Memberships"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "addOrganizationMember",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/AddOrganizationMember"
+        },
+        "responses": {
+          "204": {
+            "description": "Membership added."
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/organizations/{organization_id}/members/{actor_id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/OrganizationId"
+        },
+        {
+          "$ref": "#/components/parameters/ActorId"
+        }
+      ],
+      "delete": {
+        "operationId": "removeOrganizationMember",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Membership removed."
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/projects": {
+      "get": {
+        "operationId": "listProjects",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Projects"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createProject",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/CreateProject"
+        },
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/CreatedProjectSnapshot"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        }
+      ],
+      "get": {
+        "operationId": "getProject",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ProjectSnapshot"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/revisions/{revision}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        },
+        {
+          "$ref": "#/components/parameters/RevisionNumber"
+        }
+      ],
+      "get": {
+        "operationId": "getProjectRevision",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/AppRevision"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/changes": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        }
+      ],
+      "post": {
+        "operationId": "submitProjectChanges",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RevisionIfMatch"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/ChangeSet"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ApplyChangesResult"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "412": {
+            "$ref": "#/components/responses/Error"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/decisions": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        }
+      ],
+      "get": {
+        "operationId": "listProjectDecisions",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ProjectDecisions"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createProjectDecision",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/AddDecision"
+        },
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/ProjectDecision"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/data-policy": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        }
+      ],
+      "put": {
+        "operationId": "replaceProjectDataPolicy",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RevisionIfMatch"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/DataPolicy"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ProjectSnapshot"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "412": {
+            "$ref": "#/components/responses/Error"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/limits": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        }
+      ],
+      "put": {
+        "operationId": "replaceProjectLimits",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RevisionIfMatch"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/ProjectLimits"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ProjectSnapshot"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "412": {
+            "$ref": "#/components/responses/Error"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/grants": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        }
+      ],
+      "post": {
+        "operationId": "createProjectGrant",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/CreateCapabilityGrant"
+        },
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/CapabilityGrant"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/grants/{grant_id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        },
+        {
+          "$ref": "#/components/parameters/GrantId"
+        }
+      ],
+      "delete": {
+        "operationId": "revokeProjectGrant",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Grant revoked."
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/jobs": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        }
+      ],
+      "get": {
+        "operationId": "listProjectJobs",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PageLimit"
+          },
+          {
+            "$ref": "#/components/parameters/JobCursor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Jobs"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "enqueueProjectJob",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RevisionIfMatch"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/CreateJob"
+        },
+        "responses": {
+          "202": {
+            "$ref": "#/components/responses/Job"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "412": {
+            "$ref": "#/components/responses/Error"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/jobs/{job_id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        },
+        {
+          "$ref": "#/components/parameters/JobId"
+        }
+      ],
+      "get": {
+        "operationId": "getProjectJob",
+        "description": "Returns a safe job view. The creator may read their own reconciliation command with current budget or manage authority, without project read access; all other jobs require read authority. The store checks this exception atomically.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Job"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "requestProjectJobCancellation",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "responses": {
+          "202": {
+            "$ref": "#/components/responses/Job"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/budget": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        }
+      ],
+      "get": {
+        "operationId": "getProjectBudget",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Budget"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateProjectBudget",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BudgetIfMatch"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/UpdateBudget"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Budget"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "412": {
+            "$ref": "#/components/responses/Error"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/effects": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        }
+      ],
+      "get": {
+        "operationId": "listProjectEffects",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PageLimit"
+          },
+          {
+            "$ref": "#/components/parameters/EffectCursor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Effects"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/effects/{effect_id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        },
+        {
+          "$ref": "#/components/parameters/EffectId"
+        }
+      ],
+      "get": {
+        "operationId": "getProjectEffect",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Effect"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/effects/{effect_id}/reconcile": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        },
+        {
+          "$ref": "#/components/parameters/EffectId"
+        }
+      ],
+      "post": {
+        "operationId": "reconcileProjectEffect",
+        "summary": "Queue an authorized effect reconciliation",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/ReconcileEffect"
+        },
+        "responses": {
+          "202": {
+            "$ref": "#/components/responses/Job"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/events": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        }
+      ],
+      "get": {
+        "operationId": "streamProjectEvents",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/LastEventId"
+          },
+          {
+            "$ref": "#/components/parameters/InitialEventCursor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Private resumable server-sent events.",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "410": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "sessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "kyro_session"
+      },
+      "csrfToken": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-CSRF-Token"
+      }
+    },
+    "parameters": {
+      "ProjectId": {
+        "name": "project_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "OrganizationId": {
+        "name": "organization_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "ActorId": {
+        "name": "actor_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "GrantId": {
+        "name": "grant_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "JobId": {
+        "name": "job_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "EffectId": {
+        "name": "effect_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "RevisionNumber": {
+        "name": "revision",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "RevisionIfMatch": {
+        "name": "If-Match",
+        "in": "header",
+        "required": true,
+        "description": "Strong project revision ETag, exactly \"rev-N\".",
+        "schema": {
+          "type": "string",
+          "pattern": "^\\\"rev-[0-9]+\\\"$"
+        }
+      },
+      "BudgetIfMatch": {
+        "name": "If-Match",
+        "in": "header",
+        "required": true,
+        "description": "Strong budget configuration ETag, exactly \"budget-N\".",
+        "schema": {
+          "type": "string",
+          "pattern": "^\\\"budget-[0-9]+\\\"$"
+        }
+      },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9._:-]+$"
+        }
+      },
+      "PageLimit": {
+        "name": "limit",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 50
+        }
+      },
+      "JobCursor": {
+        "name": "before",
+        "in": "query",
+        "required": false,
+        "description": "Opaque base64url job sort cursor; it grants no access.",
+        "schema": {
+          "type": "string",
+          "maxLength": 512
+        }
+      },
+      "EffectCursor": {
+        "name": "before",
+        "in": "query",
+        "required": false,
+        "description": "Effect UUID sort cursor; it grants no access.",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "LastEventId": {
+        "name": "Last-Event-ID",
+        "in": "header",
+        "required": false,
+        "description": "Project-scoped cursor <project-uuid>:<sequence>.",
+        "schema": {
+          "type": "string",
+          "maxLength": 64
+        }
+      },
+      "InitialEventCursor": {
+        "name": "after",
+        "in": "query",
+        "required": false,
+        "description": "Initial browser subscription cursor <project-uuid>:<sequence>; must match Last-Event-ID if both are supplied.",
+        "schema": {
+          "type": "string",
+          "maxLength": 64
+        }
+      }
+    },
+    "requestBodies": {
+      "CreateOrganization": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CreateOrganizationRequest"
+            }
+          }
+        }
+      },
+      "AddOrganizationMember": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/AddOrganizationMemberRequest"
+            }
+          }
+        }
+      },
+      "CreateCapabilityGrant": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CreateCapabilityGrantRequest"
+            }
+          }
+        }
+      },
+      "CreateProject": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CreateProjectRequest"
+            }
+          }
+        }
+      },
+      "ChangeSet": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ChangeSet"
+            }
+          }
+        }
+      },
+      "AddDecision": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/AddDecisionRequest"
+            }
+          }
+        }
+      },
+      "DataPolicy": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/DataPolicy"
+            }
+          }
+        }
+      },
+      "ProjectLimits": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProjectLimits"
+            }
+          }
+        }
+      },
+      "CreateJob": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CreateJobRequest"
+            }
+          }
+        }
+      },
+      "UpdateBudget": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/UpdateBudgetRequest"
+            }
+          }
+        }
+      },
+      "ReconcileEffect": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ReconcileEffectRequest"
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "Health": {
+        "description": "Health probe.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "status"
+              ],
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "live",
+                    "ready"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "Session": {
+        "description": "Opaque session information; CSRF token is returned only to the authenticated browser.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SessionResponse"
+            }
+          }
+        }
+      },
+      "Organization": {
+        "description": "Created organization.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Organization"
+            }
+          }
+        }
+      },
+      "Organizations": {
+        "description": "Organizations and roles visible to this actor.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/OrganizationMembershipList"
+            }
+          }
+        }
+      },
+      "Memberships": {
+        "description": "Organization memberships visible to this actor.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MembershipList"
+            }
+          }
+        }
+      },
+      "CapabilityGrant": {
+        "description": "Created capability grant.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CapabilityGrant"
+            }
+          }
+        }
+      },
+      "Projects": {
+        "description": "Projects visible to this actor.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Project"
+              }
+            }
+          }
+        }
+      },
+      "ProjectSnapshot": {
+        "description": "Project snapshot with the strong current revision ETag.",
+        "headers": {
+          "ETag": {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\\"rev-[0-9]+\\\"$"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProjectSnapshot"
+            }
+          }
+        }
+      },
+      "CreatedProjectSnapshot": {
+        "description": "Created project snapshot with the initial revision ETag.",
+        "headers": {
+          "ETag": {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\\"rev-[0-9]+\\\"$"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProjectSnapshot"
+            }
+          }
+        }
+      },
+      "AppRevision": {
+        "description": "Immutable revision with its strong revision ETag.",
+        "headers": {
+          "ETag": {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\\"rev-[0-9]+\\\"$"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/AppRevision"
+            }
+          }
+        }
+      },
+      "ApplyChangesResult": {
+        "description": "Applied command and new immutable revision with its strong revision ETag.",
+        "headers": {
+          "ETag": {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\\"rev-[0-9]+\\\"$"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApplyChangesResult"
+            }
+          }
+        }
+      },
+      "ProjectDecisions": {
+        "description": "Bounded decision history.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ProjectDecision"
+              }
+            }
+          }
+        }
+      },
+      "ProjectDecision": {
+        "description": "Created project decision.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ProjectDecision"
+            }
+          }
+        }
+      },
+      "Job": {
+        "description": "Safe actor-authorized job metadata; request bodies and reconciliation evidence are omitted.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/JobView"
+            }
+          }
+        }
+      },
+      "Jobs": {
+        "description": "Bounded actor-authorized job page.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/JobPage"
+            }
+          }
+        }
+      },
+      "Budget": {
+        "description": "Budget snapshot with strong configuration ETag.",
+        "headers": {
+          "ETag": {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\\"budget-[0-9]+\\\"$"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/BudgetSnapshot"
+            }
+          }
+        }
+      },
+      "Effects": {
+        "description": "Bounded effect page; model output is visible only to authorized readers.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/EffectListPage"
+            }
+          }
+        }
+      },
+      "Effect": {
+        "description": "Effect and authorization-filtered result details.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/EffectRecordView"
+            }
+          }
+        }
+      },
+      "Error": {
+        "description": "Stable generic error; response is never cacheable.",
+        "headers": {
+          "Cache-Control": {
+            "schema": {
+              "type": "string",
+              "const": "no-store"
+            }
+          },
+          "X-Request-Id": {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ErrorEnvelope": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "invalid_request",
+                  "payload_too_large",
+                  "unauthenticated",
+                  "invalid_auth_flow",
+                  "forbidden",
+                  "not_found",
+                  "conflict",
+                  "idempotency_conflict",
+                  "stale_revision",
+                  "budget_version_stale",
+                  "precondition_required",
+                  "resource_limit",
+                  "event_cursor_invalid",
+                  "event_cursor_future",
+                  "event_cursor_project_mismatch",
+                  "event_history_expired",
+                  "capacity_limited",
+                  "request_timeout",
+                  "service_unavailable",
+                  "gateway_unavailable",
+                  "rate_limited",
+                  "oidc_unavailable",
+                  "internal_error"
+                ]
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "SessionResponse": {
+        "type": "object",
+        "required": [
+          "actor_id",
+          "csrf_token"
+        ],
+        "properties": {
+          "actor_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "csrf_token": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 43
+          }
+        }
+      },
+      "Organization": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "MembershipRole": {
+        "type": "string",
+        "enum": [
+          "owner",
+          "admin",
+          "member"
+        ]
+      },
+      "OrganizationMembership": {
+        "type": "object",
+        "required": [
+          "organization_id",
+          "actor_id",
+          "role",
+          "organization_name"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "actor_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "role": {
+            "$ref": "#/components/schemas/MembershipRole"
+          },
+          "organization_name": {
+            "type": "string"
+          }
+        }
+      },
+      "OrganizationMembershipList": {
+        "type": "object",
+        "required": [
+          "organizations"
+        ],
+        "properties": {
+          "organizations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrganizationMembership"
+            }
+          }
+        }
+      },
+      "MembershipList": {
+        "type": "object",
+        "required": [
+          "memberships"
+        ],
+        "properties": {
+          "memberships": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrganizationMembership"
+            }
+          }
+        }
+      },
+      "CapabilityGrant": {
+        "type": "object",
+        "required": [
+          "id",
+          "actor_id",
+          "project_id",
+          "actions",
+          "resources",
+          "environment",
+          "expires_at",
+          "revoked_at",
+          "created_by",
+          "created_at",
+          "limits"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "actor_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "read",
+                "write",
+                "execute",
+                "model",
+                "manage",
+                "budget"
+              ]
+            },
+            "uniqueItems": true
+          },
+          "resources": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          },
+          "environment": {
+            "type": "string",
+            "enum": [
+              "development",
+              "production"
+            ]
+          },
+          "expires_at": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "revoked_at": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/CapabilityGrantLimits"
+          }
+        }
+      },
+      "AddOrganizationMemberRequest": {
+        "type": "object",
+        "required": [
+          "actor_id",
+          "role"
+        ],
+        "properties": {
+          "actor_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "role": {
+            "$ref": "#/components/schemas/MembershipRole"
+          }
+        }
+      },
+      "CreateOrganizationRequest": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        }
+      },
+      "CreateCapabilityGrantRequest": {
+        "type": "object",
+        "required": [
+          "actor_id",
+          "actions",
+          "resources",
+          "expires_at"
+        ],
+        "properties": {
+          "actor_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "read",
+                "write",
+                "execute",
+                "model",
+                "manage",
+                "budget"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 6,
+            "uniqueItems": true
+          },
+          "resources": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "maxItems": 128,
+            "uniqueItems": true
+          },
+          "expires_at": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "limits": {
+            "$ref": "#/components/schemas/CapabilityGrantLimits"
+          }
+        }
+      },
+      "CapabilityGrantLimits": {
+        "type": "object",
+        "properties": {
+          "max_job_attempts": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "max_job_ttl_secs": {
+            "type": "integer",
+            "minimum": 10,
+            "maximum": 1800
+          },
+          "max_model_input_bytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1048576
+          },
+          "max_model_output_tokens": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000000
+          },
+          "max_changeset_operations": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 128
+          }
+        },
+        "additionalProperties": false
+      },
+      "AppNode": {
+        "type": "object",
+        "required": [
+          "id",
+          "kind"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "properties": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        },
+        "additionalProperties": false
+      },
+      "AppSpec": {
+        "type": "object",
+        "required": [
+          "schema_version",
+          "nodes",
+          "preferences"
+        ],
+        "properties": {
+          "schema_version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "nodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AppNode"
+            }
+          },
+          "preferences": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        }
+      },
+      "ProjectLimits": {
+        "type": "object",
+        "required": [],
+        "properties": {
+          "max_active_jobs": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 32
+          },
+          "max_queued_jobs": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 256
+          },
+          "max_job_attempts": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "job_ttl_secs": {
+            "type": "integer",
+            "minimum": 10,
+            "maximum": 1800
+          },
+          "max_revisions": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000
+          }
+        },
+        "additionalProperties": false
+      },
+      "ChangeOperation": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "op",
+              "node"
+            ],
+            "properties": {
+              "op": {
+                "const": "add_node"
+              },
+              "node": {
+                "$ref": "#/components/schemas/AppNode"
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "op",
+              "node_id",
+              "key",
+              "value"
+            ],
+            "properties": {
+              "op": {
+                "const": "set_property"
+              },
+              "node_id": {
+                "type": "string"
+              },
+              "key": {
+                "type": "string"
+              },
+              "value": {}
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "op",
+              "node_id"
+            ],
+            "properties": {
+              "op": {
+                "const": "remove_node"
+              },
+              "node_id": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "op",
+              "key",
+              "value"
+            ],
+            "properties": {
+              "op": {
+                "const": "set_preference"
+              },
+              "key": {
+                "type": "string"
+              },
+              "value": {}
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+      "ChangeSet": {
+        "type": "object",
+        "required": [
+          "operations"
+        ],
+        "properties": {
+          "operations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangeOperation"
+            },
+            "maxItems": 64
+          }
+        },
+        "additionalProperties": false
+      },
+      "AddDecisionRequest": {
+        "type": "object",
+        "required": [
+          "revision",
+          "kind",
+          "payload"
+        ],
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "kind": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "payload": {}
+        },
+        "additionalProperties": false
+      },
+      "Project": {
+        "type": "object",
+        "required": [
+          "id",
+          "organization_id",
+          "name",
+          "current_revision",
+          "event_sequence",
+          "data_policy",
+          "limits",
+          "created_by",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "current_revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "event_sequence": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "data_policy": {
+            "$ref": "#/components/schemas/DataPolicy"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/ProjectLimits"
+          },
+          "created_by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AppRevision": {
+        "type": "object",
+        "required": [
+          "project_id",
+          "revision",
+          "spec",
+          "created_by",
+          "created_at"
+        ],
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "spec": {
+            "$ref": "#/components/schemas/AppSpec"
+          },
+          "created_by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ProjectSnapshot": {
+        "type": "object",
+        "required": [
+          "project",
+          "revision"
+        ],
+        "properties": {
+          "project": {
+            "$ref": "#/components/schemas/Project"
+          },
+          "revision": {
+            "$ref": "#/components/schemas/AppRevision"
+          }
+        }
+      },
+      "ApplyChangesResult": {
+        "type": "object",
+        "required": [
+          "command_id",
+          "revision"
+        ],
+        "properties": {
+          "command_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "$ref": "#/components/schemas/AppRevision"
+          }
+        }
+      },
+      "ProjectDecision": {
+        "type": "object",
+        "required": [
+          "id",
+          "project_id",
+          "revision",
+          "actor_id",
+          "kind",
+          "payload",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "actor_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "payload": {},
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ProjectList": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Project"
+        }
+      },
+      "ProjectDecisionList": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProjectDecision"
+        }
+      },
+      "CreateProjectRequest": {
+        "type": "object",
+        "required": [
+          "organization_id",
+          "name"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "data_policy": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/DataPolicy"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "limits": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ProjectLimits"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "DataCategory": {
+        "type": "string",
+        "enum": [
+          "user_request",
+          "project_specification",
+          "project_source",
+          "diagnostics",
+          "end_user_data",
+          "secret"
+        ]
+      },
+      "ModelPurpose": {
+        "type": "string",
+        "enum": [
+          "planning",
+          "generation",
+          "review",
+          "diagnostics",
+          "summarization",
+          "structured_extraction",
+          "translation"
+        ]
+      },
+      "ModelPolicyLimits": {
+        "type": "object",
+        "required": [
+          "max_input_bytes",
+          "max_input_tokens",
+          "max_output_tokens",
+          "max_deadline_ms",
+          "max_response_bytes",
+          "max_retention_seconds"
+        ],
+        "properties": {
+          "max_input_bytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1048576
+          },
+          "max_input_tokens": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 262144
+          },
+          "max_output_tokens": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 32768
+          },
+          "max_deadline_ms": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 120000
+          },
+          "max_response_bytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 48000
+          },
+          "max_retention_seconds": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 31536000
+          }
+        },
+        "additionalProperties": false
+      },
+      "DataPolicy": {
+        "type": "object",
+        "required": [
+          "allowed_destinations",
+          "allowed_categories",
+          "allowed_purposes",
+          "limits"
+        ],
+        "properties": {
+          "allowed_destinations": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 128
+            },
+            "maxItems": 64,
+            "uniqueItems": true
+          },
+          "allowed_categories": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "user_request",
+                "project_specification",
+                "project_source",
+                "diagnostics",
+                "end_user_data",
+                "secret"
+              ]
+            },
+            "maxItems": 16,
+            "uniqueItems": true
+          },
+          "allowed_purposes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "planning",
+                "generation",
+                "review",
+                "diagnostics",
+                "summarization",
+                "structured_extraction",
+                "translation"
+              ]
+            },
+            "maxItems": 32,
+            "uniqueItems": true
+          },
+          "limits": {
+            "$ref": "#/components/schemas/ModelPolicyLimits"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ModelInput": {
+        "type": "object",
+        "required": [
+          "purpose",
+          "categories",
+          "content"
+        ],
+        "properties": {
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "planning",
+              "generation",
+              "review",
+              "diagnostics",
+              "summarization",
+              "structured_extraction",
+              "translation"
+            ]
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "user_request",
+                "project_specification",
+                "project_source",
+                "diagnostics",
+                "end_user_data",
+                "secret"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 6,
+            "uniqueItems": true
+          },
+          "content": {}
+        },
+        "additionalProperties": false
+      },
+      "ModelRequest": {
+        "type": "object",
+        "required": [
+          "destination_id",
+          "model",
+          "input",
+          "max_output_tokens",
+          "deadline_ms"
+        ],
+        "properties": {
+          "destination_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "model": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "input": {
+            "$ref": "#/components/schemas/ModelInput"
+          },
+          "max_output_tokens": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 32768
+          },
+          "deadline_ms": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 120000
+          }
+        },
+        "additionalProperties": false
+      },
+      "ModelUsage": {
+        "type": "object",
+        "required": [
+          "input_tokens",
+          "output_tokens",
+          "cached_input_tokens"
+        ],
+        "properties": {
+          "input_tokens": {
+            "oneOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "output_tokens": {
+            "oneOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cached_input_tokens": {
+            "oneOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "PricingSnapshot": {
+        "type": "object",
+        "required": [
+          "version",
+          "effective_date",
+          "currency",
+          "unit",
+          "unit_scale",
+          "input_units_per_million_tokens",
+          "output_units_per_million_tokens"
+        ],
+        "properties": {
+          "version": {
+            "type": "string"
+          },
+          "effective_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "currency": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "unit_scale": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "input_units_per_million_tokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "output_units_per_million_tokens": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "StructuredModelOutput": {
+        "type": "object",
+        "required": [
+          "schema_id",
+          "schema_version",
+          "data"
+        ],
+        "properties": {
+          "schema_id": {
+            "type": "string"
+          },
+          "schema_version": {
+            "type": "string"
+          },
+          "data": {}
+        },
+        "additionalProperties": false
+      },
+      "ModelResponse": {
+        "type": "object",
+        "required": [
+          "destination_id",
+          "provider",
+          "model",
+          "model_version",
+          "output",
+          "usage",
+          "pricing"
+        ],
+        "properties": {
+          "destination_id": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "model_version": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "output": {
+            "$ref": "#/components/schemas/StructuredModelOutput"
+          },
+          "usage": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ModelUsage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pricing": {
+            "$ref": "#/components/schemas/PricingSnapshot"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ReconciledModelResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ModelResponse"
+          },
+          {
+            "type": "object",
+            "required": [
+              "usage"
+            ],
+            "properties": {
+              "usage": {
+                "$ref": "#/components/schemas/ModelUsage"
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+      "EffectStatus": {
+        "type": "string",
+        "enum": [
+          "prepared",
+          "sending",
+          "succeeded",
+          "failed",
+          "unknown",
+          "cancelled"
+        ]
+      },
+      "ModelProviderKind": {
+        "type": "string",
+        "enum": [
+          "synthetic",
+          "cloud"
+        ]
+      },
+      "ModelRegistrationSnapshot": {
+        "type": "object",
+        "required": [
+          "destination_id",
+          "provider",
+          "provider_kind",
+          "model",
+          "model_version",
+          "output_schema_id",
+          "output_schema_version",
+          "output_schema_hash",
+          "pricing",
+          "retention_seconds"
+        ],
+        "properties": {
+          "destination_id": {
+            "type": "string"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "provider_kind": {
+            "$ref": "#/components/schemas/ModelProviderKind"
+          },
+          "model": {
+            "type": "string"
+          },
+          "model_version": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "output_schema_id": {
+            "type": "string"
+          },
+          "output_schema_version": {
+            "type": "string"
+          },
+          "output_schema_hash": {
+            "type": "array",
+            "minItems": 32,
+            "maxItems": 32,
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 255
+            }
+          },
+          "pricing": {
+            "$ref": "#/components/schemas/PricingSnapshot"
+          },
+          "retention_seconds": {
+            "oneOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "EffectIntent": {
+        "type": "object",
+        "required": [
+          "id",
+          "project_id",
+          "job_id",
+          "destination_id",
+          "fingerprint",
+          "reservation_id",
+          "reserved_units",
+          "request_purpose",
+          "request_categories",
+          "input_bytes",
+          "conservative_input_tokens",
+          "max_output_tokens",
+          "deadline_ms",
+          "registration"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "job_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "destination_id": {
+            "type": "string"
+          },
+          "fingerprint": {
+            "type": "array",
+            "minItems": 32,
+            "maxItems": 32,
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 255
+            }
+          },
+          "reservation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reserved_units": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "request_purpose": {
+            "type": "string",
+            "enum": [
+              "planning",
+              "generation",
+              "review",
+              "diagnostics",
+              "summarization",
+              "structured_extraction",
+              "translation"
+            ]
+          },
+          "request_categories": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "user_request",
+                "project_specification",
+                "project_source",
+                "diagnostics",
+                "end_user_data",
+                "secret"
+              ]
+            },
+            "uniqueItems": true
+          },
+          "input_bytes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "conservative_input_tokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "max_output_tokens": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "deadline_ms": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "registration": {
+            "$ref": "#/components/schemas/ModelRegistrationSnapshot"
+          }
+        }
+      },
+      "EffectReconciliationReceipt": {
+        "type": "object",
+        "required": [
+          "evidence_id",
+          "evidence_fingerprint",
+          "decision"
+        ],
+        "properties": {
+          "evidence_id": {
+            "type": "string"
+          },
+          "evidence_fingerprint": {
+            "type": "array",
+            "minItems": 32,
+            "maxItems": 32,
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 255
+            }
+          },
+          "decision": {
+            "type": "string",
+            "enum": [
+              "processed",
+              "not_processed"
+            ]
+          }
+        }
+      },
+      "BudgetSnapshot": {
+        "type": "object",
+        "required": [
+          "project_id",
+          "configuration_version",
+          "limit_units",
+          "reserved_units",
+          "spent_units",
+          "currency",
+          "unit_scale"
+        ],
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "configuration_version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "limit_units": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "reserved_units": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "spent_units": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "currency": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "unit_scale": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "EffectRecordView": {
+        "type": "object",
+        "required": [
+          "effect_id",
+          "job_id",
+          "project_id",
+          "generation",
+          "destination",
+          "fingerprint",
+          "status",
+          "intent",
+          "result",
+          "reconciliation",
+          "failure_code",
+          "reserved_units",
+          "reservation_status",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "effect_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "job_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "generation": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "destination": {
+            "type": "string"
+          },
+          "fingerprint": {
+            "type": "array",
+            "minItems": 32,
+            "maxItems": 32,
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 255
+            }
+          },
+          "status": {
+            "$ref": "#/components/schemas/EffectStatus"
+          },
+          "intent": {
+            "$ref": "#/components/schemas/EffectIntent"
+          },
+          "result": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ModelResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reconciliation": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/EffectReconciliationReceipt"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "failure_code": {
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "transport_uncertain",
+                  "provider_status_uncertain",
+                  "invalid_response",
+                  "response_too_large",
+                  "invalid_usage",
+                  "persistence_uncertain"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reserved_units": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "reservation_status": {
+            "type": "string",
+            "enum": [
+              "held",
+              "settled",
+              "released"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "EffectListPage": {
+        "type": "object",
+        "required": [
+          "items",
+          "next_before"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EffectRecordView"
+            }
+          },
+          "next_before": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "ReconcileEffectRequest": {
+        "type": "object",
+        "required": [
+          "evidence_id",
+          "decision"
+        ],
+        "properties": {
+          "evidence_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "decision": {
+            "oneOf": [
+              {
+                "type": "object",
+                "required": [
+                  "outcome",
+                  "response"
+                ],
+                "properties": {
+                  "outcome": {
+                    "const": "processed"
+                  },
+                  "response": {
+                    "$ref": "#/components/schemas/ReconciledModelResponse"
+                  }
+                },
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "required": [
+                  "outcome"
+                ],
+                "properties": {
+                  "outcome": {
+                    "const": "not_processed"
+                  }
+                },
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateBudgetRequest": {
+        "type": "object",
+        "required": [
+          "limit_units",
+          "currency",
+          "unit_scale"
+        ],
+        "properties": {
+          "limit_units": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "currency": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "unit_scale": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "JobStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "running",
+          "succeeded",
+          "failed",
+          "cancelled",
+          "unknown",
+          "stale"
+        ]
+      },
+      "JobPayloadSummary": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ApplyChangesSummary"
+          },
+          {
+            "$ref": "#/components/schemas/ModelCallSummary"
+          },
+          {
+            "$ref": "#/components/schemas/ReconcileEffectSummary"
+          }
+        ]
+      },
+      "ApplyChangesSummary": {
+        "type": "object",
+        "required": [
+          "kind",
+          "operation_count"
+        ],
+        "properties": {
+          "kind": {
+            "const": "apply_changes"
+          },
+          "operation_count": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      },
+      "ModelCallSummary": {
+        "type": "object",
+        "required": [
+          "kind",
+          "destination_id",
+          "model",
+          "purpose",
+          "categories",
+          "max_output_tokens",
+          "deadline_ms"
+        ],
+        "properties": {
+          "kind": {
+            "const": "model_call"
+          },
+          "destination_id": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "planning",
+              "generation",
+              "review",
+              "diagnostics",
+              "summarization",
+              "structured_extraction",
+              "translation"
+            ]
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "user_request",
+                "project_specification",
+                "project_source",
+                "diagnostics",
+                "end_user_data",
+                "secret"
+              ]
+            },
+            "uniqueItems": true
+          },
+          "max_output_tokens": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "deadline_ms": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "ReconcileEffectSummary": {
+        "type": "object",
+        "required": [
+          "kind",
+          "effect_id"
+        ],
+        "properties": {
+          "kind": {
+            "const": "reconcile_effect"
+          },
+          "effect_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false
+      },
+      "JobResult": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "revision"
+            ],
+            "properties": {
+              "revision": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "effect_id",
+              "status"
+            ],
+            "properties": {
+              "effect_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "status": {
+                "$ref": "#/components/schemas/EffectStatus"
+              }
+            }
+          }
+        ]
+      },
+      "JobView": {
+        "type": "object",
+        "required": [
+          "id",
+          "project_id",
+          "actor_id",
+          "environment",
+          "source_revision",
+          "payload",
+          "status",
+          "attempts",
+          "max_attempts",
+          "generation",
+          "deadline",
+          "cancel_requested",
+          "result",
+          "error_code",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "actor_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "environment": {
+            "type": "string",
+            "enum": [
+              "development",
+              "production"
+            ]
+          },
+          "source_revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "payload": {
+            "$ref": "#/components/schemas/JobPayloadSummary"
+          },
+          "status": {
+            "$ref": "#/components/schemas/JobStatus"
+          },
+          "attempts": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3
+          },
+          "max_attempts": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "generation": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "deadline": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "cancel_requested": {
+            "type": "boolean"
+          },
+          "result": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/JobResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error_code": {
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "unsupported_payload",
+                  "execution_failed",
+                  "retryable_internal",
+                  "gateway_unavailable",
+                  "permission_revoked",
+                  "source_stale",
+                  "deadline_expired",
+                  "attempts_exceeded",
+                  "cancelled",
+                  "lease_lost"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "JobPage": {
+        "type": "object",
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JobView"
+            }
+          },
+          "next_cursor": {
+            "oneOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "CreateJobRequest": {
+        "type": "object",
+        "required": [
+          "payload"
+        ],
+        "properties": {
+          "payload": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ApplyChangesPayload"
+              },
+              {
+                "$ref": "#/components/schemas/ModelCallPayload"
+              }
+            ]
+          },
+          "max_attempts": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "ttl_seconds": {
+            "type": "integer",
+            "minimum": 10,
+            "maximum": 1800
+          }
+        },
+        "additionalProperties": false
+      },
+      "ApplyChangesPayload": {
+        "type": "object",
+        "required": [
+          "kind",
+          "changes"
+        ],
+        "properties": {
+          "kind": {
+            "const": "apply_changes"
+          },
+          "changes": {
+            "$ref": "#/components/schemas/ChangeSet"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ModelCallPayload": {
+        "type": "object",
+        "required": [
+          "kind",
+          "request"
+        ],
+        "properties": {
+          "kind": {
+            "const": "model_call"
+          },
+          "request": {
+            "$ref": "#/components/schemas/ModelRequest"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

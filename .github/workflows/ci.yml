@@ -1,0 +1,156 @@
+name: P1 checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:18.6-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
+        env:
+          POSTGRES_DB: kyro_p1
+          POSTGRES_USER: kyro_admin
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U kyro_admin -d kyro_p1"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      KYRO_ENV: development
+      KYRO_BIND: 127.0.0.1:8080
+      KYRO_DATABASE_URL: postgres://kyro_api@127.0.0.1:5432/kyro_p1
+      KYRO_WORKER_DATABASE_URL: postgres://kyro_worker@127.0.0.1:5432/kyro_p1
+      KYRO_DATABASE_ADMIN_URL: postgres://kyro_admin@127.0.0.1:5432/kyro_p1
+      KYRO_MAX_CONNECTIONS: 8
+      KYRO_WORKER_POLL_MS: 100
+      KYRO_LEASE_SECONDS: 10
+      KYRO_MAX_BODY_BYTES: 262144
+      KYRO_SYNTHETIC_PROVIDERS: false
+      KYRO_AUTH_UI_ORIGIN: http://127.0.0.1:3000
+      KYRO_OIDC_SYNTHETIC_PROVIDER: "true"
+      KYRO_OIDC_ISSUER: http://127.0.0.1:9090/issuer
+      KYRO_OIDC_AUTHORIZATION_ENDPOINT: http://127.0.0.1:9090/oidc/authorize
+      KYRO_OIDC_TOKEN_ENDPOINT: http://127.0.0.1:9090/oidc/token
+      KYRO_OIDC_JWKS_URI: http://127.0.0.1:9090/oidc/jwks
+      KYRO_OIDC_REDIRECT_URI: http://127.0.0.1:8080/v1/auth/callback
+      KYRO_OIDC_CLIENT_ID: kyro-e2e-client
+      KYRO_MODEL_REGISTRY_PATH: tests/fixtures/models.synthetic.e2e.json
+      KYRO_MODEL_ALLOW_SYNTHETIC_LOOPBACK: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PostgreSQL 18.6 client tools
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ca-certificates curl
+          sudo install -d -m 0755 /usr/share/postgresql-common/pgdg
+          sudo curl --fail --show-error --silent --location \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            --output /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+          printf '%s\n' \
+            'Types: deb' \
+            'URIs: https://apt-archive.postgresql.org/pub/repos/apt' \
+            'Suites: noble-pgdg-archive' \
+            'Architectures: amd64' \
+            'Components: main' \
+            'Signed-By: /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc' \
+            | sudo tee /etc/apt/sources.list.d/pgdg-archive.sources >/dev/null
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            postgresql-client-18=18.6-1.pgdg24.04+2 \
+            libpq5=18.6-1.pgdg24.04+2
+          echo '/usr/lib/postgresql/18/bin' >> "$GITHUB_PATH"
+          export PATH="/usr/lib/postgresql/18/bin:$PATH"
+          psql --version | grep -F 'PostgreSQL) 18.6 ('
+          pg_dump --version | grep -F 'PostgreSQL) 18.6 ('
+          pg_restore --version | grep -F 'PostgreSQL) 18.6 ('
+
+      - name: Install the workspace toolchain
+        run: rustup toolchain install 1.96.1 --profile minimal --component rustfmt
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Check locked workspace
+        run: cargo check --locked --workspace
+
+      - name: Verify domain dependency boundary
+        shell: bash
+        run: |
+          if cargo tree --locked -p kyro-domain --edges normal --prefix none | grep -Eq '^(axum|sqlx) v'; then
+            echo "kyro-domain must not depend on Axum or SQLx" >&2
+            exit 1
+          fi
+
+      - name: Apply database migrations with the admin role
+        run: cargo run --locked -p kyro-store --bin kyro-migrate
+
+      - name: Create isolated PostgreSQL integration database
+        run: psql "$KYRO_DATABASE_ADMIN_URL" --set=ON_ERROR_STOP=1 --command='CREATE DATABASE kyro_p1_test_ci OWNER kyro_admin'
+
+      - name: Migrate isolated PostgreSQL integration database
+        env:
+          KYRO_DATABASE_ADMIN_URL: postgres://kyro_admin@127.0.0.1:5432/kyro_p1_test_ci
+        run: cargo run --locked -p kyro-store --bin kyro-migrate
+
+      - name: Run unit and PostgreSQL integration tests
+        env:
+          KYRO_TEST_DATABASE_URL: postgres://kyro_api@127.0.0.1:5432/kyro_p1_test_ci
+          KYRO_TEST_WORKER_DATABASE_URL: postgres://kyro_worker@127.0.0.1:5432/kyro_p1_test_ci
+          KYRO_TEST_DATABASE_ADMIN_URL: postgres://kyro_admin@127.0.0.1:5432/kyro_p1_test_ci
+        run: cargo test --locked --workspace -- --include-ignored
+
+      - name: Build runtime executables
+        run: cargo build --locked --bins --workspace
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.18.0
+
+      - name: Check the versioned OpenAPI contract
+        run: node scripts/check-openapi.mjs
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pinned OpenAPI validation tooling
+        run: python -m pip install --disable-pip-version-check openapi-spec-validator==0.8.4
+
+      - name: Validate OpenAPI 3.1 document
+        run: python -m openapi_spec_validator docs/backend/partie-1/openapi.v1.json
+
+      - name: Run synthetic end-to-end qualification against PostgreSQL
+        run: node scripts/verify-p1.mjs --run --execution local
+
+      - name: Install dependency advisory scanner
+        run: cargo install cargo-audit --version 0.22.0 --locked
+
+      - name: Audit active dependency graph
+        shell: bash
+        run: |
+          node scripts/check-dependencies.mjs --evidence "$RUNNER_TEMP/cargo-audit-raw.json" \
+            | tee "$RUNNER_TEMP/cargo-audit-summary.json"
+
+      - name: Preserve dependency audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cargo-audit-evidence
+          path: |
+            ${{ runner.temp }}/cargo-audit-raw.json
+            ${{ runner.temp }}/cargo-audit-summary.json
+          if-no-files-found: ignore
+
+      - name: Build the pinned runtime image
+        run: docker build --tag kyro-p1:ci .

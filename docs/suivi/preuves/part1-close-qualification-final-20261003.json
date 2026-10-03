@@ -1,0 +1,96 @@
+{
+  "status": "P1 valid\u00e9e dans le p\u00e9rim\u00e8tre synth\u00e9tique convenu",
+  "date": "2026-10-03",
+  "timezone": "Europe/Paris",
+  "commit": "d2d7fbafec5b1e3d50d4b6324ad3f40e836c8cc2",
+  "source_sha256": "8da46273d2f17bb9abef667e05c7de7af54babdac8c203e089e5464d00a1fd4d",
+  "worktree_clean": false,
+  "automatic_commit_created": false,
+  "providers": {
+    "postgresql": "real",
+    "api": "real",
+    "worker": "real",
+    "oidc": "synthetic",
+    "inference": "synthetic"
+  },
+  "criteria": {
+    "P1-01": {
+      "status": "passed",
+      "evidence": "part1-e2e-20261003T204435-4ef16a288963cbbf.json"
+    },
+    "P1-02": {
+      "status": "passed",
+      "evidence": "part1-e2e-20261003T204435-4ef16a288963cbbf.json"
+    },
+    "P1-03": {
+      "status": "passed",
+      "evidence": "part1-e2e-20261003T204435-4ef16a288963cbbf.json"
+    },
+    "P1-04": {
+      "status": "passed",
+      "evidence": "part1-e2e-20261003T204435-4ef16a288963cbbf.json"
+    },
+    "P1-05": {
+      "status": "passed",
+      "evidence": "part1-e2e-20261003T204435-4ef16a288963cbbf.json"
+    },
+    "P1-06": {
+      "status": "passed",
+      "evidence": "part1-e2e-20261003T204435-4ef16a288963cbbf.json"
+    },
+    "P1-07": {
+      "status": "passed",
+      "evidence": "part1-e2e-20261003T204435-4ef16a288963cbbf.json"
+    },
+    "P1-08": {
+      "status": "passed",
+      "evidence": "part1-e2e-20261003T204435-4ef16a288963cbbf.json"
+    },
+    "P1-09": {
+      "status": "passed",
+      "evidence": "part1-e2e-20261003T204435-4ef16a288963cbbf.json"
+    },
+    "P1-10": {
+      "status": "passed",
+      "evidence": "part1-e2e-20261003T204435-4ef16a288963cbbf.json"
+    },
+    "P1-11": {
+      "status": "passed",
+      "evidence": "part1-e2e-20261003T204435-4ef16a288963cbbf.json"
+    },
+    "P1-12": {
+      "status": "passed",
+      "evidence": "part1-e2e-20261003T204435-4ef16a288963cbbf.json"
+    },
+    "P1-13": {
+      "status": "passed",
+      "evidence": "part1-e2e-20261003T204435-4ef16a288963cbbf.json"
+    },
+    "P1-14": {
+      "status": "passed",
+      "evidence": "part1-close-review-final-20261003.json"
+    }
+  },
+  "controls": "part1-close-controls-final-20261003.json",
+  "migration": "part1-close-upgrade-20261003.json",
+  "runtime_privileges": "part1-close-runtime-table-privileges-20261003.json",
+  "review": "part1-close-review-final-20261003.json",
+  "review_score": 9.5,
+  "critical_or_high_unresolved": 0,
+  "all_previous_failures_retained": true,
+  "real_nvidia_nebius_qualified": false,
+  "deployment_verified": false,
+  "paid_provider_calls": 0,
+  "source_input_archive": {
+    "file": "part1-close-final-inputs.zip",
+    "sha256": "06c004e1ce6198fbfe27ed9530b3a1364fd01275c5da5a2450e256f9ccb3d12a",
+    "bytes": 326696
+  },
+  "patch": {
+    "file": "part1-close-final.patch",
+    "sha256": "5a239c00a209e345364f14134c770bf5869a55fa9464c30339fbfac2b931c4b5"
+  },
+  "model_measurements": "part1-close-model-measurements-20261003.json",
+  "documentation_review_confirmed": true,
+  "critical_high_or_medium_unresolved_in_review_scope": 0
+}

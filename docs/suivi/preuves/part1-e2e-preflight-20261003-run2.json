@@ -1,0 +1,39 @@
+{
+  "record": "part1-e2e-preflight",
+  "date": "2026-10-03",
+  "status": "passed_read_only",
+  "command": "node scripts/verify-p1.mjs --preflight --execution docker --db-container kyro-p1-ops-postgres-1 --db-port 55440",
+  "versions": {
+    "node": "v24.18.0",
+    "docker_server": "29.8.0",
+    "postgresql": "18.6"
+  },
+  "database_resource": {
+    "container_running": true,
+    "health": "healthy",
+    "compose_project": "kyro-p1-ops",
+    "compose_service": "postgres",
+    "image": "postgres:18.6-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873",
+    "host_ip": "127.0.0.1",
+    "host_port": 55440,
+    "data_volume": "kyro-p1-ops_postgres-data"
+  },
+  "runtime_roles_observed_in_existing_db": [
+    { "role": "kyro_admin", "superuser": true, "bypass_rls": true },
+    { "role": "kyro_api", "superuser": false, "bypass_rls": false },
+    { "role": "kyro_worker", "superuser": false, "bypass_rls": false }
+  ],
+  "docker_to_postgres_probe": "accepting connections",
+  "expected_loopback_ports_available": {
+    "8080": true,
+    "9090": true,
+    "9091": true
+  },
+  "database_created": false,
+  "existing_database_modified": false,
+  "persistent_containers_created": 0,
+  "temporary_probe_containers_created": 1,
+  "temporary_probe_containers_removed": 1,
+  "real_secrets_used": false,
+  "acceptance_criteria_verified": []
+}
