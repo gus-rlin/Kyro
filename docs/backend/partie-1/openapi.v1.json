@@ -1887,7 +1887,7 @@
               "minLength": 1
             },
             "minItems": 1,
-            "maxItems": 128,
+            "maxItems": 1,
             "uniqueItems": true
           },
           "expires_at": {

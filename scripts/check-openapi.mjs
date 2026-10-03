@@ -185,6 +185,10 @@ try {
   if (document.components.schemas.ChangeSet.properties.operations.maxItems !== 128) {
     throw new Error('ChangeSet.operations must match the runtime limit of 128');
   }
+  const resources = document.components.schemas.CreateCapabilityGrantRequest.properties.resources;
+  if (resources.minItems !== 1 || resources.maxItems !== 1) {
+    throw new Error('capability grants require exactly one project resource');
+  }
   const expectedGrantLimits = {
     max_job_attempts: [1, 3],
     max_job_ttl_secs: [10, 1800],
