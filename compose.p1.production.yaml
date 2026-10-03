@@ -92,6 +92,12 @@ services:
       KYRO_OIDC_CLIENT_ID: ${KYRO_OIDC_CLIENT_ID:?Set KYRO_OIDC_CLIENT_ID}
       KYRO_OIDC_SYNTHETIC_PROVIDER: "false"
       KYRO_SYNTHETIC_PROVIDERS: "false"
+      KYRO_MODEL_REGISTRY_PATH: /app/config/models.deployment.json
+    volumes:
+      - type: bind
+        source: ${KYRO_MODEL_REGISTRY_FILE:?Set KYRO_MODEL_REGISTRY_FILE to the deployment model registry}
+        target: /app/config/models.deployment.json
+        read_only: true
     expose:
       - "8080"
     secrets:
@@ -129,6 +135,12 @@ services:
       KYRO_LEASE_SECONDS: ${KYRO_LEASE_SECONDS:?Set KYRO_LEASE_SECONDS}
       KYRO_MAX_BODY_BYTES: ${KYRO_MAX_BODY_BYTES:?Set KYRO_MAX_BODY_BYTES}
       KYRO_SYNTHETIC_PROVIDERS: "false"
+      KYRO_MODEL_REGISTRY_PATH: /app/config/models.deployment.json
+    volumes:
+      - type: bind
+        source: ${KYRO_MODEL_REGISTRY_FILE:?Set KYRO_MODEL_REGISTRY_FILE to the deployment model registry}
+        target: /app/config/models.deployment.json
+        read_only: true
     secrets:
       - postgres_ca
       - worker_database_url
