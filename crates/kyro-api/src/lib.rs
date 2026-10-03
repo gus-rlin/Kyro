@@ -13,7 +13,7 @@ use axum::{
     Router,
     body::Body,
     extract::{DefaultBodyLimit, MatchedPath, Request, State},
-    http::{HeaderName, HeaderValue, StatusCode, header},
+    http::{HeaderName, HeaderValue, Method, StatusCode, header},
     middleware::{self, Next},
     response::{IntoResponse, Json, Response},
     routing::get,
@@ -23,6 +23,7 @@ use kyro_gateway::{Gateway, GatewayConfig};
 use kyro_store::Store;
 use serde::Serialize;
 use tokio::{sync::Semaphore, time};
+use tower_http::cors::CorsLayer;
 use tracing::Instrument;
 use uuid::Uuid;
 
@@ -214,7 +215,33 @@ pub fn router(state: AppState) -> Router {
             observe_request,
         ))
         .layer(middleware::from_fn(attach_request_id))
+        .layer(ui_cors(&state.auth.ui_origin))
         .with_state(state)
+}
+
+fn ui_cors(origin: &str) -> CorsLayer {
+    CorsLayer::new()
+        .allow_origin([origin.parse::<HeaderValue>().expect("validated UI origin")])
+        .allow_credentials(true)
+        .allow_methods([
+            Method::GET,
+            Method::HEAD,
+            Method::POST,
+            Method::PUT,
+            Method::DELETE,
+        ])
+        .allow_headers([
+            header::CONTENT_TYPE,
+            header::IF_MATCH,
+            HeaderName::from_static("x-csrf-token"),
+            HeaderName::from_static("idempotency-key"),
+            HeaderName::from_static("last-event-id"),
+        ])
+        .expose_headers([
+            header::ETAG,
+            header::LOCATION,
+            HeaderName::from_static("x-request-id"),
+        ])
 }
 
 async fn health_live() -> Json<HealthResponse> {
@@ -404,6 +431,113 @@ mod tests {
     use axum::http::{Method, StatusCode};
 
     use super::{HttpControls, HttpMetrics, safe_http_method};
+
+    #[tokio::test]
+    async fn cors_allows_only_the_configured_ui_with_credentials_and_bounded_headers() {
+        use axum::{Router, http::header, routing::get};
+
+        let app = Router::new()
+            .route(
+                "/resource",
+                get(|| async { ([(header::ETAG, "\"rev-1\"")], "ok") }),
+            )
+            .layer(super::ui_cors("http://127.0.0.1:3000"));
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let url = format!("http://{}/resource", listener.local_addr().unwrap());
+        let server = tokio::spawn(async { axum::serve(listener, app).await.unwrap() });
+        let client = reqwest::Client::new();
+        let response = client
+            .get(&url)
+            .header(header::ORIGIN, "http://127.0.0.1:3000")
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(
+            response.headers()[header::ACCESS_CONTROL_ALLOW_ORIGIN],
+            "http://127.0.0.1:3000"
+        );
+        assert_eq!(
+            response.headers()[header::ACCESS_CONTROL_ALLOW_CREDENTIALS],
+            "true"
+        );
+        assert!(
+            response.headers()[header::ACCESS_CONTROL_EXPOSE_HEADERS]
+                .to_str()
+                .unwrap()
+                .contains("etag")
+        );
+        assert!(
+            response.headers()[header::VARY]
+                .to_str()
+                .unwrap()
+                .contains("origin")
+        );
+        for method in ["POST", "PUT", "DELETE"] {
+            let response = client
+                .request(Method::OPTIONS, &url)
+                .header(header::ORIGIN, "http://127.0.0.1:3000")
+                .header(header::ACCESS_CONTROL_REQUEST_METHOD, method)
+                .header(
+                    header::ACCESS_CONTROL_REQUEST_HEADERS,
+                    "content-type,x-csrf-token,if-match,idempotency-key,last-event-id",
+                )
+                .send()
+                .await
+                .unwrap();
+            assert!(response.status().is_success());
+            assert_eq!(
+                response.headers()[header::ACCESS_CONTROL_ALLOW_ORIGIN],
+                "http://127.0.0.1:3000"
+            );
+            assert_eq!(
+                response.headers()[header::ACCESS_CONTROL_ALLOW_CREDENTIALS],
+                "true"
+            );
+            assert!(
+                response.headers()[header::ACCESS_CONTROL_ALLOW_METHODS]
+                    .to_str()
+                    .unwrap()
+                    .contains(method)
+            );
+            let allowed = response.headers()[header::ACCESS_CONTROL_ALLOW_HEADERS]
+                .to_str()
+                .unwrap();
+            for name in [
+                "content-type",
+                "x-csrf-token",
+                "if-match",
+                "idempotency-key",
+                "last-event-id",
+            ] {
+                assert!(allowed.contains(name));
+            }
+            assert!(!allowed.contains("x-untrusted"));
+        }
+        for origin in ["http://127.0.0.1:3001", "https://attacker.invalid", "null"] {
+            for method in [Method::GET, Method::OPTIONS] {
+                let response = client
+                    .request(method, &url)
+                    .header(header::ORIGIN, origin)
+                    .header(header::ACCESS_CONTROL_REQUEST_METHOD, "POST")
+                    .send()
+                    .await
+                    .unwrap();
+                assert!(
+                    !response
+                        .headers()
+                        .contains_key(header::ACCESS_CONTROL_ALLOW_ORIGIN)
+                );
+            }
+        }
+        let response = client.get(&url).send().await.unwrap();
+        assert!(response.status().is_success());
+        assert!(
+            !response
+                .headers()
+                .contains_key(header::ACCESS_CONTROL_ALLOW_ORIGIN)
+        );
+        server.abort();
+    }
 
     #[test]
     fn observability_normalizes_unrecognized_client_methods() {

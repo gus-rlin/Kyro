@@ -28,6 +28,7 @@ sha2 = "=0.10.9"
 sqlx = { version = "=0.8.6", default-features = false, features = ["runtime-tokio-rustls", "postgres", "migrate", "uuid", "chrono", "json", "macros"] }
 thiserror = "=2.0.18"
 tokio = { version = "=1.51.4", features = ["macros", "rt-multi-thread", "signal", "time", "net", "io-util", "sync"] }
+tower-http = { version = "=0.6.11", default-features = false, features = ["cors"] }
 tracing = "=0.1.44"
 tracing-subscriber = { version = "=0.3.22", features = ["env-filter", "json"] }
 url = "=2.5.8"

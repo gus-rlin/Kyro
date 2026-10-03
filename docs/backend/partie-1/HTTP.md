@@ -4,6 +4,8 @@
 
 Le schéma OpenAPI versionné est [`openapi.v1.json`](openapi.v1.json). Le workflow valide son JSON, ses références et la présence des routes documentées dans les sources Axum.
 
+L'API autorise CORS avec credentials pour l'origine exacte `KYRO_AUTH_UI_ORIGIN` : GET/HEAD/POST/PUT/DELETE, en-têtes Content-Type, X-CSRF-Token, If-Match, Idempotency-Key et Last-Event-ID. ETag, Location et X-Request-ID sont exposés aux scripts du navigateur. Les clients cross-origin utilisent `credentials: "include"` ; les mutations conservent leurs contrôles de session, Origin et CSRF. Aucun wildcard d'origine, de méthode ou d'en-tête n'est activé.
+
 ## Origine et authentification
 
 Les routes applicatives sont sous `/v1`. Le serveur n’exécute pas les migrations à son démarrage. `GET /health/live` indique que le processus répond; `GET /health/ready` vérifie la base et le rôle d’exécution sans exposer les détails de connexion. Un échec de readiness renvoie `503`.
