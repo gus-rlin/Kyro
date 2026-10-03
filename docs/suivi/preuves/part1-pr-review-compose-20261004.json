@@ -1,0 +1,21 @@
+{
+  "date": "2026-10-04",
+  "status": "PASS",
+  "fixture": "synthetic_external_temp_directory",
+  "checks": {
+    "api": {
+      "registryPath": "/app/config/models.deployment.json",
+      "registryMountReadOnly": true,
+      "sameHostSource": true,
+      "modelKeySecret": false
+    },
+    "worker": {
+      "registryPath": "/app/config/models.deployment.json",
+      "registryMountReadOnly": true,
+      "sameHostSource": true,
+      "modelKeySecret": true
+    }
+  },
+  "deploymentStarted": false,
+  "providerCalls": 0
+}

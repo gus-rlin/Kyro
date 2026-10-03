@@ -1,0 +1,5 @@
+info: syncing channel updates for 1.96.1-x86_64-unknown-linux-gnu
+info: latest update on 2026-06-30 for version 1.96.1 (31fca3adb 2026-06-26)
+info: downloading component clippy
+error: cannot update the lock file /workspace/Cargo.lock because --locked was passed to prevent this
+help: to generate the lock file without accessing the network, remove the --locked flag and use --offline instead.
