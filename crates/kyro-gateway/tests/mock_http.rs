@@ -65,7 +65,14 @@ fn context() -> ModelEffectContext {
 }
 
 fn gateway_for(address: SocketAddr) -> Gateway {
+    gateway_for_auth(address, true)
+}
+
+fn gateway_for_auth(address: SocketAddr, requires_key: bool) -> Gateway {
     let mut registry: Value = serde_json::from_str(SYNTHETIC_REGISTRY).expect("registry JSON");
+    if !requires_key {
+        registry["destinations"][0]["secret_ref"] = Value::Null;
+    }
     registry["destinations"][0]["base_url"] =
         json!(format!("http://127.0.0.1:{}/v1/", address.port()));
     registry["destinations"][0]["pinned_addresses"][0] =
@@ -192,6 +199,26 @@ fn successful_provider_response() -> Vec<u8> {
         "usage": { "prompt_tokens": 12, "completion_tokens": 5 }
     }))
     .expect("response JSON")
+}
+
+#[tokio::test]
+async fn qualified_keyless_destination_sends_once_without_authorization() {
+    let body = successful_provider_response();
+    let (address, requests, server) = mock_provider(http_response("200 OK", &body, "")).await;
+    let gateway = gateway_for_auth(address, false);
+    let store = RecordingStore::default();
+    assert!(gateway.validate_request(&request(), &policy()).is_ok());
+    let outcome = gateway
+        .execute_model_effect(&store, context(), request())
+        .await
+        .unwrap();
+    let captured = server.await.unwrap();
+    assert_eq!(requests.load(Ordering::SeqCst), 1);
+    assert_eq!(outcome.status, EffectStatus::Succeeded);
+    assert!(!captured.to_ascii_lowercase().contains("authorization:"));
+    assert!(!captured.contains(SECRET_CANARY));
+    assert_eq!(store.transition_counts(), (1, 1, 0));
+    assert_eq!(store.sent_status(), Some(EffectStatus::Succeeded));
 }
 
 #[tokio::test]

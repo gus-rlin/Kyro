@@ -4,6 +4,32 @@ use kyro_gateway::{DisabledReason, GatewayConfig};
 const SYNTHETIC_REGISTRY: &str = include_str!("../../../config/models.synthetic.json");
 
 #[test]
+fn qualified_keyless_destination_is_admissible_and_enabled_without_a_secret() {
+    let mut registry: serde_json::Value = serde_json::from_str(SYNTHETIC_REGISTRY).unwrap();
+    registry["destinations"][0]["secret_ref"] = serde_json::Value::Null;
+    let bytes = serde_json::to_vec(&registry).unwrap();
+    let admission =
+        GatewayConfig::for_admission_from_registry_json(&bytes, Environment::Development, true)
+            .unwrap();
+    assert!(admission.registry()[0].admissible);
+    assert!(!admission.registry()[0].enabled);
+    let execution =
+        GatewayConfig::from_registry_json(&bytes, Environment::Development, true, None).unwrap();
+    assert!(execution.registry()[0].enabled);
+    assert_eq!(execution.registry()[0].disabled_reason, None);
+    registry["destinations"][0]["qualified"] = serde_json::json!(false);
+    let unqualified = GatewayConfig::from_registry_json(
+        &serde_json::to_vec(&registry).unwrap(),
+        Environment::Development,
+        true,
+        None,
+    )
+    .unwrap();
+    assert!(!unqualified.registry()[0].admissible);
+    assert!(!unqualified.registry()[0].enabled);
+}
+
+#[test]
 fn synthetic_registry_requires_development_opt_in_and_server_secret() {
     let without_secret = GatewayConfig::from_registry_json(
         SYNTHETIC_REGISTRY.as_bytes(),

@@ -352,21 +352,24 @@ fn parse_destination(
     }
 
     let secret = match file.secret_ref.as_deref() {
-        Some(reference) if reference == "env:KYRO_MODEL_API_KEY" => {
-            api_key.map(|key| SecretValue(key.to_owned()))
-        }
+        Some(reference) if reference == "env:KYRO_MODEL_API_KEY" => api_key
+            .filter(|key| !key.trim().is_empty())
+            .map(|key| SecretValue(key.to_owned())),
         Some(_) => return Err(Error::Invalid("référence de secret non autorisée".into())),
         None => None,
     };
-    let admissible = file.qualified && file.secret_ref.is_some();
+    let admissible = file.qualified;
     let disabled_reason = if !file.qualified {
         Some(DisabledReason::NotQualified)
-    } else if matches!(mode, GatewayMode::Execution) && secret.is_none() {
+    } else if matches!(mode, GatewayMode::Execution)
+        && file.secret_ref.is_some()
+        && secret.is_none()
+    {
         Some(DisabledReason::MissingSecret)
     } else {
         None
     };
-    let enabled = matches!(mode, GatewayMode::Execution) && admissible && secret.is_some();
+    let enabled = matches!(mode, GatewayMode::Execution) && admissible && disabled_reason.is_none();
     let destination_id = file.id.clone();
     let provider = file.provider.clone();
     let destination_kind = file.kind;

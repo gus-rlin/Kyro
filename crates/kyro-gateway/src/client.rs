@@ -137,7 +137,7 @@ impl Gateway {
         let (destination, model) = self
             .registered_model(&request.destination_id, &request.model)
             .ok_or(Error::Unavailable)?;
-        let can_send = destination.enabled && destination.secret.is_some();
+        let can_send = destination.enabled;
         let input_json = serde_json::to_vec(&request.input)
             .map_err(|_| Error::Invalid("entrée de modèle invalide".into()))?;
         let (input_bytes, conservative_input_tokens) = request_measurements(&request, model)?;
@@ -305,14 +305,11 @@ impl Gateway {
                 }
             }
         });
-        let secret = destination
-            .secret
-            .as_ref()
-            .ok_or(SendFailure::DefinitelyNotSent)?;
-        let response = self
-            .client
-            .post(endpoint)
-            .bearer_auth(secret.expose())
+        let mut http_request = self.client.post(endpoint);
+        if let Some(secret) = &destination.secret {
+            http_request = http_request.bearer_auth(secret.expose());
+        }
+        let response = http_request
             .header(header::CONTENT_TYPE, "application/json")
             .json(&body)
             .timeout(Duration::from_millis(u64::from(request.deadline_ms)))
