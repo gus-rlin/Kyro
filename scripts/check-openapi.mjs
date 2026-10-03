@@ -182,6 +182,9 @@ try {
   rejectPermissiveSchemas(document.components.schemas, 'components.schemas');
 
   const grantLimits = document.components.schemas.CapabilityGrantLimits;
+  if (document.components.schemas.ChangeSet.properties.operations.maxItems !== 128) {
+    throw new Error('ChangeSet.operations must match the runtime limit of 128');
+  }
   const expectedGrantLimits = {
     max_job_attempts: [1, 3],
     max_job_ttl_secs: [10, 1800],

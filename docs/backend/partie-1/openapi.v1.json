@@ -2100,7 +2100,7 @@
             "items": {
               "$ref": "#/components/schemas/ChangeOperation"
             },
-            "maxItems": 64
+            "maxItems": 128
           }
         },
         "additionalProperties": false
