@@ -153,7 +153,7 @@ fn select_database_urls(
                 ));
             }
             Ok((
-                parse_required_database_url("KYRO_DATABASE_URL", api_url)?,
+                parse_required_database_url("KYRO_DATABASE_URL", api_url, environment)?,
                 String::new(),
             ))
         }
@@ -165,7 +165,7 @@ fn select_database_urls(
             }
             Ok((
                 String::new(),
-                parse_required_database_url("KYRO_WORKER_DATABASE_URL", worker_url)?,
+                parse_required_database_url("KYRO_WORKER_DATABASE_URL", worker_url, environment)?,
             ))
         }
         ProcessRole::CombinedDevelopment => {
@@ -175,21 +175,29 @@ fn select_database_urls(
                 ));
             }
             Ok((
-                parse_required_database_url("KYRO_DATABASE_URL", api_url)?,
-                parse_required_database_url("KYRO_WORKER_DATABASE_URL", worker_url)?,
+                parse_required_database_url("KYRO_DATABASE_URL", api_url, environment)?,
+                parse_required_database_url("KYRO_WORKER_DATABASE_URL", worker_url, environment)?,
             ))
         }
     }
 }
 
-fn parse_required_database_url(name: &'static str, value: Option<String>) -> Result<String> {
+fn parse_required_database_url(
+    name: &'static str,
+    value: Option<String>,
+    environment: Environment,
+) -> Result<String> {
     let value = value
         .filter(|value| !value.trim().is_empty())
         .ok_or_else(|| Error::Invalid(format!("{name} is required")))?;
-    parse_database_url(name, value)
+    parse_database_url(name, value, environment)
 }
 
-fn parse_database_url(name: &'static str, value: String) -> Result<String> {
+fn parse_database_url(
+    name: &'static str,
+    value: String,
+    environment: Environment,
+) -> Result<String> {
     let parsed = Url::parse(&value)
         .map_err(|_| Error::Invalid(format!("{name} must be a PostgreSQL URL")))?;
     let postgres_scheme = matches!(parsed.scheme(), "postgres" | "postgresql");
@@ -198,6 +206,33 @@ fn parse_database_url(name: &'static str, value: String) -> Result<String> {
         .any(|(key, host)| key == "host" && !host.trim().is_empty());
     if !postgres_scheme || (parsed.host_str().is_none() && !unix_socket_host) {
         return Err(Error::Invalid(format!("{name} must be a PostgreSQL URL")));
+    }
+    if environment == Environment::Production {
+        let mut socket = parsed
+            .host_str()
+            .is_some_and(|host| host.to_ascii_lowercase().starts_with("%2f"));
+        let mut ssl_mode = None;
+        let mut root_cert = None;
+        // Match SQLx's aliases and last-value precedence, including endpoint overrides.
+        for (key, value) in parsed.query_pairs() {
+            match key.as_ref() {
+                "host" => socket = value.starts_with('/'),
+                "hostaddr" => socket = false,
+                "sslmode" | "ssl-mode" => ssl_mode = Some(value.into_owned()),
+                "sslrootcert" | "ssl-root-cert" | "ssl-ca" => root_cert = Some(value.into_owned()),
+                _ => {}
+            }
+        }
+        if !socket
+            && (ssl_mode.as_deref() != Some("verify-full")
+                || root_cert
+                    .as_deref()
+                    .is_none_or(|cert| cert.trim().is_empty()))
+        {
+            return Err(Error::Invalid(format!(
+                "{name} requires verify-full TLS and a root certificate in production"
+            )));
+        }
     }
     Ok(value)
 }
@@ -353,9 +388,30 @@ mod tests {
 
     #[test]
     fn database_urls_must_use_a_postgresql_scheme_and_endpoint() {
-        assert!(parse_database_url("KYRO_DATABASE_URL", "postgres://db/app".to_owned()).is_ok());
-        assert!(parse_database_url("KYRO_DATABASE_URL", "https://db/app".to_owned()).is_err());
-        assert!(parse_database_url("KYRO_DATABASE_URL", "postgres:///app".to_owned()).is_err());
+        assert!(
+            parse_database_url(
+                "KYRO_DATABASE_URL",
+                "postgres://db/app".to_owned(),
+                Environment::Development
+            )
+            .is_ok()
+        );
+        assert!(
+            parse_database_url(
+                "KYRO_DATABASE_URL",
+                "https://db/app".to_owned(),
+                Environment::Development
+            )
+            .is_err()
+        );
+        assert!(
+            parse_database_url(
+                "KYRO_DATABASE_URL",
+                "postgres:///app".to_owned(),
+                Environment::Development
+            )
+            .is_err()
+        );
     }
 
     #[test]
@@ -363,20 +419,68 @@ mod tests {
         let (api, worker) = select_database_urls(
             ProcessRole::Api,
             Environment::Production,
-            Some("postgres://api@db/kyro".to_owned()),
+            Some("postgres://api@db/kyro?sslmode=verify-full&sslrootcert=/ca".to_owned()),
             None,
         )
         .expect("API-only credentials");
-        assert_eq!(api, "postgres://api@db/kyro");
+        assert_eq!(
+            api,
+            "postgres://api@db/kyro?sslmode=verify-full&sslrootcert=/ca"
+        );
         assert!(worker.is_empty());
         assert!(
             select_database_urls(
                 ProcessRole::Api,
                 Environment::Production,
-                Some("postgres://api@db/kyro".to_owned()),
+                Some("postgres://api@db/kyro?sslmode=verify-full&sslrootcert=/ca".to_owned()),
                 Some("postgres://worker@db/kyro".to_owned()),
             )
             .is_err()
         );
+    }
+
+    #[test]
+    fn production_tcp_database_urls_require_verified_tls_for_each_runtime_role() {
+        for role in [ProcessRole::Api, ProcessRole::Worker] {
+            for query in [
+                "",
+                "?sslmode=prefer",
+                "?sslmode=require",
+                "?sslmode=verify-ca",
+                "?sslmode=verify-full",
+                "?sslmode=verify-full&sslrootcert=",
+                "?sslmode=verify-full&sslrootcert=/ca&ssl-mode=disable",
+                "?sslmode=verify-full&sslrootcert=/ca&ssl-ca=",
+                "?host=db",
+                "?host=/tmp&hostaddr=127.0.0.1",
+            ] {
+                let url = Some(format!("postgres://runtime@db/kyro{query}"));
+                let (api, worker) = if matches!(role, ProcessRole::Api) {
+                    (url, None)
+                } else {
+                    (None, url)
+                };
+                assert!(
+                    select_database_urls(role, Environment::Production, api, worker).is_err(),
+                    "production URL must fail closed: {query}"
+                );
+            }
+        }
+        for url in [
+            "postgres://api@db/kyro?sslmode=verify-full&sslrootcert=/ca",
+            "postgres://api@db/kyro?ssl-mode=verify-full&ssl-ca=/ca",
+            "postgres:///kyro?host=/var/run/postgresql",
+        ] {
+            assert!(
+                select_database_urls(
+                    ProcessRole::Api,
+                    Environment::Production,
+                    Some(url.into()),
+                    None
+                )
+                .is_ok(),
+                "valid production endpoint: {url}"
+            );
+        }
     }
 }
