@@ -58,8 +58,8 @@ fn context() -> ModelEffectContext {
         "source_revision": 1,
         "generation": 1,
         "lease_owner": "00000000-0000-0000-0000-000000000004",
-        "lease_until": "2026-10-04T00:00:00Z",
-        "deadline": "2026-10-04T00:00:00Z"
+        "lease_until": chrono::Utc::now() + chrono::Duration::seconds(30),
+        "deadline": chrono::Utc::now() + chrono::Duration::seconds(30)
     }))
     .expect("test context deserializes")
 }
@@ -127,6 +127,13 @@ fn persisted_response() -> ModelResponse {
 }
 
 async fn mock_provider(response: String) -> (SocketAddr, Arc<AtomicUsize>, JoinHandle<String>) {
+    mock_provider_delayed(response, std::time::Duration::ZERO).await
+}
+
+async fn mock_provider_delayed(
+    response: String,
+    delay: std::time::Duration,
+) -> (SocketAddr, Arc<AtomicUsize>, JoinHandle<String>) {
     let listener = TcpListener::bind("127.0.0.1:0")
         .await
         .expect("loopback bind");
@@ -167,6 +174,7 @@ async fn mock_provider(response: String) -> (SocketAddr, Arc<AtomicUsize>, JoinH
             request.extend_from_slice(&chunk[..read]);
         }
         let captured = String::from_utf8_lossy(&request).into_owned();
+        tokio::time::sleep(delay).await;
         stream
             .write_all(response.as_bytes())
             .await
@@ -199,6 +207,50 @@ fn successful_provider_response() -> Vec<u8> {
         "usage": { "prompt_tokens": 12, "completion_tokens": 5 }
     }))
     .expect("response JSON")
+}
+
+#[tokio::test]
+async fn remaining_job_deadline_prevents_settling_a_late_provider_response() {
+    let (address, requests, server) = mock_provider_delayed(
+        http_response("200 OK", &successful_provider_response(), ""),
+        std::time::Duration::from_millis(500),
+    )
+    .await;
+    let gateway = gateway_for(address);
+    let store = RecordingStore::default();
+    let mut context = context();
+    context.deadline = chrono::Utc::now() + chrono::Duration::milliseconds(100);
+    let started = std::time::Instant::now();
+    let outcome = gateway
+        .execute_model_effect(&store, context, request())
+        .await
+        .unwrap();
+    assert_eq!(outcome.status, EffectStatus::Unknown);
+    assert!(outcome.response.is_none());
+    assert!(started.elapsed() < std::time::Duration::from_millis(400));
+    assert_eq!(requests.load(Ordering::SeqCst), 1);
+    assert_eq!(store.transition_counts(), (1, 1, 1));
+    assert_eq!(store.sent_status(), Some(EffectStatus::Unknown));
+    server.abort();
+}
+
+#[tokio::test]
+async fn expired_job_deadline_never_opens_a_provider_socket() {
+    let (address, requests, server) =
+        mock_provider(http_response("200 OK", &successful_provider_response(), "")).await;
+    let gateway = gateway_for(address);
+    let store = RecordingStore::default();
+    let mut context = context();
+    context.deadline = chrono::Utc::now() - chrono::Duration::milliseconds(1);
+    assert!(matches!(
+        gateway
+            .execute_model_effect(&store, context, request())
+            .await,
+        Err(Error::Unavailable)
+    ));
+    assert_eq!(requests.load(Ordering::SeqCst), 0);
+    assert_eq!(store.sent_status(), Some(EffectStatus::Failed));
+    server.abort();
 }
 
 #[tokio::test]

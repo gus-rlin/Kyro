@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use chrono::Utc;
 use kyro_domain::{
     Error, Result,
     model::{
@@ -210,7 +211,12 @@ impl Gateway {
         store
             .mark_sending(&context, prepared.intent.id, &request)
             .await?;
-        let deadline = Duration::from_millis(u64::from(request.deadline_ms));
+        let remaining = (context.deadline - Utc::now()).to_std().unwrap_or_default();
+        if remaining.is_zero() {
+            store.release_not_sent(&context, prepared.intent.id).await?;
+            return Err(Error::Unavailable);
+        }
+        let deadline = Duration::from_millis(u64::from(request.deadline_ms)).min(remaining);
         let call = self.send_request(
             destination,
             model,
@@ -219,7 +225,7 @@ impl Gateway {
             prepared.data_policy.limits.max_response_bytes,
         );
         let response = match timeout(deadline, call).await {
-            Ok(Ok(response)) => response,
+            Ok(Ok(response)) if Utc::now() < context.deadline => response,
             Ok(Err(SendFailure::DefinitelyNotSent)) => {
                 store.release_not_sent(&context, prepared.intent.id).await?;
                 return Err(Error::Unavailable);
@@ -234,7 +240,7 @@ impl Gateway {
                     response: None,
                 });
             }
-            Err(_) => {
+            Ok(Ok(_)) | Err(_) => {
                 store
                     .mark_unknown(
                         &context,
