@@ -40,4 +40,4 @@ La clôture de P1 est achevée dans le périmètre convenu. Aucune partie 2, cam
 
 À la demande explicite de l'utilisateur, le socle complet est préparé sur gus-rlin/p1-delivery, issue du main GitHub e277840. La qualification ci-dessus porte sur les sources avant normalisation Git des fins de ligne ; leur archive exacte reste fournie. Voir SUIVI-0013 dans le journal.
 
-[PR #1](https://github.com/gus-rlin/Kyro/pull/1) ouverte sur main, branche gus-rlin/p1-delivery. Les deux contrôles GitHub sur 0573e25 ont réussi. Les nouvelles corrections sont qualifiées localement ; les contrôles GitHub après leur push restent distincts. Aucun merge ni déploiement.
+[PR #1](https://github.com/gus-rlin/Kyro/pull/1) ouverte sur main, branche gus-rlin/p1-delivery poussée avec les nouvelles corrections. Les deux contrôles GitHub sur 0573e25 ont réussi. Les nouvelles corrections sont qualifiées localement ; les contrôles GitHub après leur push restent distincts. Aucun merge ni déploiement.
