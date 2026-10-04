@@ -5,6 +5,36 @@ const SYNTHETIC_REGISTRY: &str = include_str!("../../../config/models.synthetic.
 const NEBIUS_REGISTRY: &str = include_str!("../../../config/models.nebius.example.json");
 
 #[test]
+fn standard_retention_is_explicit_and_limited_to_nano_development_chat() {
+    let mut registry: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../config/models.nebius.chat.example.json"
+    ))
+    .unwrap();
+    registry["destinations"][0]["qualified"] = serde_json::json!(true);
+    registry["destinations"][0]["pinned_addresses"] = serde_json::json!(["1.1.1.1:443"]);
+    registry["destinations"][0]["nebius"]["retention_evidence"] =
+        serde_json::json!("https://docs.nebius.com/legal/token-factory");
+    let parse = |value: &serde_json::Value, env| {
+        GatewayConfig::for_admission_from_registry_json(
+            &serde_json::to_vec(value).unwrap(),
+            env,
+            false,
+        )
+    };
+    assert!(parse(&registry, Environment::Development).is_err());
+    registry["destinations"][0]["nebius"]["provider_standard_retention_accepted"] =
+        serde_json::json!(true);
+    let admitted = parse(&registry, Environment::Development).unwrap();
+    assert!(admitted.registry()[0].admissible);
+    assert!(parse(&registry, Environment::Production).is_err());
+    registry["destinations"][0]["retention_seconds"] = serde_json::json!(0);
+    assert!(parse(&registry, Environment::Development).is_err());
+    registry["destinations"][0]["retention_seconds"] = serde_json::Value::Null;
+    registry["destinations"][0]["models"][0]["output_mode"] = serde_json::json!("structured_json");
+    assert!(parse(&registry, Environment::Development).is_err());
+}
+
+#[test]
 fn nebius_stays_disabled_without_verified_retention_and_capabilities() {
     let mut registry: serde_json::Value = serde_json::from_str(NEBIUS_REGISTRY).unwrap();
     let disabled = GatewayConfig::from_registry_json(

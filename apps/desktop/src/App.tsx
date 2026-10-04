@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type MouseEvent } from 'react';
-import { ArrowRight, ArrowUp, ArrowUpRight, Database, File, Files, FlowArrow, Folder, FolderOpen, House, Microphone, Monitor, Plus, ShieldCheck, Sparkle, Users, X } from '@phosphor-icons/react';
+import { ArrowRight, ArrowUp, ArrowUpRight, Database, DeviceMobile, DeviceTablet, File, Files, FlowArrow, Folder, FolderOpen, House, Microphone, Monitor, Plus, ShieldCheck, Sparkle, Users, X } from '@phosphor-icons/react';
 import { WorkspacePicker } from './WorkspacePicker';
 import { TeamPicker } from './TeamPicker';
-import { defaultTeam, describeTeam, type TeamConfiguration } from './team-models';
-import { ComposerSettings, defaultPreferences, describePreferences, type ComposerPreferences } from './ComposerSettings';
+import { ProfileMenu } from './ProfileMenu';
+import { useTooltip } from './useTooltip';
+import { type TeamConfiguration } from './team-models';
+import { ComposerSettings, defaultPreferences, type ComposerPreferences } from './ComposerSettings';
+import { useChat } from './useChat';
 import { ProjectFlow, type ProjectRequest } from './ProjectFlow';
 import { workspaceApi } from './workspace-api';
 import mascot from './assets/kyro-spark.png';
@@ -15,6 +18,12 @@ import './team-picker.css';
 
 type Notice = { title: string; body: string };
 type MenuAction = { label: string; action: () => void };
+const previewDevices = [
+  { id: 'desktop', label: 'Ordinateur', icon: Monitor },
+  { id: 'tablet', label: 'Tablette', icon: DeviceTablet },
+  { id: 'phone', label: 'iPhone', icon: DeviceMobile },
+] as const;
+type PreviewDevice = typeof previewDevices[number]['id'];
 const sections = [
   { label: 'Application', icon: House, color: 'blue', hint: '' },
   { label: 'Pages', icon: Files, color: 'blue', hint: 'Imaginez les pages et les parcours de votre application.' },
@@ -80,7 +89,10 @@ function Menu({ label, actions }: { label: string; actions: MenuAction[] }) {
 }
 
 export function App() {
+  const voiceTooltip = useTooltip('Dicter');
+  const sendTooltip = useTooltip('Envoyer');
   const [section, setSection] = useState('Application');
+  const [previewDevice, setPreviewDevice] = useState<PreviewDevice>('desktop');
   const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace | null>(null);
   const [projectRequest, setProjectRequest] = useState<ProjectRequest | null>(null);
   const [recentWorkspaces, setRecentWorkspaces] = useState<Workspace[]>([]);
@@ -88,9 +100,9 @@ export function App() {
   const filePicker = useRef<HTMLInputElement>(null);
   const pickerPurpose = useRef<'folder' | 'worktree'>('folder');
   const [draft, setDraft] = useState('');
-  const [team, setTeam] = useState<TeamConfiguration>(defaultTeam);
+  const [team, setTeam] = useState<TeamConfiguration>({orchestrator:'nano',worker:'nano',workers:0});
   const [preferences, setPreferences] = useState<ComposerPreferences>(defaultPreferences);
-  const [messages, setMessages] = useState<{ text: string; team: TeamConfiguration; preferences: ComposerPreferences }[]>([]);
+  const chat = useChat();
   const [notice, setNotice] = useState<Notice | null>(null);
   const composer = useRef<HTMLTextAreaElement>(null);
   const dialog = useRef<HTMLDialogElement>(null);
@@ -104,7 +116,7 @@ export function App() {
   }, [notice]);
   useEffect(() => {
     conversation.current?.scrollTo({ top: conversation.current.scrollHeight });
-  }, [messages]);
+  }, [chat.turns]);
   useEffect(() => {
     const closeMenus = (event: KeyboardEvent) => {
       if (event.key === 'Escape') document.querySelectorAll('.app-menu[open], .profile[open], .checkout-bar details[open]').forEach((item) => item.removeAttribute('open'));
@@ -124,8 +136,7 @@ export function App() {
 
   function send(event: FormEvent) {
     event.preventDefault();
-    if (!draft.trim()) return;
-    setMessages((previous) => [...previous, { text: draft.trim(), team: { ...team }, preferences: { ...preferences } }]);
+    if (!chat.send(draft,preferences.contextTokens)) return;
     setDraft('');
     composer.current?.focus();
   }
@@ -201,7 +212,7 @@ export function App() {
         <nav className="menubar" aria-label="Menu de l’application">
           {menus.map((menu) => <Menu key={menu.label} {...menu} />)}
         </nav>
-        <div className="title-drag"><span className="project-name">{selectedWorkspace?.name || 'Mon application'}</span></div>
+        <div className="title-drag">{selectedWorkspace && <span className="project-name">{selectedWorkspace.name}</span>}</div>
         <button className="publish-button" onClick={() => setNotice({ title: 'Publier l’application', body: 'La publication sera disponible lorsqu’une application et sa destination seront configurées.' })}>Publier <ArrowUpRight size={15} weight="bold" /></button>
       </header>
 
@@ -210,7 +221,7 @@ export function App() {
           <nav aria-label="Pages de Kyro">
             {sections.map(({ label, icon: Icon, color }) => <button key={label} aria-label={label} title={label} data-color={color} className={`rail-button${section === label ? ' active' : ''}`} aria-current={section === label ? 'page' : undefined} onClick={() => { setSection(label); setExplorerVisible(false); }}><Icon size={22} weight={section === label ? 'fill' : 'regular'} /><span className="rail-label" aria-hidden="true">{label}</span></button>)}
           </nav>
-          <details className="profile" name="application-menu"><summary aria-label="Profil" title="Profil"><span className="profile-avatar">K</span></summary><div className="menu-popup profile-popup"><strong>Profil local</strong><span>Aucun compte connecté</span></div></details>
+          <ProfileMenu onNotice={setNotice} />
         </aside>
         <aside className={`project-sidebar${explorerVisible ? ' mobile-open' : ''}`} aria-label="Explorateur de fichiers">
           <div className="explorer-heading"><h2>Explorateur</h2><button className="icon-button" aria-label="Ouvrir un dossier" title="Ouvrir un dossier" onClick={() => openDirectory('folder')}><FolderOpen size={19} /></button></div>
@@ -220,23 +231,32 @@ export function App() {
         </aside>
 
         <main className="window-surface preview-panel" aria-label="Surface Kyro" tabIndex={-1}>
-          <header className="preview-heading"><span><Monitor size={19} /> {section === 'Application' ? 'Aperçu de l’application' : section}</span></header>
-          <div className="preview-canvas">
+          <header className="preview-heading">
+            <span><Monitor size={19} /> {section === 'Application' ? 'Aperçu de l’application' : section}</span>
+            <div className="preview-devices" role="group" aria-label="Format de l’aperçu">
+              {previewDevices.map(({ id, label, icon: Icon }) => <button key={id} type="button" className="icon-button" aria-label={label} title={label} aria-pressed={previewDevice === id} onClick={() => setPreviewDevice(id)}><Icon size={19} weight={previewDevice === id ? 'fill' : 'regular'} aria-hidden="true" /></button>)}
+            </div>
+          </header>
+          <div className="preview-stage">
+          <div className="preview-canvas" data-device={previewDevice}>
             {section !== 'Application' && <div className="preview-empty" data-color={activeSection.color}><span className="empty-frame"><SectionIcon size={42} weight="duotone" /></span><h2>{section}</h2><p className="section-hint">{activeSection.hint}</p><p>Aucune donnée de projet chargée.</p><button className="text-button" onClick={() => prepareDraft(`Je souhaite définir la section ${section.toLowerCase()} de mon application.`)}>Préparer avec Kyro <ArrowRight size={18} /></button></div>}
+          </div>
           </div>
         </main>
 
         <section className="chat-panel" aria-label="Chat AI">
           <header className="panel-heading"><h1><span className="assistant-avatar"><img src={mascot} alt="" width="40" height="40" /></span> Kyro</h1></header>
           <div className="conversation" ref={conversation}>
-            {messages.length === 0 ? <div className="chat-welcome"><span className="welcome-mark"><Sparkle size={34} weight="fill" /></span><h2>Et si on le<br />construisait ?</h2><p>Une idée en vrac, une envie précise…<br />Écrivez comme vous pensez.</p><button className="chat-suggestion" onClick={() => prepareDraft('Aide-moi à structurer mon idée d’application.')}><span>Structurer mon idée</span><ArrowUpRight size={18} /></button><span className="welcome-footnote">Les belles idées commencent par un échange.</span></div> : <div className="message-list" role="log" aria-label="Conversation"><p className="connection-note">Messages locaux · IA non connectée</p>{messages.map((message, index) => <article className="user-message" key={index}><span>Vous · {describeTeam(message.team)} · démo</span><small className="message-preferences">{describePreferences(message.preferences)}</small><p>{message.text}</p></article>)}</div>}
+            {chat.turns.length === 0 ? <div className="chat-welcome"><span className="welcome-mark"><Sparkle size={34} weight="fill" /></span><h2>Et si on le<br />construisait ?</h2><p>Une idée en vrac, une envie précise…<br />Écrivez comme vous pensez.</p><button className="chat-suggestion" onClick={() => prepareDraft('Aide-moi à structurer mon idée d’application.')}><span>Structurer mon idée</span><ArrowUpRight size={18} /></button><span className="welcome-footnote">Les belles idées commencent par un échange.</span></div> : <div className="message-list" role="log" aria-label="Conversation">{chat.turns.map((turn) => <div key={turn.id}><article className="user-message"><span>Vous</span><p>{turn.user}</p></article><article className="assistant-message" data-state={turn.state}><span>Kyro · Nano</span><p>{turn.assistant || (turn.state==='waiting'?'En attente de Nano…':turn.state==='generating'?'Nano répond…':'')}</p>{turn.state==='generating' && <small>Génération en cours…</small>}{turn.note && <small className="chat-turn-note">{turn.note}</small>}</article></div>)}</div>}
           </div>
           <div className="composer-area">
+            <div className="chat-connection" role="status"><span>{chat.status.message}</span>{!chat.status.ready && <button type="button" onClick={()=>void chat.refresh()}>Revérifier</button>}{chat.status.budget && <small>Plafond cumulé : 1 € · estimations tarifaires : {chat.status.budget.spentUsd.toFixed(4)} $ consommés, {chat.status.budget.reservedUsd.toFixed(4)} $ réservés / {chat.status.budget.limitUsd.toFixed(4)} $.</small>}</div>
+            {chat.error && <div className="chat-error" role="alert"><p>{chat.error}</p>{chat.recoverable && <button type="button" onClick={()=>void chat.retry()}>Reprendre</button>}</div>}
             <form className="composer" onSubmit={send}>
               <textarea ref={composer} aria-label="Votre message" placeholder="Qu’aimeriez-vous créer ?" value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} />
-              <div className="composer-controls"><TeamPicker team={team} onChange={setTeam} /><div className="composer-actions"><ComposerSettings preferences={preferences} onChange={setPreferences} /><button className="icon-button voice-button" type="button" aria-label="Saisie vocale" title="Saisie vocale" onClick={() => setNotice({ title: 'Saisie vocale', body: 'La saisie vocale n’est pas encore connectée. Vous pouvez écrire votre message dans le chat.' })}><Microphone size={18} /></button><button className="send-button" type="submit" aria-label="Envoyer le message" title="Envoyer le message" disabled={!draft.trim()}><ArrowUp size={18} weight="bold" /></button></div></div>
+              <div className="composer-controls"><TeamPicker team={team} onChange={setTeam} chatOnly /><div className="composer-actions"><ComposerSettings preferences={preferences} onChange={setPreferences} chatOnly /><button className="icon-button voice-button" type="button" {...voiceTooltip.triggerProps} aria-label="Dicter" onClick={() => { voiceTooltip.hide(); setNotice({ title: 'Dicter', body: 'La saisie vocale n’est pas encore connectée. Vous pouvez écrire votre message dans le chat.' }); }}><Microphone size={18} /></button>{chat.busy?<button className="chat-stop" type="button" disabled={!chat.canStop} onClick={()=>void chat.stop()}>Arrêter</button>:<button className="send-button" type="submit" {...sendTooltip.triggerProps} aria-label="Envoyer le message" disabled={!draft.trim()}><ArrowUp size={18} weight="bold" /></button>}</div></div>
             </form>
-            <WorkspacePicker selected={selectedWorkspace} recent={recentWorkspaces} openDirectory={openDirectory} select={remember} acceptNative={acceptNative} newProject={() => setProjectRequest({ kind: 'new' })} />
+            {voiceTooltip.tooltip}{sendTooltip.tooltip}<WorkspacePicker selected={selectedWorkspace} recent={recentWorkspaces} openDirectory={openDirectory} select={remember} acceptNative={acceptNative} newProject={() => setProjectRequest({ kind: 'new' })} />
           </div>
         </section>
 
@@ -246,7 +266,7 @@ export function App() {
       <footer className="verification-bar" aria-label="État du projet">
         <span>{selectedWorkspace ? 'Dossier local ouvert' : 'Prêt à démarrer'}</span>
         <span>{selectedWorkspace ? 'Décrivez la prochaine étape dans le chat' : 'Créez un projet ou ouvrez un dossier'}</span>
-        <button className="status-details" onClick={() => setNotice({ title: 'Docs · Premiers pas', body: 'Créez un projet ou choisissez un dossier pour afficher ses fichiers dans l’explorateur. Sous le chat, les menus Dossier et Worktree permettent de changer d’espace de travail. Le chat accueille vos idées pendant la session ; ses messages ne sont pas conservés après rechargement. L’assistant IA, l’aperçu de votre application et la publication ne sont pas encore connectés.' })}>Docs <ArrowUpRight size={13} /></button>
+        <button className="status-details" onClick={() => setNotice({ title: 'Docs · Premiers pas', body: 'Le chat Nano est utilisable dès l’accueil lorsque le runtime Nebius et la confirmation de zéro conservation sont configurés. Seuls vos messages sont envoyés ; aucun fichier du dossier choisi n’est joint. L’historique visible disparaît au rechargement. Les traces des jobs et le budget cumulé de 1 € restent durables. L’aperçu et la publication sont en préparation.' })}>Docs <ArrowUpRight size={13} /></button>
       </footer>
 
       <dialog ref={dialog} className="notice-dialog" onClose={() => setNotice(null)} onClick={(event) => { if (event.target === event.currentTarget) dialog.current?.close(); }} aria-labelledby="notice-title">

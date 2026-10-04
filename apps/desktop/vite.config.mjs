@@ -1,9 +1,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { nativeDevelopment } from './scripts/native-development.mjs';
+import { chatDevelopment } from './scripts/chat-development.mjs';
 
 export default defineConfig({
-  plugins: [react(), nativeDevelopment(), {
+  plugins: [react(), nativeDevelopment(), chatDevelopment(), {
     name: 'development-csp', apply: 'serve',
     transformIndexHtml: (html) => html.replace("script-src 'self'", "script-src 'self' 'unsafe-inline'"),
   }, {

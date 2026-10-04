@@ -320,6 +320,7 @@ async fn exercise_model_queue(destination: &str, reconcile: bool) {
                 organization_id: organization.id,
                 name: format!("queue-{}", Uuid::new_v4()),
                 data_policy: Some(kyro_domain::model::DataPolicy {
+                    allow_unknown_provider_retention: false,
                     allowed_destinations: [destination.to_owned()].into_iter().collect(),
                     allowed_categories: [DataCategory::UserRequest].into_iter().collect(),
                     allowed_purposes: [ModelPurpose::Generation].into_iter().collect(),
@@ -503,6 +504,7 @@ async fn exercise_model_queue(destination: &str, reconcile: bool) {
     }))
     .unwrap();
     let registration = ModelRegistrationSnapshot {
+        output_mode: Default::default(),
         destination_id: model_request.destination_id.clone(),
         provider: "synthetic".into(),
         provider_kind: kyro_domain::model::ModelProviderKind::Synthetic,
@@ -973,4 +975,223 @@ fn model_request(content: serde_json::Value) -> ModelRequest {
         max_output_tokens: 32,
         deadline_ms: 1_000,
     }
+}
+
+#[tokio::test]
+#[ignore = "requires dedicated migrated PostgreSQL runtime roles"]
+async fn postgres_chat_fragments_are_private_bounded_and_lease_fenced() {
+    let _guard = QUEUE_FIXTURES.lock().await;
+    let url = std::env::var("KYRO_TEST_DATABASE_URL").unwrap();
+    let store = Store::connect(&url, 8).await.unwrap();
+    let worker = Store::connect(&std::env::var("KYRO_TEST_WORKER_DATABASE_URL").unwrap(), 8)
+        .await
+        .unwrap();
+    let mut serial = store.pool.begin().await.unwrap();
+    sqlx::query("SELECT pg_advisory_xact_lock(160016)")
+        .execute(&mut *serial)
+        .await
+        .unwrap();
+    let actor = store
+        .upsert_oidc_actor("https://chat.test.invalid", &Uuid::new_v4().to_string())
+        .await
+        .unwrap();
+    let org = store
+        .create_organization(actor, "chat stream test")
+        .await
+        .unwrap();
+    let policy=serde_json::from_value(json!({"allowed_destinations":["synthetic-local"],"allowed_categories":["user_request"],"allowed_purposes":["conversation"],"limits":{"max_input_bytes":32768,"max_input_tokens":16384,"max_output_tokens":2048,"max_deadline_ms":60000,"max_response_bytes":48000,"max_retention_seconds":0}})).unwrap();
+    let project = store
+        .create_project(
+            actor,
+            CreateProjectInput {
+                organization_id: org.id,
+                name: "private chat".into(),
+                data_policy: Some(policy),
+                limits: None,
+            },
+        )
+        .await
+        .unwrap()
+        .project
+        .id;
+    let other = add_member(&store, actor, org.id, "chat-reader").await;
+    grant(
+        &store,
+        actor,
+        other,
+        project,
+        Action::Read,
+        GrantLimits::default(),
+    )
+    .await;
+    let mut request = model_request(
+        json!({"messages":[{"role":"user","content":"Bonjour 🍋"}],"context_tokens":8192}),
+    );
+    request.input.purpose = ModelPurpose::Conversation;
+    let input_bytes = to_vec(&request.input).unwrap().len() as u32;
+    let payload = JobPayload::ModelCall {
+        request: request.clone(),
+    };
+    let job = store
+        .enqueue_job(
+            actor,
+            project,
+            0,
+            "chat-unique",
+            payload.clone(),
+            Some(1),
+            Some(90),
+        )
+        .await
+        .unwrap();
+    let duplicate = store
+        .enqueue_job(actor, project, 0, "chat-unique", payload, Some(1), Some(90))
+        .await
+        .unwrap();
+    assert_eq!(job.id, duplicate.id);
+    let mut claimed = None;
+    // Recovery may first terminalize a stale fixture left by a failed previous test run.
+    for _ in 0..32 {
+        if let Some(lease) = worker.claim_next_job(Uuid::new_v4(), 30).await.unwrap() {
+            claimed = Some(lease);
+            break;
+        }
+    }
+    let lease = claimed.expect("chat job becomes eligible after stale fixture recovery");
+    assert_eq!(lease.job_id, job.id);
+    let context = ModelEffectContext {
+        project_id: project,
+        actor_id: actor,
+        job_id: job.id,
+        source_revision: 0,
+        generation: lease.generation,
+        lease_owner: lease.lease_owner,
+        lease_until: lease.lease_until,
+        deadline: lease.deadline,
+    };
+    let registration=ModelRegistrationSnapshot{
+        output_mode:kyro_domain::model::ModelOutputMode::TextChat,destination_id:request.destination_id.clone(),provider:"synthetic".into(),provider_kind:kyro_domain::model::ModelProviderKind::Synthetic,model:request.model.clone(),model_version:None,output_schema_id:"chat-reply".into(),output_schema_version:"1".into(),output_schema_hash:[0;32],retention_seconds:Some(0),
+        pricing:serde_json::from_value(json!({"version":"chat-test-v1","effective_date":"2026-10-04","currency":"SYN","unit":"synthetic_budget_unit","unit_scale":1,"input_units_per_million_tokens":1000000,"output_units_per_million_tokens":1000000})).unwrap(),
+    };
+    let reservation = registration
+        .pricing
+        .reservation_units(4096, request.max_output_tokens)
+        .unwrap();
+    #[derive(serde::Serialize)]
+    struct ChatFingerprint<'a> {
+        request: &'a ModelRequest,
+        registration: &'a ModelRegistrationSnapshot,
+    }
+    let material = ChatFingerprint {
+        request: &request,
+        registration: &registration,
+    };
+    let preparation = ModelEffectPreparation {
+        context: context.clone(),
+        request: request.clone(),
+        allow_new_effect: true,
+        fingerprint: Sha256::digest(to_vec(&material).unwrap()).into(),
+        input_bytes,
+        conservative_input_tokens: 4096,
+        reservation_units: reservation,
+        registration,
+    };
+    let empty_budget = worker.prepare_model_effect(preparation.clone()).await;
+    assert!(
+        matches!(empty_budget, Err(Error::BudgetExceeded)),
+        "empty chat budget: {empty_budget:?}"
+    );
+    store
+        .update_budget(actor, project, 0, reservation, "SYN".into(), 1)
+        .await
+        .unwrap();
+    let prepared = worker.prepare_model_effect(preparation).await.unwrap();
+    let effect = prepared.intent.id;
+    assert!(
+        worker
+            .append_chat_delta(&context, effect, "before send")
+            .await
+            .is_err()
+    );
+    worker
+        .mark_sending(&context, effect, &request)
+        .await
+        .unwrap();
+    worker
+        .append_chat_delta(&context, effect, "été 🍋")
+        .await
+        .unwrap();
+    worker
+        .append_chat_delta(&context, effect, " visible")
+        .await
+        .unwrap();
+    let own = store
+        .read_chat_chunks(actor, project, job.id, lease.generation, 0)
+        .await
+        .unwrap();
+    assert_eq!(own.len(), 2);
+    assert_eq!(own[0].text, "été 🍋");
+    assert!(
+        store
+            .read_chat_chunks(other, project, job.id, lease.generation, 0)
+            .await
+            .unwrap()
+            .is_empty()
+    );
+    assert_eq!(
+        store
+            .read_chat_chunks(actor, project, job.id, lease.generation, 1)
+            .await
+            .unwrap()
+            .len(),
+        1
+    );
+    let mut stale = context.clone();
+    stale.generation += 1;
+    assert!(
+        worker
+            .append_chat_delta(&stale, effect, "stale")
+            .await
+            .is_err()
+    );
+    stale = context.clone();
+    stale.lease_owner = Uuid::new_v4();
+    assert!(
+        worker
+            .append_chat_delta(&stale, effect, "old owner")
+            .await
+            .is_err()
+    );
+    assert!(
+        store
+            .append_chat_delta(&context, effect, "API cannot publish")
+            .await
+            .is_err()
+    );
+    assert!(
+        worker
+            .append_chat_delta(&context, effect, &"x".repeat(4097))
+            .await
+            .is_err()
+    );
+    store.cancel_job(actor, project, job.id).await.unwrap();
+    assert!(worker.check_chat_active(&context, effect).await.is_err());
+    assert!(
+        worker
+            .append_chat_delta(&context, effect, "after stop")
+            .await
+            .is_err()
+    );
+    worker
+        .mark_unknown(&context, effect, ModelFailureCode::TransportUncertain)
+        .await
+        .unwrap();
+    worker
+        .finish_model_job(&lease, effect, kyro_domain::model::EffectStatus::Unknown)
+        .await
+        .unwrap();
+    let held = store.get_budget(actor, project).await.unwrap();
+    assert_eq!(held.reserved_units, reservation);
+    assert_eq!(held.spent_units, 0);
+    serial.commit().await.unwrap();
 }

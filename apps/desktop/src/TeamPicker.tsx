@@ -1,9 +1,11 @@
 import { ComposerChoice } from './ComposerChoice';
+import { useTooltip } from './useTooltip';
 import { useEffect, useRef } from 'react';
 import { CaretDown, Minus, Plus, TreeStructure, Users } from '@phosphor-icons/react';
 import { describeTeam, getTeamModel, modelCostHint, modelCostNote, teamModels, type TeamConfiguration } from './team-models';
 
-export function TeamPicker({ team, onChange }: { team: TeamConfiguration; onChange: (team: TeamConfiguration) => void }) {
+export function TeamPicker({ team, onChange, chatOnly=false }: { team: TeamConfiguration; onChange: (team: TeamConfiguration) => void; chatOnly?:boolean }) {
+  const { triggerProps, tooltip } = useTooltip('Modèles');
   const picker = useRef<HTMLDetailsElement>(null);
   useEffect(() => {
     const closeOutside = (event: PointerEvent) => {
@@ -14,7 +16,7 @@ export function TeamPicker({ team, onChange }: { team: TeamConfiguration; onChan
   }, []);
   const orchestrator = getTeamModel(team.orchestrator);
   const worker = getTeamModel(team.worker);
-  const modelChoices = teamModels.map((model) => ({ value: model.id, label: model.name, description: modelCostNote(model.id), hint: modelCostHint(model.id) }));
+  const modelChoices = teamModels.map((model) => ({ value: model.id, label: model.name, description: chatOnly && model.id!=='nano'?'Indisponible dans cette version':modelCostNote(model.id), hint: modelCostHint(model.id), disabled:chatOnly && model.id!=='nano' }));
 
   return <details ref={picker} className="team-picker" name="application-menu" onToggle={(event) => { if (!event.currentTarget.open) event.currentTarget.querySelectorAll('details[open]').forEach((item) => item.removeAttribute('open')); }} onKeyDown={(event) => {
     if (event.key === 'Escape') {
@@ -23,18 +25,19 @@ export function TeamPicker({ team, onChange }: { team: TeamConfiguration; onChan
       event.stopPropagation();
     }
   }}>
-    <summary className="team-trigger" aria-label={`Configurer l’équipe : ${describeTeam(team)} (démo)`}>
-      <TreeStructure size={17} /><span className="team-trigger-label"><strong>{orchestrator.short}</strong><span className="team-trigger-dot">·</span>{team.workers} {worker.short}</span><CaretDown size={12} />
+    <summary {...triggerProps} className="team-trigger" aria-label={chatOnly?'Modèles : Nemotron 3 Nano':`Configurer l’équipe : ${describeTeam(team)} (démo)`}>
+      <TreeStructure size={17} /><span className="team-trigger-label"><strong>{orchestrator.short}</strong>{!chatOnly && <><span className="team-trigger-dot">·</span>{team.workers} {worker.short}</>}</span><CaretDown size={12} />
     </summary>
+    {tooltip}
     <section className="team-panel" aria-label="Composition de l’équipe">
-      <header className="team-panel-header"><div><h2>Votre équipe</h2><p>Modèles et nombre de sous-agents.</p></div><span className="team-demo">Démo</span></header>
+      <header className="team-panel-header"><div><h2>{chatOnly?'Votre modèle':'Votre équipe'}</h2><p>{chatOnly?'Conversation avec Nano via Nebius.':'Modèles et nombre de sous-agents.'}</p></div>{!chatOnly && <span className="team-demo">Démo</span>}</header>
       <div className="team-role">
         <span className="team-role-icon"><TreeStructure size={20} /></span>
-        <div className="team-role-content"><strong>Orchestrateur</strong><p>Planifie, délègue et arbitre.</p>
-          <ComposerChoice label="Orchestrateur" selected={team.orchestrator} choices={modelChoices} onSelect={(orchestrator) => onChange({ ...team, orchestrator })} />
+        <div className="team-role-content"><strong>{chatOnly?'Conversation':'Orchestrateur'}</strong><p>{chatOnly?'Un seul appel, sans outils.':'Planifie, délègue et arbitre.'}</p>
+          <ComposerChoice label={chatOnly?'Modèle':'Orchestrateur'} selected={team.orchestrator} choices={modelChoices} onSelect={(orchestrator) => onChange({ ...team, orchestrator })} />
         </div>
       </div>
-      <div className="team-role">
+      {chatOnly?<p className="team-role-content">Sous-agents indisponibles dans cette version.</p>:<><div className="team-role">
         <span className="team-role-icon workers"><Users size={20} /></span>
         <div className="team-role-content"><strong>Sous-agents</strong><p>Composent et vérifient les blocs.</p>
           <ComposerChoice label="Sous-agents" selected={team.worker} choices={modelChoices} onSelect={(worker) => onChange({ ...team, worker })} />
@@ -44,7 +47,7 @@ export function TeamPicker({ team, onChange }: { team: TeamConfiguration; onChan
         <button type="button" aria-label="Moins de sous-agents" disabled={team.workers <= 1} onClick={() => onChange({ ...team, workers: Math.max(1, team.workers - 1) })}><Minus size={14} /></button>
         <output aria-live="polite">{team.workers}</output>
         <button type="button" aria-label="Plus de sous-agents" disabled={team.workers >= 32} onClick={() => onChange({ ...team, workers: Math.min(32, team.workers + 1) })}><Plus size={14} /></button>
-      </div></div>
+      </div></div></>}
     </section>
   </details>;
 }

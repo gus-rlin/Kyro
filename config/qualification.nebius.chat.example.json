@@ -1,0 +1,10 @@
+{
+  "endpoint": "https://api.tokenfactory.nebius.com/v1/",
+  "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+  "checked_at": "REPLACE_WITH_VERIFIED_ISO_TIMESTAMP",
+  "source": "https://docs.nebius.com/legal/token-factory",
+  "account_evidence": "",
+  "vault_sha256": "REPLACE_WITH_ENCRYPTED_VAULT_SHA256",
+  "zero_retention_confirmed": false,
+  "max_completion_tokens_includes_reasoning": false
+}

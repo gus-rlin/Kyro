@@ -298,10 +298,10 @@
           "200": {
             "$ref": "#/components/responses/Projects"
           },
-          "401": {
+          "400": {
             "$ref": "#/components/responses/Error"
           },
-          "400": {
+          "401": {
             "$ref": "#/components/responses/Error"
           }
         },
@@ -1062,6 +1062,70 @@
             "$ref": "#/components/responses/Error"
           },
           "410": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/jobs/{job_id}/stream": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        },
+        {
+          "$ref": "#/components/parameters/JobId"
+        }
+      ],
+      "get": {
+        "operationId": "streamChatJob",
+        "description": "Private to the submitting actor and environment. Delta text is provisional. Complete includes effect output and usage when settled. Resuming reads durable fragments without another inference. Cursor is job UUID:generation:chunk index; Last-Event-ID overrides after. Sessions and project read permission are revalidated while streaming.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Last-Event-ID",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SSE delta events with cursor IDs and JSON {text}; complete event with status, error_code, optional effect_status, output {text,truncated}, and usage. Polling interval 250 ms.",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
             "$ref": "#/components/responses/Error"
           }
         }
@@ -2384,7 +2448,8 @@
           "diagnostics",
           "summarization",
           "structured_extraction",
-          "translation"
+          "translation",
+          "conversation"
         ]
       },
       "ModelPolicyLimits": {
@@ -2475,7 +2540,8 @@
                 "diagnostics",
                 "summarization",
                 "structured_extraction",
-                "translation"
+                "translation",
+                "conversation"
               ]
             },
             "maxItems": 32,
@@ -2483,6 +2549,11 @@
           },
           "limits": {
             "$ref": "#/components/schemas/ModelPolicyLimits"
+          },
+          "allow_unknown_provider_retention": {
+            "type": "boolean",
+            "default": false,
+            "description": "Explicit acceptance of an unknown provider retention duration for conversation requests. Absent/false retains the historical refusal; known retention durations still obey max_retention_seconds."
           }
         },
         "additionalProperties": false
@@ -2504,7 +2575,8 @@
               "diagnostics",
               "summarization",
               "structured_extraction",
-              "translation"
+              "translation",
+              "conversation"
             ]
           },
           "categories": {
@@ -2524,7 +2596,9 @@
             "maxItems": 6,
             "uniqueItems": true
           },
-          "content": {}
+          "content": {
+            "description": "For conversation with a text_chat registry, use ChatInput. Other purposes retain their existing structured content."
+          }
         },
         "additionalProperties": false
       },
@@ -2826,6 +2900,15 @@
                 "type": "null"
               }
             ]
+          },
+          "output_mode": {
+            "type": "string",
+            "enum": [
+              "structured_json",
+              "text_chat"
+            ],
+            "default": "structured_json",
+            "description": "Historical registrations omit this field; text_chat streams visible text and constructs the final effect wrapper locally."
           }
         }
       },
@@ -2879,7 +2962,8 @@
               "diagnostics",
               "summarization",
               "structured_extraction",
-              "translation"
+              "translation",
+              "conversation"
             ]
           },
           "request_categories": {
@@ -3262,7 +3346,8 @@
               "diagnostics",
               "summarization",
               "structured_extraction",
-              "translation"
+              "translation",
+              "conversation"
             ]
           },
           "categories": {
@@ -3540,6 +3625,53 @@
           }
         },
         "additionalProperties": false
+      },
+      "ChatInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "messages",
+          "context_tokens"
+        ],
+        "properties": {
+          "context_tokens": {
+            "type": "integer",
+            "enum": [
+              4096,
+              8192,
+              16384
+            ]
+          },
+          "messages": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 128,
+            "description": "Alternating user/assistant messages, ending with user. The server prepends its fixed system instruction.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "role",
+                "content"
+              ],
+              "properties": {
+                "role": {
+                  "type": "string",
+                  "enum": [
+                    "user",
+                    "assistant"
+                  ]
+                },
+                "content": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 16384,
+                  "description": "At most 16,384 UTF-8 bytes; the aggregate wire context is also bounded."
+                }
+              }
+            }
+          }
+        }
       }
     }
   }

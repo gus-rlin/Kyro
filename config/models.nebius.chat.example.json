@@ -1,0 +1,16 @@
+{
+  "format_version": 1,
+  "destinations": [{
+    "id": "nebius-chat", "provider": "nebius", "kind": "cloud",
+    "base_url": "https://api.tokenfactory.nebius.com/v1/", "allowed_host": "api.tokenfactory.nebius.com",
+    "pinned_addresses": [], "secret_ref": "file:KYRO_MODEL_API_KEY_FILE",
+    "qualified": false, "retention_seconds": null,
+    "nebius": {"json_schema": false, "bounded_completion": true, "retention_evidence": null, "wire_overhead_tokens": 1024, "context_tokens": 262144},
+    "models": [{
+      "id": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B", "version": null, "output_mode": "text_chat",
+      "output_schema": {"id": "chat-reply", "version": "1", "schema": {"type":"object","required":["text","truncated"],"additionalProperties":false,"properties":{"text":{"type":"string","maxLength":32768},"truncated":{"type":"boolean"}}}},
+      "pricing": {"version":"example-replace-from-catalog","effective_date":"2026-10-04","currency":"USD","unit":"usd","unit_scale":1000000000,"input_units_per_million_tokens":60000000,"output_units_per_million_tokens":240000000},
+      "max_input_bytes":32768, "max_input_tokens":262144, "max_output_tokens":2048, "max_deadline_ms":60000, "max_response_bytes":48000
+    }]
+  }]
+}

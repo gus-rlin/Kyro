@@ -1,5 +1,6 @@
 #![forbid(unsafe_code)]
 
+mod chat;
 mod client;
 mod config;
 mod secret;

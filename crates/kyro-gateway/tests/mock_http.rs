@@ -43,6 +43,7 @@ fn request() -> ModelRequest {
 
 fn policy() -> DataPolicy {
     DataPolicy {
+        allow_unknown_provider_retention: false,
         allowed_destinations: ["synthetic-local".into()].into_iter().collect(),
         allowed_categories: [DataCategory::UserRequest].into_iter().collect(),
         allowed_purposes: [ModelPurpose::Planning].into_iter().collect(),

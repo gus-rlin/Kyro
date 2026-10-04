@@ -4,6 +4,7 @@
 .env.*
 target
 node_modules
+apps/desktop
 *.log
 *.dump
 *.sql.gz
