@@ -1,9 +1,10 @@
 import { spawnSync } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
 const state = join(homedir(), '.kyro', 'nebius-p1');
+mkdirSync('docs/suivi/preuves', { recursive: true });
 const pins = JSON.parse(readFileSync(join(state, 'pins.json'), 'utf8')).ipv4;
 const container = 'kyro-nebius-p1-egress-1';
 const report = { at: new Date().toISOString(), kind: 'independent_network_filter', rust_client_used: false, real_api_key_used: false, probes: [] };
@@ -27,6 +28,7 @@ probe('wrong_tls_hostname_denied', [...curl, '--resolve', `wrong-host.invalid:44
 const caps = spawnSync('docker', ['exec', container, 'sh', '-c', 'grep CapEff /proc/1/status'], { encoding: 'utf8' });
 report.installer_dropped_capabilities = /CapEff:\s+0+/.test(caps.stdout);
 report.passed = report.installer_dropped_capabilities && report.probes.every((item) => item.passed);
-writeFileSync('docs/suivi/preuves/nebius-network.json', JSON.stringify(report, null, 2) + '\n');
+const stamp = report.at.replaceAll(/[^0-9A-Za-z]/g, '');
+writeFileSync(`docs/suivi/preuves/nebius-network-${stamp}.json`, JSON.stringify(report, null, 2) + '\n');
 process.stdout.write(JSON.stringify(report, null, 2) + '\n');
 process.exitCode = report.passed ? 0 : 1;

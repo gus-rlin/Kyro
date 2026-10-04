@@ -2,6 +2,8 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 $repo=Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+$evidence=Join-Path $repo 'docs/suivi/preuves'
+New-Item -ItemType Directory -Path $evidence -Force | Out-Null
 $state=Join-Path ([Environment]::GetFolderPath('UserProfile')) '.kyro/nebius-p1'
 $env:KYRO_NEBIUS_STATE=$state.Replace('\','/')
 $compose=Join-Path $repo 'compose.p1.nebius.yaml'

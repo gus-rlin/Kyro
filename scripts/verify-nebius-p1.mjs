@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, openSync, closeSync, unlinkSync, renameSync } from 'node:fs';
+import { readFileSync, writeFileSync, openSync, closeSync, unlinkSync, renameSync, mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -6,6 +6,8 @@ import assert from 'node:assert/strict';
 
 const live = process.argv.includes('--run');
 assert(process.argv.length === 3 && ['--preflight', '--run'].includes(process.argv[2]), 'Use --preflight or --run');
+// Internal evidence directories are intentionally absent from a fresh clone.
+mkdirSync('docs/suivi/preuves', { recursive: true });
 const state = join(homedir(), '.kyro', 'nebius-p1');
 const registry = JSON.parse(readFileSync(join(state, 'models.json'), 'utf8'));
 const campaignPath = join(state, 'campaign.json');
