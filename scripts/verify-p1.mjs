@@ -1,7 +1,7 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { createServer, connect as tcpConnect } from 'node:net';
 import { createHash, randomBytes } from 'node:crypto';
-import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
@@ -886,6 +886,7 @@ async function readSseEventOrTimeout(response, timeoutMs = 1000) {
 
 function writeEvidence(report, runId) {
   const path = resolve(repoRoot, 'docs/suivi/preuves', `part1-e2e-${runId}.json`);
+  mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, `${JSON.stringify(report, null, 2)}\n`, { flag: 'wx' });
   return path;
 }

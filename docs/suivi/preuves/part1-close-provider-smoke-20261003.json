@@ -1,1 +1,0 @@
-{"result":"PASS","oidc":"valid PKCE exchange and invalid-verifier rejection; exact issuer/audience/nonce and RS256 signature verified","inference":"success, one-shot 503, malformed JSON, oversized response and aborted hold observed","inferenceRequests":6,"inferenceFailures":1,"inferenceAborted":1,"statuses":{"200":4,"503":1}}

@@ -7,3 +7,8 @@
 *.log
 *.dump
 *.sql.gz
+
+# Internal design documents and local agent instructions stay on this computer.
+/docs/nvidia-hackathon/
+/docs/suivi/
+[Aa][Gg][Ee][Nn][Tt][Ss].[Mm][Dd]
