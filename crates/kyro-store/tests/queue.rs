@@ -581,6 +581,30 @@ async fn exercise_model_queue(destination: &str, reconcile: bool) {
         .get_effect(owner, project_id, prepared.intent.id)
         .await
         .unwrap();
+    let public = serde_json::to_value(&observed).unwrap();
+    assert!(public.get("fingerprint").is_none());
+    assert!(public["intent"].get("fingerprint").is_none());
+    let roundtrip: kyro_domain::model::EffectRecordView = serde_json::from_value(public).unwrap();
+    assert_eq!(roundtrip, observed);
+    let page = store
+        .list_effects(owner, project_id, 100, None)
+        .await
+        .unwrap();
+    let public_page = serde_json::to_value(page).unwrap();
+    assert!(
+        public_page["items"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|effect| effect.get("fingerprint").is_none()
+                && effect["intent"].get("fingerprint").is_none())
+    );
+    // The durable intent still carries the original hash used by preparation/replay.
+    let durable = serde_json::to_value(&prepared.intent).unwrap();
+    assert_eq!(
+        durable["fingerprint"],
+        serde_json::json!(prepared.intent.fingerprint)
+    );
     assert_eq!(observed.status, kyro_domain::model::EffectStatus::Unknown);
     assert_eq!(
         observed.failure_code,

@@ -397,9 +397,8 @@ pub struct EffectRecordView {
     pub project_id: Uuid,
     pub generation: i64,
     pub destination: String,
-    pub fingerprint: [u8; 32],
     pub status: EffectStatus,
-    pub intent: EffectIntent,
+    pub intent: EffectIntentView,
     pub result: Option<ModelResponse>,
     pub reconciliation: Option<EffectReconciliationReceipt>,
     pub failure_code: Option<ModelFailureCode>,
@@ -498,6 +497,48 @@ pub struct EffectIntent {
     pub max_response_bytes: u32,
     pub deadline_ms: u32,
     pub registration: ModelRegistrationSnapshot,
+}
+
+/// Public projection; the input fingerprint stays in the durable EffectIntent only.
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct EffectIntentView {
+    pub id: Uuid,
+    pub project_id: Uuid,
+    pub job_id: Uuid,
+    pub destination_id: String,
+    pub reservation_id: Uuid,
+    pub reserved_units: i64,
+    pub request_purpose: ModelPurpose,
+    pub request_categories: BTreeSet<DataCategory>,
+    pub input_bytes: u32,
+    pub conservative_input_tokens: u32,
+    pub max_output_tokens: u32,
+    /// Limite de réponse du projet évaluée au moment de la préparation.
+    pub max_response_bytes: u32,
+    pub deadline_ms: u32,
+    pub registration: ModelRegistrationSnapshot,
+}
+
+impl From<EffectIntent> for EffectIntentView {
+    fn from(intent: EffectIntent) -> Self {
+        Self {
+            id: intent.id,
+            project_id: intent.project_id,
+            job_id: intent.job_id,
+            destination_id: intent.destination_id,
+            reservation_id: intent.reservation_id,
+            reserved_units: intent.reserved_units,
+            request_purpose: intent.request_purpose,
+            request_categories: intent.request_categories,
+            input_bytes: intent.input_bytes,
+            conservative_input_tokens: intent.conservative_input_tokens,
+            max_output_tokens: intent.max_output_tokens,
+            max_response_bytes: intent.max_response_bytes,
+            deadline_ms: intent.deadline_ms,
+            registration: intent.registration,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]

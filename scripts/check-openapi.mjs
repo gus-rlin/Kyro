@@ -181,6 +181,18 @@ try {
   };
   rejectPermissiveSchemas(document.components.schemas, 'components.schemas');
 
+  const schemas = document.components.schemas;
+  if (schemas.DataPolicy.properties.allowed_categories.items.enum.includes('secret')) {
+    throw new Error('DataPolicy must never allow secret inputs');
+  }
+  if (!schemas.ModelInput.properties.categories.items.enum.includes('secret')) {
+    throw new Error('ModelInput must represent secret requests for explicit refusal');
+  }
+  for (const name of ['EffectRecordView', 'EffectIntent']) {
+    if (schemas[name].properties.fingerprint || schemas[name].required.includes('fingerprint')) {
+      throw new Error(`${name} must not expose the private input fingerprint`);
+    }
+  }
   const grantLimits = document.components.schemas.CapabilityGrantLimits;
   if (document.components.schemas.ChangeSet.properties.operations.maxItems !== 128) {
     throw new Error('ChangeSet.operations must match the runtime limit of 128');

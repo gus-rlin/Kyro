@@ -4,8 +4,8 @@ use std::{collections::VecDeque, convert::Infallible, time::Duration};
 
 use axum::{
     Router,
-    extract::State,
-    http::HeaderMap,
+    extract::{FromRequestParts, State},
+    http::{HeaderMap, request::Parts},
     response::{
         IntoResponse,
         sse::{Event as SseEvent, KeepAlive, Sse},
@@ -56,8 +56,26 @@ struct StreamState {
     _permit: OwnedSemaphorePermit,
 }
 
+// Admission precedes AuthActor so rejected reconnects never consume the DB pool.
+struct SsePermit(OwnedSemaphorePermit);
+
+impl FromRequestParts<AppState> for SsePermit {
+    type Rejection = ApiError;
+
+    async fn from_request_parts(_: &mut Parts, state: &AppState) -> Result<Self, Self::Rejection> {
+        state
+            .http
+            .sse_permits
+            .clone()
+            .try_acquire_owned()
+            .map(Self)
+            .map_err(|_| ApiError::capacity_limited())
+    }
+}
+
 async fn stream_events(
     State(state): State<AppState>,
+    SsePermit(permit): SsePermit,
     actor: AuthActor,
     ApiPath(project_id): ApiPath<Uuid>,
     headers: HeaderMap,
@@ -79,12 +97,6 @@ async fn stream_events(
     if page.events.len() > EVENT_BATCH_SIZE {
         return Err(ApiError::internal());
     }
-    let permit = state
-        .http
-        .sse_permits
-        .clone()
-        .try_acquire_owned()
-        .map_err(|_| ApiError::capacity_limited())?;
 
     let stream_state = StreamState {
         app: state,

@@ -1,7 +1,7 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { createServer, connect as tcpConnect } from 'node:net';
 import { createHash, randomBytes } from 'node:crypto';
-import { existsSync, mkdtempSync, readFileSync, rmSync, rmdirSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, rmdirSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
@@ -898,6 +898,7 @@ async function readSseEventOrTimeout(response, timeoutMs = 1000) {
 
 function writeEvidence(report, runId) {
   const path = resolve(repoRoot, 'docs/suivi/preuves', `part1-e2e-${runId}.json`);
+  mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, `${JSON.stringify(report, null, 2)}\n`, { flag: 'wx' });
   return path;
 }
@@ -3266,6 +3267,21 @@ async function runAcceptance(options) {
       invalid_schema_preserved_hold_and_ledger: true, valid_job_status: acceptedProof.status,
       target_status: acceptedTarget.status, ledger_rows: 1, provider_calls: processedCalls,
       budget: acceptedBudget };
+    const publicEffects = await apiRequest(testApiOrigin,
+      `/v1/projects/${unknownProject.id}/effects`, refreshedSession);
+    const publicEffect = await apiRequest(testApiOrigin,
+      `/v1/projects/${unknownProject.id}/effects/${processedEffect.effectId}`, refreshedSession);
+    assert(publicEffects.response.status === 200 && publicEffect.response.status === 200,
+      'public effect projection could not be read');
+    assertOpenApiComponent('EffectRecordView', publicEffect.data);
+    for (const effect of [...publicEffects.data.items, publicEffect.data]) {
+      assert(!Object.hasOwn(effect, 'fingerprint') && !Object.hasOwn(effect.intent, 'fingerprint'),
+        'public effect DTO exposed a deterministic private-input fingerprint');
+    }
+    assert(Array.isArray(intent.fingerprint) && intent.fingerprint.length === 32,
+      'durable effect intent lost its private idempotency fingerprint');
+    report.effect_privacy = { list_and_detail_omit_input_fingerprint: true,
+      durable_intent_retains_fingerprint: true };
     report.model_key_delivery = { api_process_has_model_key: false, worker_process_has_ephemeral_model_key: true };
     report.criteria['P1-10'] = { status: 'passed', checks: ['known provider settlement survived SIGKILL before terminal job write and did not resend', 'interrupted sending became unknown and retained held reservation', 'different budget-only operator reconciled idempotently with zero additional provider requests', 'Processed proof rejects invalid schema without accounting changes and integrates valid schema once'] };
 

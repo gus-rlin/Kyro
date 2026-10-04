@@ -1244,7 +1244,13 @@ fn cookie_header(
     http_only: bool,
     max_age_seconds: i64,
 ) -> String {
-    let mut cookie = format!("{name}={value}; Path=/; SameSite=Lax; Max-Age={max_age_seconds}");
+    let same_site = if config.environment == Environment::Production {
+        "None"
+    } else {
+        "Lax"
+    };
+    let mut cookie =
+        format!("{name}={value}; Path=/; SameSite={same_site}; Max-Age={max_age_seconds}");
     if http_only {
         cookie.push_str("; HttpOnly");
     }
@@ -1393,7 +1399,18 @@ mod tests {
             false,
         )
         .unwrap();
-        assert!(cookie_header("kyro_session", "opaque", &production, true, 300).contains("Secure"));
+        for (name, http_only) in [
+            (SESSION_COOKIE, true),
+            (CSRF_COOKIE, false),
+            (BROWSER_COOKIE, true),
+        ] {
+            for max_age in [300, 0] {
+                let cookie = cookie_header(name, "opaque", &production, http_only, max_age);
+                assert!(cookie.contains("SameSite=None"));
+                assert!(cookie.contains("; Secure"));
+                assert_eq!(cookie.contains("HttpOnly"), http_only);
+            }
+        }
     }
 
     #[test]
