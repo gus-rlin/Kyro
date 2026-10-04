@@ -177,6 +177,7 @@ pub async fn append_event(
 pub(crate) fn map_database_error(error: sqlx::Error) -> Error {
     match error {
         sqlx::Error::Database(database_error) => match database_error.code().as_deref() {
+            Some("57014" | "55P03") => Error::Unavailable,
             Some("P0002") => Error::NotFound,
             Some("42501") => Error::Forbidden,
             Some("40001") => Error::Conflict("concurrent database change".to_owned()),
@@ -188,5 +189,66 @@ pub(crate) fn map_database_error(error: sqlx::Error) -> Error {
             Error::Unavailable
         }
         _ => Error::Internal,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    #[ignore = "requires a dedicated PostgreSQL database in KYRO_TEST_DATABASE_URL"]
+    async fn postgres_statement_and_lock_timeouts_are_transient_in_all_store_paths() {
+        let url = std::env::var("KYRO_TEST_DATABASE_URL").unwrap();
+        let pool = PgPoolOptions::new()
+            .max_connections(2)
+            .connect(&url)
+            .await
+            .unwrap();
+        let lock_key = i64::from_le_bytes(Uuid::new_v4().as_bytes()[..8].try_into().unwrap());
+        let mut holder = pool.begin().await.unwrap();
+        sqlx::query("SELECT pg_advisory_xact_lock($1)")
+            .bind(lock_key)
+            .execute(&mut *holder)
+            .await
+            .unwrap();
+        let mappers: [fn(sqlx::Error) -> Error; 3] = [
+            map_database_error,
+            crate::budget::database_error,
+            crate::queue::map_database_error,
+        ];
+        for mapper in mappers {
+            for (setting, query, code) in [
+                (
+                    "SET LOCAL statement_timeout = '20ms'",
+                    "SELECT pg_sleep(0.2)",
+                    "57014",
+                ),
+                (
+                    "SET LOCAL lock_timeout = '20ms'",
+                    "SELECT pg_advisory_xact_lock($1)",
+                    "55P03",
+                ),
+            ] {
+                let mut tx = pool.begin().await.unwrap();
+                sqlx::query(setting).execute(&mut *tx).await.unwrap();
+                let error = if code == "55P03" {
+                    sqlx::query(query)
+                        .bind(lock_key)
+                        .execute(&mut *tx)
+                        .await
+                        .unwrap_err()
+                } else {
+                    sqlx::query(query).execute(&mut *tx).await.unwrap_err()
+                };
+                assert_eq!(
+                    error.as_database_error().unwrap().code().as_deref(),
+                    Some(code)
+                );
+                assert!(matches!(mapper(error), Error::Unavailable));
+                tx.rollback().await.unwrap();
+            }
+        }
+        holder.rollback().await.unwrap();
     }
 }

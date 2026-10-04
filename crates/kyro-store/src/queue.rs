@@ -2438,8 +2438,13 @@ fn admission_fingerprint(
     Ok(Sha256::digest(canonical).into())
 }
 
-fn map_database_error(error: sqlx::Error) -> Error {
+pub(crate) fn map_database_error(error: sqlx::Error) -> Error {
     match error {
+        sqlx::Error::Database(error)
+            if matches!(error.code().as_deref(), Some("57014" | "55P03")) =>
+        {
+            Error::Unavailable
+        }
         sqlx::Error::PoolClosed | sqlx::Error::PoolTimedOut => Error::Unavailable,
         _ => Error::Internal,
     }

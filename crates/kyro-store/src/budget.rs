@@ -1669,9 +1669,10 @@ fn decode_data_policy(value: Value) -> Result<DataPolicy> {
     Ok(policy)
 }
 
-fn database_error(error: sqlx::Error) -> Error {
+pub(crate) fn database_error(error: sqlx::Error) -> Error {
     match error {
         sqlx::Error::Database(database_error) => match database_error.code().as_deref() {
+            Some("57014" | "55P03") => Error::Unavailable,
             Some("P0002") => Error::NotFound,
             Some("42501") => Error::Forbidden,
             Some("40001") => Error::Conflict("concurrent database change".into()),
