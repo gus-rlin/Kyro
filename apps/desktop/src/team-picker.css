@@ -1,0 +1,79 @@
+/* The composer is the anchor; disclosures stay within the chat column. */
+.composer-controls { flex-wrap: nowrap; gap: 4px; }
+.composer-controls > .composer-actions { gap: 4px; flex: 0 0 auto; }
+.team-picker { min-width: 0; }
+.team-trigger { display: flex; align-items: center; gap: 7px; min-height: 36px; padding: 6px 7px; list-style: none; border-radius: 10px; cursor: pointer; color: var(--muted); font-size: 12px; }
+.team-trigger > svg { flex: 0 0 auto; }
+.team-trigger-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.team-trigger-label strong { color: var(--ink); font-weight: 650; }
+.team-trigger-dot { margin: 0 7px; color: var(--muted); }
+.team-trigger:hover, .team-picker[open] > .team-trigger { background: var(--hover); }
+/* Reserve the title bar, composer, workspace picker and status bar, including at mobile widths. */
+.team-panel, .composer-preferences-panel { position: absolute; z-index: 12; left: 0; bottom: calc(100% + 12px); width: 100%; max-height: min(650px, calc(100dvh - 340px)); overflow-y: auto; overscroll-behavior: contain; padding: 22px; border: 1px solid var(--line); border-radius: 22px; background: var(--paper); box-shadow: 0 16px 48px #23274620, 0 2px 6px #23274608; scrollbar-width: thin; }
+.team-panel-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding-bottom: 22px; }
+.team-panel-header h2 { font-size: 17px; font-weight: 700; letter-spacing: -.4px; }
+.team-panel-header p { margin-top: 5px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.team-demo { font-size: 10px; font-weight: 650; border: 1px solid var(--line); padding: 4px 8px; border-radius: 6px; color: var(--muted); }
+.team-role { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; }
+.team-role + .team-role { margin-top: 22px; }
+.team-role-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; color: var(--accent-text); background: var(--lavender); }
+.team-role-icon.workers { color: var(--muted); background: var(--hover); }
+.team-role-content > strong, .team-capacity strong { font-size: 12px; font-weight: 700; }
+.team-role-content > p { color: var(--muted); margin-top: 3px; font-size: 11px; line-height: 1.6; }
+.team-capacity { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 20px 0 16px 46px; }
+.team-capacity small { display: block; font-size: 11px; margin-top: 4px; color: var(--muted); }
+.team-stepper { display: flex; align-items: center; padding: 3px; border: 1px solid var(--line); border-radius: 10px; flex: 0 0 auto; }
+.team-stepper button { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 7px; }
+.team-stepper button:hover:not(:disabled) { background: var(--hover); }
+.team-stepper button:disabled { opacity: .3; }
+.team-stepper output { min-width: 24px; text-align: center; font-variant-numeric: tabular-nums; font-size: 12px; font-weight: 650; }
+.composer-preferences > summary { display: grid; place-items: center; list-style: none; width: 32px; height: 36px; border-radius: 10px; color: var(--muted); cursor: pointer; }
+.composer-preferences > summary:hover, .composer-preferences[open] > summary { background: var(--hover); }
+.preference-field { border: 0; margin: 0; padding: 0 0 22px; min-width: 0; }
+.preference-field > strong, .preference-field legend { display: block; font-size: 12px; font-weight: 650; margin-bottom: 10px; }
+.preference-options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; background: var(--hover); padding: 4px; border-radius: 10px; }
+.preference-options.context-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.preference-options button { min-height: 35px; padding: 6px 2px; border-radius: 7px; font-size: 10px; color: var(--muted); }
+.preference-options button[aria-pressed="true"] { background: var(--paper); color: var(--ink); box-shadow: 0 1px 4px #23274612; }
+@media (max-width: 420px) {
+  .team-panel, .composer-preferences-panel { padding: 18px; }
+  .team-role { grid-template-columns: 28px minmax(0, 1fr); gap: 10px; }
+  .team-role-icon { width: 28px; height: 28px; }
+  .team-capacity { margin-left: 38px; }
+  .team-trigger { gap: 5px; padding-inline: 3px; font-size: 11px; }
+  .team-trigger-dot { margin-inline: 4px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .team-picker[open] > .team-panel, .composer-preferences[open] > .composer-preferences-panel { animation: team-reveal 140ms ease-out; }
+  @keyframes team-reveal { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+}
+/* Choice rows share the workspace menu styling in style.css. */
+.composer-choice { margin-top: 9px; min-width: 0; }
+.composer-choice > summary { display: flex; align-items: center; gap: 10px; list-style: none; cursor: pointer; padding: 11px 14px; border: 1px solid var(--line); border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--paper); box-shadow: inset 0 1px 3px #2327460c; }
+.composer-choice > summary > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.composer-choice > summary > svg { flex-shrink: 0; color: var(--muted); }
+.composer-choice > summary:hover, .composer-choice[open] > summary { background: var(--hover); }
+.composer-choice-options { margin-top: 8px; padding: 6px; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); }
+.composer-choice-options button { font-size: 12px; }
+.composer-choice-options button strong { font-weight: 600; }
+.composer-choice-options button small { display: block; margin-top: 5px; color: var(--muted); font-size: 11px; line-height: 1.6; }
+.composer-choice-options button > svg { flex-shrink: 0; }
+.composer-choice-options button[data-danger] { color: var(--peach-ink); }
+.composer-choice-options button[data-danger] strong, .composer-choice-options button[data-danger] small { color: var(--peach-ink); }
+.team-capacity { margin-bottom: 0; }
+.team-stepper, .team-stepper button, .preference-options, .preference-options button { border-radius: 999px; }
+.preference-field:last-child { padding-bottom: 0; }
+.access-confirm-body { padding: 28px 32px; }
+.access-capabilities { display: grid; gap: 20px; margin: 28px 0; }
+.access-capabilities > div { display: flex; align-items: flex-start; gap: 14px; }
+.access-capabilities > div > span:last-child { min-width: 0; padding-top: 2px; }
+.access-capabilities strong { display: block; font-size: 14px; font-weight: 650; }
+.access-capabilities small { display: block; margin-top: 5px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+.access-confirm-risk { display: flex; align-items: flex-start; gap: 11px; padding: 14px 16px; border-radius: 14px; background: var(--peach); color: var(--peach-ink); }
+.access-confirm-risk > svg { flex-shrink: 0; margin-top: 2px; }
+.access-confirm-risk p { font-size: 14px; line-height: 1.65; }
+.access-confirm-body > .project-field-hint { margin-top: 14px; }
+@media (max-width: 560px) {
+  .access-confirm-body { padding: 24px 20px; }
+  .access-confirm-body .project-flow-footer { gap: 10px; }
+}
