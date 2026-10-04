@@ -2411,6 +2411,29 @@ async function runAcceptance(options) {
     const orgB = await createOrganization(testApiOrigin, actorB, 'Synthetic E2E Org B');
     const projectA = await createProject(testApiOrigin, refreshedSession, orgA.id, 'Synthetic E2E Project A');
     const projectB = await createProject(testApiOrigin, actorB, orgB.id, 'Synthetic E2E Project B');
+    const paginationProject = await createProject(testApiOrigin, refreshedSession, orgA.id, 'Synthetic Pagination Project');
+    const firstProjects = await apiRequest(testApiOrigin, '/v1/projects?limit=1', refreshedSession);
+    assert(firstProjects.response.status === 200 && firstProjects.data.length === 1,
+      'project pagination did not retain the bounded array response');
+    const projectCursor = firstProjects.response.headers.get('x-next-cursor');
+    assert(projectCursor, 'project pagination silently omitted the next page');
+    const secondProjects = await apiRequest(testApiOrigin,
+      `/v1/projects?limit=1&before=${encodeURIComponent(projectCursor)}`, refreshedSession);
+    assert(secondProjects.response.status === 200 && secondProjects.data.length === 1 &&
+      !secondProjects.response.headers.has('x-next-cursor') &&
+      new Set([...firstProjects.data, ...secondProjects.data].map((project) => project.id)).size === 2 &&
+      [...firstProjects.data, ...secondProjects.data].every((project) => [projectA.id, paginationProject.id].includes(project.id)),
+    'project pagination lost, duplicated, or exposed another actor project');
+    const foreignCursorProjects = await apiRequest(testApiOrigin,
+      `/v1/projects?limit=1&before=${encodeURIComponent(projectCursor)}`, actorB);
+    assert(foreignCursorProjects.response.status === 200 &&
+      foreignCursorProjects.data.every((project) => project.id === projectB.id),
+    'a foreign project cursor conferred visibility');
+    for (const query of ['limit=0', 'limit=1001', 'before=not-base64', `before=${'x'.repeat(513)}`]) {
+      const invalid = await apiRequest(testApiOrigin, `/v1/projects?${query}`, refreshedSession);
+      assert(invalid.response.status === 400, 'invalid project pagination was not rejected');
+    }
+    report.project_pagination = { pages: 2, array_body_preserved: true, no_duplicates_or_foreign_projects: true, invalid_queries_refused: 4 };
     const projectBSeed = await applyChange(testApiOrigin, projectB.id, actorB, 0,
       'e2e-project-b-valid-revision', [
         { op: 'set_preference', key: 'owner.seed', value: true },

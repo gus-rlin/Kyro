@@ -20,10 +20,11 @@ Les réponses et erreurs portent `Cache-Control: no-store` et un `X-Request-Id` 
 
 | Méthode et chemin | Contrat |
 | --- | --- |
-| `GET /health/live` | Sonde processus sans accès à la base. |
+| `GET /health/live` | Sonde processus sans accès à la base, indépendante des 128 places des requêtes ordinaires. |
 | `GET /health/ready` | Vérifie la base et le rôle courant non privilégié; réponse générique en cas d’indisponibilité. |
 | `/v1/auth/...` | Flux d’identité et de session défini par `identity::routes()`. |
 | `/v1/projects...` | Projets, révisions, changements et décisions définis par `projects::routes()`. Les mutations de révision exigent `If-Match: "rev-N"`. |
+| `GET /v1/projects` | Tableau de projets lisibles, tri `updated_at` décroissant puis `id` croissant. `limit` vaut 1000 par défaut, entre 1 et 1000. L'en-tête `X-Next-Cursor`, exposé par CORS, indique une page suivante ; transmettre sa valeur dans `before` (curseur opaque, 512 caractères maximum). Aucun curseur à la dernière page. Chaque page revalide les droits ; le parcours ne constitue pas un snapshot face aux mises à jour concurrentes. |
 | `GET /v1/projects/{project_id}/jobs` | Liste paginée, limite 1–100; `before` est un curseur opaque de tri et ne confère aucun droit. |
 | `POST /v1/projects/{project_id}/jobs` | Soumet `{ "payload": <JobPayload>, "max_attempts"?: u8, "ttl_seconds"?: u32 }`; exige `Idempotency-Key` et la révision source dans `If-Match: "rev-N"`. La clé est limitée à 200 caractères ASCII alphanumériques, `-`, `_`, `.` et `:`. Pour `ModelCall`, le serveur exige aussi l’action `model` et valide registre, schéma, politique, taille, délais et marqueurs de secret avant d’écrire le travail. Répéter la même clé et le même corps renvoie le travail admis; réutiliser la clé avec un corps différent renvoie `409`. |
 | `GET /v1/projects/{project_id}/jobs/{job_id}` | Lit une vue typée du travail sans son contenu d’entrée, bail propriétaire ni texte fournisseur. Le résultat d’un appel modèle reste dans la ressource effet autorisée; le travail expose au plus son identifiant d’effet et son statut. Pour suivre sa propre commande de rapprochement après le `202`, son créateur peut lire ce seul job avec `budget` ou `manage`, sans droit `read`; `Store` vérifie cette exception atomiquement. Les autres jobs restent soumis à l’autorisation `read`. |

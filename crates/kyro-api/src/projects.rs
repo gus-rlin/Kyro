@@ -6,13 +6,14 @@ use axum::{
     http::{HeaderMap, HeaderValue, StatusCode, header},
     routing::{get, post, put},
 };
+use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use kyro_domain::{
     model::DataPolicy,
     spec::{ChangeSet, ProjectLimits},
 };
 use kyro_store::projects::{
-    AddDecisionInput, ApplyChangesResult, CreateProjectInput, Project, ProjectDecision,
-    ProjectSnapshot,
+    AddDecisionInput, ApplyChangesResult, CreateProjectInput, Project, ProjectCursor,
+    ProjectDecision, ProjectSnapshot,
 };
 use serde::Deserialize;
 use uuid::Uuid;
@@ -53,16 +54,48 @@ struct DecisionsQuery {
     limit: Option<i64>,
 }
 
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ProjectsQuery {
+    limit: Option<u16>,
+    before: Option<String>,
+}
+
 pub async fn list_projects(
     State(state): State<AppState>,
     actor: AuthActor,
-) -> Result<Json<Vec<Project>>, ApiError> {
-    let projects = state
+    ApiQuery(query): ApiQuery<ProjectsQuery>,
+) -> Result<(HeaderMap, Json<Vec<Project>>), ApiError> {
+    let before = query
+        .before
+        .as_deref()
+        .map(decode_project_cursor)
+        .transpose()?;
+    let page = state
         .store
-        .list_projects(actor.actor_id)
+        .list_projects(actor.actor_id, query.limit.unwrap_or(1000), before)
         .await
         .map_err(ApiError::from)?;
-    Ok(Json(projects))
+    let mut headers = HeaderMap::new();
+    if let Some(cursor) = page.next_cursor {
+        let bytes = serde_json::to_vec(&cursor).map_err(|_| ApiError::internal())?;
+        headers.insert(
+            "x-next-cursor",
+            HeaderValue::from_str(&URL_SAFE_NO_PAD.encode(bytes))
+                .map_err(|_| ApiError::internal())?,
+        );
+    }
+    Ok((headers, Json(page.items)))
+}
+
+fn decode_project_cursor(encoded: &str) -> Result<ProjectCursor, ApiError> {
+    if encoded.len() > 512 {
+        return Err(ApiError::bad_request());
+    }
+    let bytes = URL_SAFE_NO_PAD
+        .decode(encoded)
+        .map_err(|_| ApiError::bad_request())?;
+    serde_json::from_slice(&bytes).map_err(|_| ApiError::bad_request())
 }
 
 pub async fn create_project(

@@ -300,8 +300,32 @@
           },
           "401": {
             "$ref": "#/components/responses/Error"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
           }
-        }
+        },
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000,
+              "default": 1000
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "description": "Opaque cursor from the previous X-Next-Cursor response header.",
+            "schema": {
+              "type": "string",
+              "maxLength": 512
+            }
+          }
+        ]
       },
       "post": {
         "operationId": "createProject",
@@ -1389,7 +1413,7 @@
         }
       },
       "Projects": {
-        "description": "Projects visible to this actor.",
+        "description": "Projects visible to this actor, ordered by updated_at descending then id ascending. The array body is retained; X-Next-Cursor is present only when another page exists. Pagination is not a snapshot across concurrent project updates.",
         "content": {
           "application/json": {
             "schema": {
@@ -1397,6 +1421,15 @@
               "items": {
                 "$ref": "#/components/schemas/Project"
               }
+            }
+          }
+        },
+        "headers": {
+          "X-Next-Cursor": {
+            "description": "URL-safe opaque cursor to pass as before for the next page.",
+            "schema": {
+              "type": "string",
+              "maxLength": 512
             }
           }
         }

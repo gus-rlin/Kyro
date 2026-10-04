@@ -38,6 +38,114 @@ fn two_preference_changes() -> ChangeSet {
 }
 
 #[tokio::test]
+#[ignore = "requires a dedicated migrated PostgreSQL database and admin fixture URL"]
+async fn postgres_project_pages_retrieve_more_than_one_thousand_without_crossing_actor_or_environment()
+ {
+    let url = std::env::var("KYRO_TEST_DATABASE_URL").unwrap();
+    let admin_url = std::env::var("KYRO_TEST_DATABASE_ADMIN_URL").unwrap();
+    let admin = PgPoolOptions::new()
+        .max_connections(1)
+        .connect(&admin_url)
+        .await
+        .unwrap();
+    let store = Store::connect(&url, 2).await.unwrap();
+    let owner = store
+        .upsert_oidc_actor("https://pages.test.invalid", &Uuid::new_v4().to_string())
+        .await
+        .unwrap();
+    let other = store
+        .upsert_oidc_actor("https://pages.test.invalid", &Uuid::new_v4().to_string())
+        .await
+        .unwrap();
+    let org = store
+        .create_organization(owner, "page fixture")
+        .await
+        .unwrap();
+    let first = store
+        .create_project(
+            owner,
+            CreateProjectInput {
+                organization_id: org.id,
+                name: "page fixture".into(),
+                data_policy: None,
+                limits: None,
+            },
+        )
+        .await
+        .unwrap();
+    // Clone validated project configuration; seed cardinality with the fixture admin.
+    let ids: Vec<Uuid> = sqlx::query_scalar("INSERT INTO projects (organization_id, name, data_policy, limits, created_by, updated_at) SELECT organization_id, 'page fixture', data_policy, limits, created_by, updated_at FROM projects, generate_series(1, 1005) WHERE id = $1 RETURNING id")
+        .bind(first.project.id).fetch_all(&admin).await.unwrap();
+    sqlx::query("INSERT INTO capability_grants (actor_id, project_id, actions, resources, environment, created_by) SELECT $1, id, ARRAY['read'], ARRAY[id::text], 'development', $1 FROM projects WHERE id = ANY($2)")
+        .bind(owner).bind(&ids).execute(&admin).await.unwrap();
+    let page = store.list_projects(owner, 1000, None).await.unwrap();
+    assert_eq!(page.items.len(), 1000);
+    let cursor = page
+        .next_cursor
+        .clone()
+        .expect("remaining six projects advertised");
+    let tail = store
+        .list_projects(owner, 1000, Some(cursor.clone()))
+        .await
+        .unwrap();
+    assert_eq!(tail.items.len(), 6);
+    assert!(tail.next_cursor.is_none());
+    let mut observed: Vec<_> = page
+        .items
+        .iter()
+        .chain(tail.items.iter())
+        .map(|project| project.id)
+        .collect();
+    observed.sort();
+    observed.dedup();
+    assert_eq!(observed.len(), 1006);
+    assert!(
+        store
+            .list_projects(other, 1000, None)
+            .await
+            .unwrap()
+            .items
+            .is_empty()
+    );
+    assert!(
+        store
+            .list_projects(other, 1000, Some(cursor.clone()))
+            .await
+            .unwrap()
+            .items
+            .is_empty()
+    );
+    assert!(
+        store
+            .clone()
+            .with_environment(Environment::Production)
+            .list_projects(owner, 1000, None)
+            .await
+            .unwrap()
+            .items
+            .is_empty()
+    );
+    // A cursor does not freeze permissions: revoke one second-page grant and re-read.
+    sqlx::query("UPDATE capability_grants SET revoked_at = clock_timestamp() WHERE actor_id = $1 AND project_id = $2")
+        .bind(owner).bind(tail.items[0].id).execute(&admin).await.unwrap();
+    assert_eq!(
+        store
+            .list_projects(owner, 1000, Some(cursor))
+            .await
+            .unwrap()
+            .items
+            .len(),
+        5
+    );
+    for limit in [0, 1001] {
+        assert!(matches!(
+            store.list_projects(owner, limit, None).await,
+            Err(Error::Invalid(_))
+        ));
+    }
+}
+
+#[tokio::test]
 #[ignore = "requires a dedicated migrated PostgreSQL database in KYRO_TEST_DATABASE_URL"]
 async fn postgres_projects_enforce_isolation_cas_and_idempotency() {
     let database_url = std::env::var("KYRO_TEST_DATABASE_URL")
@@ -265,9 +373,10 @@ async fn postgres_projects_enforce_isolation_cas_and_idempotency() {
     );
     assert_eq!(
         store
-            .list_projects(owner_a)
+            .list_projects(owner_a, 1000, None)
             .await
             .expect("list actor A projects")
+            .items
             .iter()
             .map(|project| project.id)
             .collect::<Vec<_>>(),

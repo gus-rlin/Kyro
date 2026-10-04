@@ -50,6 +50,18 @@ pub struct ProjectSnapshot {
     pub revision: AppRevision,
 }
 
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ProjectCursor {
+    pub updated_at: DateTime<Utc>,
+    pub id: Uuid,
+}
+
+pub struct ProjectPage {
+    pub items: Vec<Project>,
+    pub next_cursor: Option<ProjectCursor>,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct EventFeedPage {
     pub earliest_retained: Option<i64>,
@@ -141,13 +153,24 @@ impl ProjectDecision {
 }
 
 impl Store {
-    pub async fn list_projects(&self, actor_id: Uuid) -> Result<Vec<Project>> {
+    pub async fn list_projects(
+        &self,
+        actor_id: Uuid,
+        limit: u16,
+        before: Option<ProjectCursor>,
+    ) -> Result<ProjectPage> {
+        if !(1..=1000).contains(&limit) {
+            return Err(Error::Invalid(
+                "project page size is outside the allowed range".into(),
+            ));
+        }
         let mut tx = self.begin_actor(actor_id).await?;
         let rows = sqlx::query(
             "SELECT p.id, p.organization_id, p.name, p.current_revision, p.event_sequence, \
                     p.data_policy, p.limits, p.created_by, p.created_at, p.updated_at \
              FROM projects p \
-             WHERE EXISTS ( \
+             WHERE ($2::TIMESTAMPTZ IS NULL OR p.updated_at < $2 \
+                    OR (p.updated_at = $2 AND p.id > $3)) AND EXISTS ( \
                  SELECT 1 FROM capability_grants g \
                  WHERE g.project_id = p.id AND g.actor_id = $1 \
                    AND g.environment = current_setting('kyro.environment', true) \
@@ -156,18 +179,33 @@ impl Store {
                    AND g.actions @> ARRAY['read']::TEXT[] \
                    AND (g.resources @> ARRAY['*']::TEXT[] OR p.id::TEXT = ANY(g.resources)) \
              ) \
-             ORDER BY p.updated_at DESC, p.id ASC LIMIT 1000",
+             ORDER BY p.updated_at DESC, p.id ASC LIMIT $4",
         )
         .bind(actor_id)
+        .bind(before.as_ref().map(|cursor| cursor.updated_at))
+        .bind(before.as_ref().map(|cursor| cursor.id))
+        .bind(i64::from(limit) + 1)
         .fetch_all(&mut *tx)
         .await
         .map_err(db_error)?;
-        let projects = rows
+        let mut projects = rows
             .iter()
             .map(Project::from_row)
             .collect::<Result<Vec<_>>>()?;
         tx.commit().await.map_err(db_error)?;
-        Ok(projects)
+        let next_cursor = if projects.len() > usize::from(limit) {
+            projects.pop();
+            projects.last().map(|project| ProjectCursor {
+                updated_at: project.updated_at,
+                id: project.id,
+            })
+        } else {
+            None
+        };
+        Ok(ProjectPage {
+            items: projects,
+            next_cursor,
+        })
     }
 
     /// Create a project only for an organization owner. The owner grant, empty

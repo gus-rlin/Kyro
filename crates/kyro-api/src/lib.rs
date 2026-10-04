@@ -238,6 +238,7 @@ fn ui_cors(origin: &str) -> CorsLayer {
             HeaderName::from_static("last-event-id"),
         ])
         .expose_headers([
+            HeaderName::from_static("x-next-cursor"),
             header::ETAG,
             header::LOCATION,
             HeaderName::from_static("x-request-id"),
