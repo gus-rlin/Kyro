@@ -263,6 +263,16 @@ async fn postgres_queue_admission_requires_each_grant_to_cover_the_full_demand()
 #[tokio::test]
 #[ignore = "requires a dedicated migrated PostgreSQL database in KYRO_TEST_DATABASE_URL"]
 async fn postgres_model_queue_admission_does_not_require_write_and_enforces_input_limit() {
+    exercise_model_queue("synthetic-local", false).await;
+}
+
+#[tokio::test]
+#[ignore = "requires a dedicated migrated PostgreSQL database and admin fixture URL"]
+async fn postgres_named_synthetic_reconciliation_accepts_budget_only_and_rejects_cloud() {
+    exercise_model_queue("synthetic-alternate", true).await;
+}
+
+async fn exercise_model_queue(destination: &str, reconcile: bool) {
     let database_url = std::env::var("KYRO_TEST_DATABASE_URL")
         .expect("set KYRO_TEST_DATABASE_URL to a disposable kyro_api database");
     let store = Store::connect(&database_url, 8)
@@ -303,7 +313,7 @@ async fn postgres_model_queue_admission_does_not_require_write_and_enforces_inpu
                 organization_id: organization.id,
                 name: format!("queue-{}", Uuid::new_v4()),
                 data_policy: Some(kyro_domain::model::DataPolicy {
-                    allowed_destinations: ["synthetic-local".to_owned()].into_iter().collect(),
+                    allowed_destinations: [destination.to_owned()].into_iter().collect(),
                     allowed_categories: [DataCategory::UserRequest].into_iter().collect(),
                     allowed_purposes: [ModelPurpose::Generation].into_iter().collect(),
                     limits: Default::default(),
@@ -317,7 +327,8 @@ async fn postgres_model_queue_admission_does_not_require_write_and_enforces_inpu
     let oversized_model_actor = add_member(&store, owner, organization.id, "model-input-cap").await;
     let project_id = project.project.id;
 
-    let model_request = model_request(json!({ "prompt": "synthetic model input" }));
+    let mut model_request = model_request(json!({ "prompt": "synthetic model input" }));
+    model_request.destination_id = destination.into();
     let input_bytes = u32::try_from(to_vec(&model_request.input).unwrap().len()).unwrap();
     let complete_model_limits = GrantLimits {
         max_job_attempts: Some(2),
@@ -633,6 +644,152 @@ async fn postgres_model_queue_admission_does_not_require_write_and_enforces_inpu
         }),
         pricing: prepared.intent.registration.pricing.clone(),
     };
+    if reconcile {
+        use kyro_domain::model::{ReconcileEffectRequest, ReconciledEffectDecision};
+        worker
+            .fail_job(
+                &lease,
+                kyro_domain::task::JobErrorCode::GatewayUnavailable,
+                false,
+            )
+            .await
+            .unwrap();
+        let accountant = add_member(&store, owner, organization.id, "budget-only").await;
+        grant(
+            &store,
+            owner,
+            accountant,
+            project_id,
+            Action::Budget,
+            GrantLimits::default(),
+        )
+        .await;
+        assert!(store.get_project(accountant, project_id).await.is_err());
+        let proof = ReconcileEffectRequest {
+            evidence_id: "synthetic-alternate-proof".into(),
+            decision: ReconciledEffectDecision::Processed {
+                response: response.clone(),
+            },
+        };
+        for (actor, project, effect) in [
+            (no_grant_actor, project_id, prepared.intent.id),
+            (accountant, other.project.id, prepared.intent.id),
+            (accountant, project_id, Uuid::new_v4()),
+        ] {
+            assert!(
+                store
+                    .enqueue_effect_reconciliation(
+                        actor,
+                        project,
+                        effect,
+                        "reconciliation-refused",
+                        proof.clone()
+                    )
+                    .await
+                    .is_err()
+            );
+        }
+        assert!(
+            store
+                .clone()
+                .with_environment(Environment::Production)
+                .enqueue_effect_reconciliation(
+                    accountant,
+                    project_id,
+                    prepared.intent.id,
+                    "wrong-environment",
+                    proof.clone()
+                )
+                .await
+                .is_err()
+        );
+        let admin = sqlx::postgres::PgPoolOptions::new()
+            .max_connections(1)
+            .connect(&std::env::var("KYRO_TEST_DATABASE_ADMIN_URL").unwrap())
+            .await
+            .unwrap();
+        sqlx::query("UPDATE effects SET intent = jsonb_set(intent, '{registration,provider_kind}', '\"cloud\"') WHERE id = $1").bind(prepared.intent.id).execute(&admin).await.unwrap();
+        assert!(
+            store
+                .enqueue_effect_reconciliation(
+                    accountant,
+                    project_id,
+                    prepared.intent.id,
+                    "cloud-refused",
+                    proof.clone()
+                )
+                .await
+                .is_err()
+        );
+        sqlx::query("UPDATE effects SET intent = jsonb_set(intent, '{registration,provider_kind}', '\"synthetic\"') WHERE id = $1").bind(prepared.intent.id).execute(&admin).await.unwrap();
+        let command = store
+            .enqueue_effect_reconciliation(
+                accountant,
+                project_id,
+                prepared.intent.id,
+                "named-synthetic",
+                proof.clone(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            store
+                .enqueue_effect_reconciliation(
+                    accountant,
+                    project_id,
+                    prepared.intent.id,
+                    "named-synthetic",
+                    proof.clone()
+                )
+                .await
+                .unwrap()
+                .id,
+            command.id
+        );
+        let reconciliation_lease = worker
+            .claim_next_job(Uuid::new_v4(), 30)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(reconciliation_lease.job_id, command.id);
+        let completed = worker
+            .finish_effect_reconciliation_job(
+                &reconciliation_lease,
+                prepared.intent.id,
+                &proof,
+                |intent| {
+                    assert_eq!(intent.registration.destination_id, destination);
+                    assert_eq!(
+                        intent.registration.provider_kind,
+                        kyro_domain::model::ModelProviderKind::Synthetic
+                    );
+                    Ok(())
+                },
+            )
+            .await
+            .unwrap();
+        assert_eq!(completed.status, JobStatus::Succeeded);
+        let effect = store
+            .get_effect(owner, project_id, prepared.intent.id)
+            .await
+            .unwrap();
+        assert_eq!(effect.status, kyro_domain::model::EffectStatus::Succeeded);
+        assert_eq!(
+            effect.reservation_status,
+            kyro_domain::model::ReservationStatus::Settled
+        );
+        let mut tx = store.begin_actor(owner).await.unwrap();
+        let counters: (i64, i64) = sqlx::query_as(
+            "SELECT reserved_units, spent_units FROM project_budgets WHERE project_id = $1",
+        )
+        .bind(project_id)
+        .fetch_one(&mut *tx)
+        .await
+        .unwrap();
+        assert_eq!(counters, (0, 2));
+        tx.commit().await.unwrap();
+        return;
+    }
     for _ in 0..2 {
         assert_eq!(
             worker

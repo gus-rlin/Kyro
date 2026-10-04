@@ -375,7 +375,8 @@ impl Store {
         let target = sqlx::query_as::<_, EffectTargetRow>(
             "SELECT e.job_id FROM effects e \
              JOIN jobs target ON target.id = e.job_id AND target.project_id = e.project_id \
-             WHERE e.id = $1 AND e.project_id = $2 AND e.destination = 'synthetic-local' \
+             WHERE e.id = $1 AND e.project_id = $2 \
+               AND e.intent->'registration'->>'provider_kind' = 'synthetic' \
                AND e.status = 'unknown' AND target.status = 'unknown' \
                AND target.environment = $3",
         )
