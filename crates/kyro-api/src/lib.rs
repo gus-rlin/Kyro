@@ -527,6 +527,37 @@ mod tests {
                 .status(),
             StatusCode::OK
         );
+        let sse_permits = state
+            .http
+            .sse_permits
+            .clone()
+            .acquire_many_owned(MAX_SSE_CONNECTIONS as u32)
+            .await
+            .unwrap();
+        let connection = state.store.pool.acquire().await.unwrap();
+        let events_url = format!("{url}/v1/projects/{}/events", uuid::Uuid::new_v4());
+        for cookie in [
+            None,
+            Some("kyro_session=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
+        ] {
+            let mut request = client.get(&events_url);
+            if let Some(cookie) = cookie {
+                request = request.header("cookie", cookie);
+            }
+            let rejected = tokio::time::timeout(std::time::Duration::from_secs(1), request.send())
+                .await
+                .expect("SSE admission must precede any DB work")
+                .unwrap();
+            assert_eq!(rejected.status(), StatusCode::TOO_MANY_REQUESTS);
+        }
+        drop(connection);
+        drop(sse_permits);
+        let unauthenticated = client.get(&events_url).send().await.unwrap();
+        assert_eq!(unauthenticated.status(), StatusCode::UNAUTHORIZED);
+        assert_eq!(
+            state.http.sse_permits.available_permits(),
+            MAX_SSE_CONNECTIONS
+        );
         server.abort();
     }
 
