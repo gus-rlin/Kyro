@@ -1,5 +1,14 @@
 # Recette indépendante P1-01 à P1-14
 
+## Qualification SUIVI-0016 — Cinq nouvelles remarques de la PR
+
+**P1 validée dans le périmètre synthétique convenu**, le 2026-10-04 (Europe/Paris), sur `961ba2e0fec981cb67698f44560c55b1a2cebeb9` / `24c0277b53e10efd7228fe7849b6f278534dfc676ac5d7eeefed7305b3c882da`, 95 fichiers inchangés. [Rapport](part1-pr-review3-corrections.md), [bilan consolidé](../preuves/part1-pr-review3-qualification-20261004.json).
+
+La [recette finale](../preuves/part1-e2e-20261004T010836-26bd77169bfade63.json) passe P1-01 à P1-13 dans le même run : liste/détail sans hash d'entrée, 13 appels synthétiques, restauration des 16 empreintes, ancienne session401, ApplyChanges5→6 et rapprochement interne sans émission externe. Le brut garde P1-14 review_pending ; [Sol conclut séparément PASS9,5/10](../preuves/part1-pr-review3-sol-20261004.json), sans constat actionnable restant.
+
+[87 tests Rust/PostgreSQL](../preuves/part1-pr-review3-controls-20261004.json) passent, zéro échec/ignoré. Format/check/read-only, OpenAPI et outils passent ; 17 migrations et 57 privilèges inchangés. Cookies production None/Secure testés, sans essai navigateur HTTPS intersite. OIDC et inférence synthétiques, fournisseur réel toujours non qualifié ; échecs/bases conservés dans SUIVI-0016. Les qualifications suivantes restent historiques.
+
+
 ## Qualification SUIVI-0015 — Huit nouvelles remarques de la PR
 
 **P1 validée dans le périmètre synthétique convenu**, le 2026-10-04 (Europe/Paris), sur `a718deb5a51e33601effa83250b4276636f6811f` / `e2886f97905f2c61349c8ba8c8842a66944a3c4fb73a00aad308b688f2092b89`, 95 fichiers inchangés. [Rapport](part1-pr-review2-corrections.md), [bilan consolidé](../preuves/part1-pr-review2-qualification-20261004.json).

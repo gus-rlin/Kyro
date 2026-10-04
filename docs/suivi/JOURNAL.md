@@ -251,3 +251,21 @@ Les entrées conservent les réussites, les échecs et les limites. Les événem
 - Contrôle avant publication : 52 preuves UTF-8/JSON relues, 161 liens locaux résolus et aucun format de secret à haute confiance détecté ; les 95 empreintes fonctionnelles restent identiques. Les espaces finaux émis par PostgreSQL json_agg, Docker et les logs bruts sont conservés ; seuls les fichiers suivants sont exclus du contrôle whitespace, pas des vérifications de contenu : part1-pr-review2-controls-a-20261004.log, part1-pr-review2-controls-final-b-20261004.log, part1-pr-review2-controls-final-c-20261004.log, part1-pr-review2-privileges-after-20261004.json, part1-pr-review2-privileges-after-cached-baseline-20261004.json, part1-pr-review2-privileges-before-20261004.json, part1-pr-review2-production-start-20261004.log. Tous les autres fichiers et le diff fonctionnel passent git diff --check.
 
 - Publication vérifiée : push de 0573e258 vers 2dba4c6c27e30d37c49134b2fe220ebbce692f90 réussi sur gus-rlin/p1-delivery ; gh pr view et git ls-remote confirment ce HEAD distant, PR #1 OPEN, description actualisée par PATCH REST sans élargir les scopes du jeton et PR attachée au chat. Worktree propre après push. Deux nouveaux checks GitHub backend IN_PROGRESS au relevé ; leur réussite ne se déduit pas des contrôles locaux. Cette dernière trace documentaire est poussée séparément ; aucun merge ni déploiement.
+
+
+## SUIVI-0016 — Corriger les cinq nouvelles remarques de la PR P1
+
+- Date : 2026-10-04 (Europe/Paris).
+- Objectif et critères avant essais : corriger minimalement les cookies intersites, l'admission SSE, deux préfixes IPv4, le schéma des politiques et l'exposition des empreintes ; vérifier les régressions et pousser sur la PR #1.
+- État de départ : worktree p1-delivery-pr propre, HEAD 78e83227aa5c648e97fdbc350f766dc1f4a48363 ; les deux checks GitHub précédents passent. Skill senior-code-basics appliqué ; checkout racine préservé.
+- Résultat : diagnostic en cours ; anciennes preuves et migrations conservées. Aucun merge, déploiement ou fournisseur réel.
+
+- Changements : cinq commits ciblés 970e263, db1df5f, c2d9d6b, e06adb6, 961ba2e ; DTO public distinct sans hash d'entrée, persistance et migrations intactes. [Rapport](essais/part1-pr-review3-corrections.md).
+- Reproductions : baseline avec nouvelles assertions seulement, deux défauts API, IPv4 et hash confirmés ; schéma secret refusé. Erreur du nouveau test Duration et PATH Cargo bash -lc corrigés, traces conservées, base baseline maintenue.
+- Contrôles : 87 tests PostgreSQL/Rust passent, zéro échec/ignoré ; fmt/check read-only, OpenAPI et sept tests outils passent. 17 migrations/checksums intacts. Audit 194 packages actifs sans avis, RSA verrouillé inactif explicité. Recette finale et revue en cours sur 961ba2e /24c0277..., 95 fichiers ; pas de qualification anticipée.
+
+- Recette finale : [20261004T010836-26bd77169bfade63](preuves/part1-e2e-20261004T010836-26bd77169bfade63.json), sortie 0, P1-01 à P1-13 passed, source inchangée. Liste/détail sans hash privé, 13 appels synthétiques, 16 empreintes restaurées, ancienne session401, ApplyChanges5→6 et reprise comptable sans émission externe. Bases finale/restaurée conservées ; brut P1-14 review_pending, verdict indépendant attendu.
+
+- Revue finale : [Sol PASS 9,5/10](preuves/part1-pr-review3-sol-20261004.json), aucun constat actionnable restant, 95 hashes et preuves relus indépendamment. [Bilan P1-01 à P1-14](preuves/part1-pr-review3-qualification-20261004.json). P1 validée dans le périmètre synthétique convenu ; absence de test navigateur HTTPS intersite et fournisseur réel non qualifié explicités. Aucun changement fonctionnel après gel/revue.
+
+- Contrôle avant push : 21 artefacts UTF-8/JSON vérifiés, 159 liens locaux résolus, aucun format de secret à haute confiance détecté et empreinte fonctionnelle inchangée. La ligne vide finale du log brut part1-pr-review3-controls-final-20261004.log est conservée, ce seul fichier exclu du contrôle whitespace ; diff fonctionnel et autres preuves passent.

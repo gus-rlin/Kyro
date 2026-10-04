@@ -1,0 +1,1126 @@
+COMMAND node scripts/verify-p1.mjs --run --execution docker --db-container kyro-p1-ops-postgres-1 --db-port 55440 --api-port 18080 --source-sha256 24c0277b53e10efd7228fe7849b6f278534dfc676ac5d7eeefed7305b3c882da --keep-on-failure
+{
+  "record": "part1-e2e-preflight",
+  "status": "passed_read_only",
+  "versions": {
+    "node": "v24.18.0",
+    "docker_server": "29.8.0",
+    "postgresql": "18.6"
+  },
+  "database_resource": {
+    "container_running": true,
+    "health": "healthy",
+    "compose_project": "kyro-p1-ops",
+    "compose_service": "postgres",
+    "image": "postgres:18.6-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873",
+    "host_ip": "127.0.0.1",
+    "host_port": 55440,
+    "data_volume": "kyro-p1-ops_postgres-data"
+  },
+  "runtime_roles_observed_in_existing_db": [
+    {
+      "role": "kyro_admin",
+      "superuser": true,
+      "bypass_rls": true
+    },
+    {
+      "role": "kyro_api",
+      "superuser": false,
+      "bypass_rls": false
+    },
+    {
+      "role": "kyro_worker",
+      "superuser": false,
+      "bypass_rls": false
+    }
+  ],
+  "docker_to_postgres_probe": "accepting connections",
+  "expected_loopback_ports_available": {
+    "9090": true,
+    "9091": true,
+    "18080": true
+  },
+  "database_created": false,
+  "restore_database_created": false,
+  "existing_database_modified": false,
+  "persistent_containers_created": 0,
+  "temporary_probe_containers_created": 1,
+  "temporary_probe_containers_removed": 1,
+  "real_secrets_used": false,
+  "acceptance_criteria_verified": []
+}
+{
+  "record": "part1-e2e-run",
+  "run_id": "20261004T010836-26bd77169bfade63",
+  "started_at": "2026-10-04T01:08:36.721Z",
+  "status": "runtime_verified_review_pending",
+  "execution": "docker",
+  "source": {
+    "commit": "961ba2e0fec981cb67698f44560c55b1a2cebeb9",
+    "worktree_clean": false,
+    "dirty_path_count": 7,
+    "sha256": "24c0277b53e10efd7228fe7849b6f278534dfc676ac5d7eeefed7305b3c882da",
+    "files": [
+      {
+        "path": ".dockerignore",
+        "sha256": "98b47fd5f533212e0b4eb405fa6d22c1901f33ebd49b352dbf250137c80bc9c3"
+      },
+      {
+        "path": ".github/workflows/ci.yml",
+        "sha256": "131bdc95f462f264824476cb21f8904a3e10704f9bcee57b26c969bd5c682764"
+      },
+      {
+        "path": "Cargo.lock",
+        "sha256": "2f9b27849eba4274a53982d587e795c9d2a5914627b6bf6333fa0197fca567e3"
+      },
+      {
+        "path": "Cargo.toml",
+        "sha256": "05f78fd5b4e3e898a9aa08bc3045012be3f49d8c2d67b68f26a4ae7acd2ded7a"
+      },
+      {
+        "path": "Dockerfile",
+        "sha256": "04d6ac13491cfbe895c6c540b2cd8e9a167e94a5937099d62ea80b433a41911f"
+      },
+      {
+        "path": "compose.p1.production.yaml",
+        "sha256": "02e3e7ee5f6e69288253d15afcbef1c74013eb029e3af5a4d6fe7577d78a5ca2"
+      },
+      {
+        "path": "compose.p1.yaml",
+        "sha256": "c8e2973495970202e0b5d2ed499f501b3afb42d73ce2414c1354bca7bbf0927a"
+      },
+      {
+        "path": "config/models.example.json",
+        "sha256": "b8c88cbe3117a52c65d1895eed21a8df00481b87b6050e4d40ca93b33b45c341"
+      },
+      {
+        "path": "config/models.synthetic.json",
+        "sha256": "849bae418928c99fc0a254fe031c1abbd90781b8a4aff3bf293701ab57c3b15e"
+      },
+      {
+        "path": "config/postgres/pg_hba.production.conf",
+        "sha256": "f1c82a32fbeffec010166faaeb082848b67386bb25501bce3417c2b6cb24e7bb"
+      },
+      {
+        "path": "crates/kyro-api/Cargo.toml",
+        "sha256": "b2a24fd1e7177316e272a5a237f233d98095b549a0509331bd7af633a6af8cae"
+      },
+      {
+        "path": "crates/kyro-api/src/budgets.rs",
+        "sha256": "e90f4ad5cd2d9af31973885864173fd2bbd87e47a7c5cccb9133d18f07958779"
+      },
+      {
+        "path": "crates/kyro-api/src/error.rs",
+        "sha256": "c3bb75739ff1a8e60202b0edf19ee987376e2ef0a4ffa4840f6a7e2a11dea91b"
+      },
+      {
+        "path": "crates/kyro-api/src/events.rs",
+        "sha256": "be518a7ccae50b4395da758ca9a88ee24291e5604d31139abb715b808bf9f316"
+      },
+      {
+        "path": "crates/kyro-api/src/identity.rs",
+        "sha256": "dfc7b9a1ddf7ef58158c67c2492ef875156ca1e956c1f2e0952af69fd8b6812e"
+      },
+      {
+        "path": "crates/kyro-api/src/jobs.rs",
+        "sha256": "b91dbb70a417070956ffb028c9d249a431f6e808e0ab65bfec51a8c078d38d06"
+      },
+      {
+        "path": "crates/kyro-api/src/lib.rs",
+        "sha256": "1f14b56501bb23f65eeea53e291d3a4e67dadfc4598112a8d597b15f017c5ab8"
+      },
+      {
+        "path": "crates/kyro-api/src/main.rs",
+        "sha256": "1f71ed1b534c6549c0ed7012fc6936a9f6b7b6fce0ac06e8302e0841e87a06bd"
+      },
+      {
+        "path": "crates/kyro-api/src/projects.rs",
+        "sha256": "677dd2872cb507c66d8253f9dfd06275362de2897be90f6d0e45a8069e3ff352"
+      },
+      {
+        "path": "crates/kyro-api/tests/oidc.rs",
+        "sha256": "c963396a60a20cfed62e5cf794b29c584a39f0f205f0ecb2f5a85cfe887fa8c2"
+      },
+      {
+        "path": "crates/kyro-domain/Cargo.toml",
+        "sha256": "c864028c9cffe509519132e6ac65d97835129dd78eb52f057409ce8cd80de7d3"
+      },
+      {
+        "path": "crates/kyro-domain/src/config.rs",
+        "sha256": "66649244e529e49cd185f26a228a1c40f729489e62c18ba6bd7de05ee0d558e4"
+      },
+      {
+        "path": "crates/kyro-domain/src/contracts.rs",
+        "sha256": "27481990d00ae1976d59cb24ba541c45932d9c59c382a1af192fd3f1b3931df2"
+      },
+      {
+        "path": "crates/kyro-domain/src/error.rs",
+        "sha256": "022f92748865c0c1a90bf6a74837b2437fe58ce177b21c3b17fe38bdfe318490"
+      },
+      {
+        "path": "crates/kyro-domain/src/identity.rs",
+        "sha256": "adbd2c189377a8f7b223ce461025124e11eb9ea0b0af258df930cb1460b07508"
+      },
+      {
+        "path": "crates/kyro-domain/src/lib.rs",
+        "sha256": "aef028e450824a2d4c5e36e48d4060378c614d401675682d9389539ce080a39c"
+      },
+      {
+        "path": "crates/kyro-domain/src/model.rs",
+        "sha256": "d4031970a6da87324c66c60c5267e9696f5313a05d4a8c597b016f94a6d94337"
+      },
+      {
+        "path": "crates/kyro-domain/src/spec.rs",
+        "sha256": "5a225802953b8893ceb04762edeedd7a8524cae278c0b30aa7018b45f9362962"
+      },
+      {
+        "path": "crates/kyro-domain/src/task.rs",
+        "sha256": "6d024f67d3838023f8811571b65e1ab0bb373dce093b870cc0fc66b9c169bbc1"
+      },
+      {
+        "path": "crates/kyro-gateway/Cargo.toml",
+        "sha256": "1279e0627357971b4a51643c3b9e0f18a7128fd2c5c74fe4c4cca34afdf900c6"
+      },
+      {
+        "path": "crates/kyro-gateway/src/client.rs",
+        "sha256": "0d63167bc7e6c8721bf2047bc2cba7d3ff2bad7aa87a66ac765aad8b8707c5eb"
+      },
+      {
+        "path": "crates/kyro-gateway/src/config.rs",
+        "sha256": "a5326f59d51df51f172cfa84cf9658aacf25c0e52734ddea34d64b86988d3950"
+      },
+      {
+        "path": "crates/kyro-gateway/src/lib.rs",
+        "sha256": "ef03dbdaed2b96d1df958f88a75051c59f084fcd3c3c384d3d0571bf9b6aaf06"
+      },
+      {
+        "path": "crates/kyro-gateway/tests/admission.rs",
+        "sha256": "1d78f4e347d004d8ef18326492c1fd046d4250e6d0263e3fd7efc41980c0b2d9"
+      },
+      {
+        "path": "crates/kyro-gateway/tests/config.rs",
+        "sha256": "4cd0bcc8fd44059b168cc810b12eb269f444fd533f081f4801ef8228bdb18c7b"
+      },
+      {
+        "path": "crates/kyro-gateway/tests/mock_http.rs",
+        "sha256": "5ef8558ffde17af03656b31b0ee0cd00c0ea6c2286b8524344dc37e2a85eecf2"
+      },
+      {
+        "path": "crates/kyro-store/Cargo.toml",
+        "sha256": "d31a00bc7f1693126dcbf14926d35df5838676caee9fc037584aae2e96969f48"
+      },
+      {
+        "path": "crates/kyro-store/migrations/0001_foundation.sql",
+        "sha256": "aefddea2d6797a401028ea4cbfcce20681aa2d1b515665e3d8c61b73261d96a5"
+      },
+      {
+        "path": "crates/kyro-store/migrations/0002_initial_revision_zero.sql",
+        "sha256": "311b9cb5535c7b152797403163848a1ff9cc621f685c6cb62d0c68f03528a2bb"
+      },
+      {
+        "path": "crates/kyro-store/migrations/0003_isolate_queue_and_accounting_context.sql",
+        "sha256": "4b109efce95b1075582abb1cd2e430e11cae7329fc4a54efad922bbf93ba5595"
+      },
+      {
+        "path": "crates/kyro-store/migrations/0004_actor_scoped_job_cancellation.sql",
+        "sha256": "96c0f1bd3472f97756e3262f3e8efb47a1424d70fe1b0e31d5c2e95eb0382e97"
+      },
+      {
+        "path": "crates/kyro-store/migrations/0005_jsonb_object_size_compat.sql",
+        "sha256": "2978fcc7181e88c66c93bee6426643f404884df596109e219cacc01b92f65883"
+      },
+      {
+        "path": "crates/kyro-store/migrations/0006_resolve_event_parameter_names.sql",
+        "sha256": "d8c6d2e9b046c0f17efa0f92814dfbe1f8517f608c05d1b83f99f000714ae68f"
+      },
+      {
+        "path": "crates/kyro-store/migrations/0007_lock_project_before_job.sql",
+        "sha256": "6714fed54c5126ac1cd2a958240caa60238a434d31a13098c9b9763fd10b1c3e"
+      },
+      {
+        "path": "crates/kyro-store/migrations/0008_fail_closed_job_lock_context.sql",
+        "sha256": "9b451a1a89215f824684e8b617bff8e435c9a927f49169583e62baecf0e07da8"
+      },
+      {
+        "path": "crates/kyro-store/migrations/0009_api_exec_worker_predicates.sql",
+        "sha256": "9047b9a560d99b36d99a0bb0d0656efbadbd5e2deb9b0a105fa44eadad66a2d6"
+      },
+      {
+        "path": "crates/kyro-store/migrations/0010_scoped_accounting_job_visibility.sql",
+        "sha256": "0922dccea94cbdd415d0def1b478570086596be307e2f63d9153c937260ba67f"
+      },
+      {
+        "path": "crates/kyro-store/migrations/0011_effect_reservation_required.sql",
+        "sha256": "19921260f4fbcfe45bdfe346988397c25a6678e3acb51c7f69aafe816797a7ae"
+      },
+      {
+        "path": "crates/kyro-store/migrations/0012_capability_limits_and_environment_isolation.sql",
+        "sha256": "dfa807cbfb6f296a0dc2728fbd8f92ceda1a1b0424efcd9d2d4fd7fff95c066c"
+      },
+      {
+        "path": "crates/kyro-store/migrations/0013_event_history_bounds.sql",
+        "sha256": "04b7d8cdc7b675caaa95e01ae5e165e199f413c8fcfba00bd2f3dde69b712459"
+      },
+      {
+        "path": "crates/kyro-store/migrations/0014_auth_maintenance.sql",
+        "sha256": "3c2e2749e5c50cd7701b40d921b128452d86c0a289694289b11cbf5251d87db3"
+      },
+      {
+        "path": "crates/kyro-store/migrations/0015_lock_actor_grants.sql",
+        "sha256": "bac32898b4705248c541da1009781847e7a0f181d92231eaa1d87469db128e7b"
+      },
+      {
+        "path": "crates/kyro-store/migrations/0016_scoped_admission_locks.sql",
+        "sha256": "f22e5ec074463a953fb2f8b2ea57fa63e797dec0dc1580b63fa1deb3a1d27405"
+      },
+      {
+        "path": "crates/kyro-store/migrations/0017_named_synthetic_reconciliation.sql",
+        "sha256": "095b8bff8f13d7b4404b391de441db5a005f3612fed77f4185ec2f7766d56988"
+      },
+      {
+        "path": "crates/kyro-store/src/bin/kyro-migrate.rs",
+        "sha256": "b1556809cd9f5cf9f8935a9fc056f27cd1452c933f4aa908423400a267f613b0"
+      },
+      {
+        "path": "crates/kyro-store/src/budget.rs",
+        "sha256": "291d3e485a3936585ea847770c9368e6cc29735f0f92584c475bceb771fcc3f8"
+      },
+      {
+        "path": "crates/kyro-store/src/identity.rs",
+        "sha256": "19523f447035fb3abfbd0ee3c6d057755047eec5fa84157492fcd9a87bf10aec"
+      },
+      {
+        "path": "crates/kyro-store/src/lib.rs",
+        "sha256": "d05783a32a0e9002bec2518cccc8511e1b5dc6c08bc396676712b288dcae84d2"
+      },
+      {
+        "path": "crates/kyro-store/src/migrate.rs",
+        "sha256": "056b5ef42cf70df08057d1edc549deff6407fa369983445035a4aa0add8a440d"
+      },
+      {
+        "path": "crates/kyro-store/src/projects.rs",
+        "sha256": "cb3a62825b1bc03307df8d245d8cc4e1e584c818bf275fb0a41aa017c1c9c2d1"
+      },
+      {
+        "path": "crates/kyro-store/src/queue.rs",
+        "sha256": "c454fa2aa3e318af921b147b2de974a625bf2e34d62ba6dea79e721c52fef0d0"
+      },
+      {
+        "path": "crates/kyro-store/src/store.rs",
+        "sha256": "49a2737b6573410665f480e6378df3dd16b65842c31c1b297bc0a8846dc383a1"
+      },
+      {
+        "path": "crates/kyro-store/tests/projects.rs",
+        "sha256": "4d8fab43efd1b9ad353885c9b9c612701c02b343177f2ccbf7846a2db1b68a07"
+      },
+      {
+        "path": "crates/kyro-store/tests/queue.rs",
+        "sha256": "1685a2264df1565ed65f04008de4d4baff71d55053b511d1e05c688d5690f644"
+      },
+      {
+        "path": "crates/kyro-worker/Cargo.toml",
+        "sha256": "a4c57aae503bd62eda30d4cf884f0a1d9471ba6f6c1c9f54db9bbf78ab13d8ec"
+      },
+      {
+        "path": "crates/kyro-worker/src/lib.rs",
+        "sha256": "aa70aaba80bac51091f587c603fff67ae7dec7b8af3f7963de7287cc141610b4"
+      },
+      {
+        "path": "crates/kyro-worker/src/main.rs",
+        "sha256": "10da94bcd98f5f518855e4b2f35ede8df644efeafac403571c0e9d3cb8c8f8f0"
+      },
+      {
+        "path": "docs/backend/partie-1/ACCEPTATION.md",
+        "sha256": "695674ca05be267e70ec5b386c5756cb435e3babfa0f9dad3a99e8ac41a61710"
+      },
+      {
+        "path": "docs/backend/partie-1/ARCHITECTURE.md",
+        "sha256": "08b4456637a8f2516e615bf86982658e617f968a6d927cfbbae81070ea3b51c8"
+      },
+      {
+        "path": "docs/backend/partie-1/CONFORMITE.md",
+        "sha256": "e92ce5382e02a65959aa4d9199110962b0d80e79503b507c6d5bf0ab25cfee44"
+      },
+      {
+        "path": "docs/backend/partie-1/HTTP.md",
+        "sha256": "1c78e2c06fbe00993d343ee9c3bdf56e87534a1fb4bdfb9a61daaf9d633a2adc"
+      },
+      {
+        "path": "docs/backend/partie-1/MANIFESTE.md",
+        "sha256": "732274a6e5efc6bb37800472a10595ea031ecb3b3c41a9042efb18bb951edfb5"
+      },
+      {
+        "path": "docs/backend/partie-1/OPERATIONS.md",
+        "sha256": "f428eef6709164dc4373d80c99fbfb8d828d3b7eda02b3011f4cf22259fd7622"
+      },
+      {
+        "path": "docs/backend/partie-1/PERIMETRE.md",
+        "sha256": "5c240838953820a092b30d4670426a2d4dfc1717107bef215cd684777f207363"
+      },
+      {
+        "path": "docs/backend/partie-1/openapi.v1.json",
+        "sha256": "f8778bfdbd817b51c5c03cb10d881780f5dce49b5e42a88e0693832285afe94e"
+      },
+      {
+        "path": "rust-toolchain.toml",
+        "sha256": "d378cc6bc4c46cf85f3bc26a191bcb13a6f9efab78f758b39029555f88dc6e79"
+      },
+      {
+        "path": "scripts/backup-p1.ps1",
+        "sha256": "8420b9aaf963b34477cea0b985c118dd3c78e1cc88eb52e8efb7d734734a9007"
+      },
+      {
+        "path": "scripts/check-dependencies.mjs",
+        "sha256": "98c33378c22ef057150ba2299d3b51a25b2fd057a3388a1fa6e4119dfee44f26"
+      },
+      {
+        "path": "scripts/check-dependencies.test.mjs",
+        "sha256": "7e93d34d2793f5346ea413a176d657a62b9e98eaaf29a7fd8f8a54b6d726213f"
+      },
+      {
+        "path": "scripts/check-openapi.mjs",
+        "sha256": "677c936b9477111490e7230b1b3942dc81267bdb173cdfb83fe974b5181fa8c5"
+      },
+      {
+        "path": "scripts/infra-p1.ps1",
+        "sha256": "df174c229dc39231d452ef5888a87e56354d62b1f62ee70d4d680636e02258f0"
+      },
+      {
+        "path": "scripts/restore-p1.ps1",
+        "sha256": "e9b5cf752f5f7564086fa6fb17a9eab0611561d409e93b4419dd5b547fe6a80e"
+      },
+      {
+        "path": "scripts/synthetic-provider.mjs",
+        "sha256": "95d49737239733aa73d1091979d1e835b03baef7c7cb2b5411faa820318f83f1"
+      },
+      {
+        "path": "scripts/verify-p1.mjs",
+        "sha256": "8d2fe4fd4be089c9c229c19718249f51ed88507b5f18492862327e5a8b0258be"
+      },
+      {
+        "path": "scripts/verify-p1.ps1",
+        "sha256": "f70c225871ec373888dd7d9bb90518b55974d9cff29205d0194adf7d55f822ab"
+      },
+      {
+        "path": "tests/fixtures/Dockerfile.synthetic-provider",
+        "sha256": "0a7261bf406c172912fc6a7bf923d207c3ce727c8ecf917a714b8a98fda9ae06"
+      },
+      {
+        "path": "tests/fixtures/Dockerfile.synthetic-provider.dockerignore",
+        "sha256": "17ccab5e429ef8f2c2a518708290f76989a5b8b4911490e5bcfef91858aa5275"
+      },
+      {
+        "path": "tests/fixtures/app-spec-initial.json",
+        "sha256": "ed9e7639d9a3e12df3a7044412d76729460b2e13c84bffd5b0262f0145c7b9f0"
+      },
+      {
+        "path": "tests/fixtures/changeset-set-property.json",
+        "sha256": "43208d1fa9828b3bc9f38b2f1f9413ffe64376a084cc819aae644a6557887643"
+      },
+      {
+        "path": "tests/fixtures/changeset-unknown-op.json",
+        "sha256": "f52bc87369fbb33f73cd74c478d0a3b9fd9d648318ac8f94f6972a6e3eba3d90"
+      },
+      {
+        "path": "tests/fixtures/model-request-valid.json",
+        "sha256": "d91d01b41792d8dd8d1050086248526809423583dba8e67fa8ff6f476f244528"
+      },
+      {
+        "path": "tests/fixtures/models.synthetic.e2e.json",
+        "sha256": "d48be931b09a79907258e2240101d79b0b448b3939725b411757e72a03384c6c"
+      },
+      {
+        "path": "tests/fixtures/synthetic-provider-control-smoke.mjs",
+        "sha256": "d0bb5d5fc0d9e1aafe8700d4176877e9191767315be2d7768c9dabf81718122d"
+      },
+      {
+        "path": "tests/fixtures/synthetic-provider-docker-smoke.mjs",
+        "sha256": "572866cfc8f01d4e17eecfbb529fc22539d9e0bf833b66719dc7cdb850a44b1b"
+      },
+      {
+        "path": "tests/fixtures/synthetic-provider-smoke.mjs",
+        "sha256": "e19e91b83e504866a75e74f32c83b39bdc975e0cd947a2b887c91eb90af4990d"
+      }
+    ]
+  },
+  "versions": {
+    "node": "v24.18.0",
+    "docker_server": "29.8.0",
+    "postgresql": "18.6"
+  },
+  "database_name_prefix": "kyro_p1_e2e_",
+  "services": {
+    "postgres": "real",
+    "api": "real binary",
+    "worker": "real binary",
+    "oidc": "synthetic mock",
+    "inference": "synthetic mock"
+  },
+  "migrations": {
+    "concurrent_runs": [
+      {
+        "exit_code": 0,
+        "signal": null
+      },
+      {
+        "exit_code": 0,
+        "signal": null
+      }
+    ],
+    "replay_exit_code": 0
+  },
+  "database_created": true,
+  "existing_database_modified": false,
+  "real_secrets_used": false,
+  "measured_provider_requests": 13,
+  "measured_model_usage": "unknown until returned by the synthetic provider and persisted ledger",
+  "criteria": {
+    "P1-01": {
+      "status": "passed",
+      "checks": [
+        "locked binaries built",
+        "two concurrent migrations succeeded",
+        "migration replay succeeded",
+        "real PostgreSQL schema applied",
+        "API ready over HTTP",
+        "worker connected as kyro_worker and remained idle for two observations",
+        "API/worker roles are non-admin with forced RLS",
+        "Docker runtime used absolute API/worker entrypoints without forwarding a Windows host PATH"
+      ]
+    },
+    "P1-02": {
+      "status": "passed",
+      "checks": [
+        "RS256 synthetic OIDC success",
+        "bad issuer/audience/nonce refused",
+        "opaque cookie session",
+        "CSRF/Origin refusal",
+        "callback replay refusal",
+        "refresh revoked prior session",
+        "logout revoked persisted session",
+        "database-expired session refused"
+      ]
+    },
+    "P1-03": {
+      "status": "passed",
+      "checks": [
+        "two real identities/projects isolated across six HTTP read surfaces",
+        "valid cross-project ChangeSet and ApplyChanges admission refused with CSRF, Origin, If-Match, and idempotency headers",
+        "denied mutation left project revision, event sequence, jobs, change commands, events, and outbox unchanged",
+        "non-owner runtime role sees zero unscoped rows",
+        "FORCE ROW LEVEL SECURITY verified after project fixture creation"
+      ]
+    },
+    "P1-04": {
+      "status": "passed",
+      "checks": [
+        "revision 0 preserved",
+        "revision 1 contains only the declared node",
+        "stale CAS 412",
+        "missing If-Match 428",
+        "unknown and over-limit operations refused"
+      ]
+    },
+    "P1-05": {
+      "status": "passed",
+      "checks": [
+        "8 simultaneous same-key/same-fingerprint requests returned one result",
+        "same key with changed fingerprint refused 409",
+        "one revision and one event appended"
+      ]
+    },
+    "P1-06": {
+      "status": "passed",
+      "checks": [
+        "job remains pending while worker stopped",
+        "worker restart claims and completes durable job",
+        "SIGKILL during transactional internal apply rolls back and reclaims with higher generation"
+      ]
+    },
+    "P1-07": {
+      "status": "passed",
+      "checks": [
+        "source revision advanced while synthetic inference was blocked",
+        "late source result did not succeed job but settlement ledger persisted",
+        "project grant revoked while second inference was blocked; result suppressed and accounting persisted"
+      ]
+    },
+    "P1-08": {
+      "status": "passed",
+      "checks": [
+        "attempt/TTL and request-body bounds refused",
+        "queued-job saturation enforced",
+        "pending cancellation freed capacity without provider call",
+        "running cancellation suppressed business result with a single provider call"
+      ]
+    },
+    "P1-09": {
+      "status": "passed",
+      "checks": [
+        "six admitted model jobs competed through four PostgreSQL workers",
+        "atomic reservation never exceeded two-call budget",
+        "exactly two provider calls and two usage ledger rows settled",
+        "event rows used committed job lifecycle types"
+      ]
+    },
+    "P1-10": {
+      "status": "passed",
+      "checks": [
+        "known provider settlement survived SIGKILL before terminal job write and did not resend",
+        "interrupted sending became unknown and retained held reservation",
+        "different budget-only operator reconciled idempotently with zero additional provider requests",
+        "Processed proof rejects invalid schema without accounting changes and integrates valid schema once"
+      ]
+    },
+    "P1-11": {
+      "status": "passed",
+      "checks": [
+        "unregistered destination, secret category, and client secret reference refused before dispatch",
+        "malformed and oversized structured responses terminated without retry",
+        "error path kept a synthetic private-input canary out of public responses, service logs, events, and outbox"
+      ]
+    },
+    "P1-12": {
+      "status": "passed",
+      "checks": [
+        "persisted SSE replay and Last-Event-ID",
+        "malformed/future/foreign/mismatched cursor refusals",
+        "other-environment sequence hidden while global snapshot cursor advanced",
+        "subsequent visible event streamed across filtered sequence gap",
+        "genuinely pruned visible prefix returned 410",
+        "active stream closed after project grant revocation"
+      ]
+    },
+    "P1-13": {
+      "status": "passed",
+      "checks": [
+        "nonempty real PostgreSQL archive restored into a new isolated database",
+        "canonical fingerprints matched for actors, organizations, memberships, projects, grants including limits, revisions, decisions, change commands, jobs, effects, budget state, ledger, events, outbox, and sessions",
+        "prepared effect and SIGKILL-interrupted sending effect both retained held reservations; sending recovered to unknown without replay",
+        "runtime control remained disabled after worker restart and old pre-restore cookie was rejected",
+        "fresh synthetic OIDC login resolved persisted actor/owner membership and admitted ApplyChanges through the existing Execute grant",
+        "restored worker completed that command using Write; the expected preference and next revision were persisted",
+        "same-project local ReconcileEffect completed while restored ModelCalls had unchanged attempts and zero new provider calls"
+      ]
+    },
+    "P1-14": {
+      "status": "partial",
+      "reason": "report and repeatable runner are present; independent review is not executed by this harness"
+    }
+  },
+  "failure": null,
+  "open_api_validation": {
+    "command": "node scripts/check-openapi.mjs",
+    "node": "v24.18.0",
+    "response_schema_validator": "runner JSON Schema subset, OpenAPI 3.1 components",
+    "exit_code": 0
+  },
+  "build": {
+    "command": "docker build -f Dockerfile .",
+    "exit_code": 0,
+    "image_pinned_runtime": true,
+    "image_id": "sha256:770abc2399a44f66167fcd0f5869b0fdf115c805c1a59d7b1faf78f6c3cd012c"
+  },
+  "database_security": {
+    "runtime_roles_non_admin": true,
+    "forced_rls_tables": 9,
+    "runtime_context_cleared_after_commit": true,
+    "unscoped_project_rows_visible": 0
+  },
+  "secret_sentinel_included_in_test_input": true,
+  "api_readiness": {
+    "status": "ready",
+    "bind": "0.0.0.0:18080 (container; loopback-published)",
+    "runtime": "docker",
+    "absolute_entrypoint": "/usr/local/bin/kyro-api",
+    "host_windows_path_forwarded": false
+  },
+  "worker_readiness": {
+    "status": "connected_idle_stable",
+    "role": "kyro_worker",
+    "idle_observations": 2,
+    "shutdown": "SIGTERM",
+    "exit_code": 0,
+    "absolute_entrypoint": "/usr/local/bin/kyro-worker",
+    "host_windows_path_forwarded": false
+  },
+  "identity": {
+    "distinct_actors": true,
+    "bad_claims_rejected": 3,
+    "csrf_refused": true,
+    "origin_refused": true,
+    "refreshed_session_rotated": true,
+    "callback_replay_refused": true,
+    "logout_revoked": true,
+    "expired_session_refused": true
+  },
+  "project_pagination": {
+    "pages": 2,
+    "array_body_preserved": true,
+    "no_duplicates_or_foreign_projects": true,
+    "invalid_queries_refused": 4
+  },
+  "cross_project": {
+    "read_routes_refused": 6,
+    "all_read_routes_refused": true,
+    "project_b_owner_seed_revision": 1,
+    "mutation_attempts_refused": 2,
+    "mutation_http_statuses": [
+      404,
+      404
+    ],
+    "project_b_revision_before_after": [
+      1,
+      1
+    ],
+    "project_b_event_sequence_before_after": [
+      3,
+      3
+    ],
+    "project_b_counts_before": {
+      "jobs": 0,
+      "change_commands": 1,
+      "events": 3,
+      "outbox_events": 3
+    },
+    "project_b_counts_after": {
+      "jobs": 0,
+      "change_commands": 1,
+      "events": 3,
+      "outbox_events": 3
+    },
+    "no_cross_mutation_persisted": true,
+    "runtime_unscoped_project_rows": 0,
+    "context_cleared_after_commit": true
+  },
+  "revisions": {
+    "revision_zero_immutable": true,
+    "current_revision": 1,
+    "stale_refused": true,
+    "missing_if_match_refused": true,
+    "unknown_operation_refused": true,
+    "oversized_operation_count_refused": true
+  },
+  "idempotency": {
+    "concurrent_replays": 8,
+    "one_stable_result": true,
+    "fingerprint_mismatch_status": 409,
+    "revision_delta": 1,
+    "event_sequence_delta": 1
+  },
+  "worker_recovery": {
+    "idle_worker_stopped_before_admission": true,
+    "pending_job_persisted_while_stopped": true,
+    "pending_job_succeeded_after_restart": true,
+    "kill_during_internal_apply_signal": "SIGKILL",
+    "generation_before_crash": 1,
+    "generation_after_reclaim": 2,
+    "recovered_status": "succeeded"
+  },
+  "late_results": {
+    "source_change_status": "stale",
+    "source_change_reservation": "settled",
+    "source_change_ledger_rows": 1,
+    "grant_revocation_status": "stale",
+    "grant_revocation_reservation": "settled",
+    "grant_revocation_ledger_rows": 1,
+    "source_lifecycle_events": [
+      "job.queued",
+      "job.claimed",
+      "effect.prepared",
+      "effect.sending",
+      "effect.succeeded",
+      "job.stale"
+    ],
+    "grant_lifecycle_events": [
+      "job.queued",
+      "job.claimed",
+      "effect.prepared",
+      "effect.sending",
+      "effect.succeeded",
+      "job.stale"
+    ],
+    "provider_calls": 2
+  },
+  "bounds_and_cancellation": {
+    "invalid_attempt_and_ttl_requests_refused": 4,
+    "project_queue_saturation_refused": true,
+    "pending_cancellation_terminal": "cancelled",
+    "pending_model_provider_calls": 0,
+    "oversized_body_status": 413,
+    "invalid_deadline_status": 429,
+    "running_cancel_terminal": "cancelled",
+    "running_cancel_provider_calls": 1,
+    "deadline_terminal": "unknown",
+    "deadline_provider_calls": 1
+  },
+  "concurrent_budget": {
+    "limit_units": 648,
+    "measured_per_call_reservation_units": 324,
+    "provider_calls_while_held": 2,
+    "job_terminal_statuses": [
+      "succeeded",
+      "failed",
+      "succeeded",
+      "failed",
+      "failed",
+      "failed"
+    ],
+    "final_reserved_units": 0,
+    "final_spent_units": 56,
+    "ledger_rows_for_succeeded_jobs": [
+      1,
+      1
+    ],
+    "committed_lifecycle_event_sets": [
+      [
+        "job.queued",
+        "job.claimed",
+        "effect.prepared",
+        "effect.sending",
+        "effect.succeeded",
+        "job.succeeded"
+      ],
+      [
+        "job.queued",
+        "job.claimed",
+        "effect.prepared",
+        "effect.sending",
+        "effect.succeeded",
+        "job.succeeded"
+      ]
+    ]
+  },
+  "sse": {
+    "replayed_from_zero": true,
+    "last_event_id_resumed": true,
+    "malformed_cursor_refused": true,
+    "foreign_and_future_cursors_conflict": true,
+    "disagreeing_cursors_refused": true,
+    "other_environment_event_hidden": true,
+    "global_snapshot_cursor_includes_hidden_sequence": true,
+    "event_gap_replayed_without_reset": true,
+    "pruned_visible_prefix_returned_gone": true,
+    "revoked_stream_closed": true
+  },
+  "effect_recovery": {
+    "settled_effect_job_status": "succeeded",
+    "settled_effect_provider_calls": 1,
+    "settled_effect_ledger_before_and_after_restart": [
+      1,
+      1
+    ],
+    "settled_effect_lifecycle_events": [
+      "job.queued",
+      "job.claimed",
+      "effect.prepared",
+      "effect.sending",
+      "effect.succeeded",
+      "job.claimed",
+      "job.succeeded"
+    ],
+    "interrupted_job_status": "unknown",
+    "interrupted_effect_status": "unknown",
+    "interrupted_reservation_status": "held",
+    "reconciliation_job_status": "succeeded",
+    "reconciled_original_job_status": "failed",
+    "reconciled_effect_status": "failed",
+    "reconciled_reservation_status": "released",
+    "reconciliation_same_key_stable": true,
+    "reconciliation_changed_fingerprint_status": 409,
+    "budget_only_operator_can_read_own_reconciliation_job": true,
+    "budget_only_operator_cannot_read_original_job": true,
+    "unknown_send_provider_calls": 1,
+    "unknown_lifecycle_events": [
+      "job.queued",
+      "job.claimed",
+      "effect.prepared",
+      "effect.sending",
+      "effect.unknown",
+      "job.unknown"
+    ],
+    "reconciliation_lifecycle_events": [
+      "job.queued",
+      "job.claimed",
+      "effect.prepared",
+      "effect.sending",
+      "effect.unknown",
+      "job.unknown",
+      "effect.reconciled",
+      "job.reconciled"
+    ],
+    "budget_after_reconciliation": {
+      "reserved_units": 0,
+      "spent_units": 0
+    },
+    "usage_ledger_rows_after_not_processed": 0
+  },
+  "processed_reconciliation": {
+    "invalid_schema_job_status": "failed",
+    "invalid_schema_preserved_hold_and_ledger": true,
+    "valid_job_status": "succeeded",
+    "target_status": "succeeded",
+    "ledger_rows": 1,
+    "provider_calls": 1,
+    "budget": {
+      "limitUnits": 1000000,
+      "reservedUnits": 0,
+      "spentUnits": 28
+    }
+  },
+  "effect_privacy": {
+    "list_and_detail_omit_input_fingerprint": true,
+    "durable_intent_retains_fingerprint": true
+  },
+  "model_key_delivery": {
+    "api_process_has_model_key": false,
+    "worker_process_has_ephemeral_model_key": true
+  },
+  "gateway_admission_refusal_statuses": [
+    503,
+    403,
+    400
+  ],
+  "synthetic_secret_sentinel_absent_from_http_logs_and_events": true,
+  "gateway_bounds": {
+    "http_body_limit_bytes": 49152,
+    "response_policy_limit_bytes": 48000,
+    "invalid_destination_category_and_secret_reference_refused": 3,
+    "invalid_request_provider_calls": 0,
+    "bounded_output_scenarios": [
+      {
+        "scenario": "malformed",
+        "terminal_status": "unknown",
+        "provider_calls": 1
+      },
+      {
+        "scenario": "oversized",
+        "terminal_status": "unknown",
+        "provider_calls": 1
+      },
+      {
+        "scenario": "error-with-canary",
+        "terminal_status": "unknown",
+        "provider_calls": 1
+      }
+    ],
+    "secret_sentinel_absent_from_http_logs_events_and_outbox": true
+  },
+  "runtime_metrics": {
+    "endpoint_status": 200,
+    "request_counter": "kyro_http_requests_total",
+    "latency_histogram": "kyro_http_response_headers_seconds",
+    "project_probes": 5,
+    "terminal_local_jobs": 5,
+    "randomized_unmatched_paths": 5,
+    "randomized_unmatched_path_status_classes": [
+      4
+    ],
+    "unlisted_method_status_class": 4,
+    "unlisted_method_counter_delta": 1,
+    "observed_successful_get_counter_delta": 22,
+    "response_histogram_count": 237,
+    "series_cardinality_before": 62,
+    "series_cardinality_after": 62,
+    "metric_families": [
+      "kyro_http_requests_total",
+      "kyro_http_response_headers_seconds_bucket",
+      "kyro_http_response_headers_seconds_count",
+      "kyro_http_response_headers_seconds_sum"
+    ],
+    "label_names": {
+      "request_counter": [
+        "method",
+        "status_class"
+      ],
+      "latency_histogram_bucket": [
+        "le"
+      ]
+    },
+    "exposition_sample": [
+      "# HELP kyro_http_requests_total HTTP responses that produced headers.",
+      "# TYPE kyro_http_requests_total counter",
+      "kyro_http_requests_total{method=\"GET\",status_class=\"1xx\"} 0",
+      "kyro_http_requests_total{method=\"GET\",status_class=\"2xx\"} 90",
+      "kyro_http_requests_total{method=\"GET\",status_class=\"3xx\"} 11",
+      "kyro_http_requests_total{method=\"GET\",status_class=\"4xx\"} 32",
+      "kyro_http_requests_total{method=\"GET\",status_class=\"5xx\"} 0",
+      "kyro_http_requests_total{method=\"GET\",status_class=\"other\"} 0",
+      "kyro_http_requests_total{method=\"HEAD\",status_class=\"1xx\"} 0",
+      "kyro_http_requests_total{method=\"HEAD\",status_class=\"2xx\"} 0",
+      "kyro_http_requests_total{method=\"HEAD\",status_class=\"3xx\"} 0",
+      "kyro_http_requests_total{method=\"HEAD\",status_class=\"4xx\"} 0",
+      "kyro_http_requests_total{method=\"HEAD\",status_class=\"5xx\"} 0",
+      "kyro_http_requests_total{method=\"HEAD\",status_class=\"other\"} 0",
+      "kyro_http_requests_total{method=\"POST\",status_class=\"1xx\"} 0",
+      "kyro_http_requests_total{method=\"POST\",status_class=\"2xx\"} 63",
+      "kyro_http_requests_total{method=\"POST\",status_class=\"3xx\"} 0",
+      "kyro_http_requests_total{method=\"POST\",status_class=\"4xx\"} 19",
+      "kyro_http_requests_total{method=\"POST\",status_class=\"5xx\"} 1",
+      "kyro_http_requests_total{method=\"POST\",status_class=\"other\"} 0",
+      "kyro_http_requests_total{method=\"PUT\",status_class=\"1xx\"} 0",
+      "kyro_http_requests_total{method=\"PUT\",status_class=\"2xx\"} 15",
+      "kyro_http_requests_total{method=\"PUT\",status_class=\"3xx\"} 0",
+      "kyro_http_requests_total{method=\"PUT\",status_class=\"4xx\"} 0",
+      "kyro_http_requests_total{method=\"PUT\",status_class=\"5xx\"} 0",
+      "kyro_http_requests_total{method=\"PUT\",status_class=\"other\"} 0",
+      "kyro_http_requests_total{method=\"DELETE\",status_class=\"1xx\"} 0",
+      "kyro_http_requests_total{method=\"DELETE\",status_class=\"2xx\"} 5",
+      "kyro_http_requests_total{method=\"DELETE\",status_class=\"3xx\"} 0",
+      "kyro_http_requests_total{method=\"DELETE\",status_class=\"4xx\"} 0",
+      "kyro_http_requests_total{method=\"DELETE\",status_class=\"5xx\"} 0",
+      "kyro_http_requests_total{method=\"DELETE\",status_class=\"other\"} 0",
+      "kyro_http_requests_total{method=\"PATCH\",status_class=\"1xx\"} 0",
+      "kyro_http_requests_total{method=\"PATCH\",status_class=\"2xx\"} 0",
+      "kyro_http_requests_total{method=\"PATCH\",status_class=\"3xx\"} 0",
+      "kyro_http_requests_total{method=\"PATCH\",status_class=\"4xx\"} 0",
+      "kyro_http_requests_total{method=\"PATCH\",status_class=\"5xx\"} 0",
+      "kyro_http_requests_total{method=\"PATCH\",status_class=\"other\"} 0",
+      "kyro_http_requests_total{method=\"OPTIONS\",status_class=\"1xx\"} 0",
+      "kyro_http_requests_total{method=\"OPTIONS\",status_class=\"2xx\"} 0",
+      "kyro_http_requests_total{method=\"OPTIONS\",status_class=\"3xx\"} 0",
+      "kyro_http_requests_total{method=\"OPTIONS\",status_class=\"4xx\"} 0",
+      "kyro_http_requests_total{method=\"OPTIONS\",status_class=\"5xx\"} 0",
+      "kyro_http_requests_total{method=\"OPTIONS\",status_class=\"other\"} 0",
+      "kyro_http_requests_total{method=\"OTHER\",status_class=\"1xx\"} 0",
+      "kyro_http_requests_total{method=\"OTHER\",status_class=\"2xx\"} 0",
+      "kyro_http_requests_total{method=\"OTHER\",status_class=\"3xx\"} 0",
+      "kyro_http_requests_total{method=\"OTHER\",status_class=\"4xx\"} 1",
+      "kyro_http_requests_total{method=\"OTHER\",status_class=\"5xx\"} 0",
+      "kyro_http_requests_total{method=\"OTHER\",status_class=\"other\"} 0",
+      "# HELP kyro_http_response_headers_seconds Time until the response headers are produced.",
+      "# TYPE kyro_http_response_headers_seconds histogram",
+      "kyro_http_response_headers_seconds_bucket{le=\"0.005\"} 26",
+      "kyro_http_response_headers_seconds_bucket{le=\"0.01\"} 35",
+      "kyro_http_response_headers_seconds_bucket{le=\"0.025\"} 103",
+      "kyro_http_response_headers_seconds_bucket{le=\"0.05\"} 189",
+      "kyro_http_response_headers_seconds_bucket{le=\"0.1\"} 220",
+      "kyro_http_response_headers_seconds_bucket{le=\"0.25\"} 226",
+      "kyro_http_response_headers_seconds_bucket{le=\"0.5\"} 237",
+      "kyro_http_response_headers_seconds_bucket{le=\"1\"} 237",
+      "kyro_http_response_headers_seconds_bucket{le=\"2.5\"} 237",
+      "kyro_http_response_headers_seconds_bucket{le=\"5\"} 237",
+      "kyro_http_response_headers_seconds_bucket{le=\"10\"} 237",
+      "kyro_http_response_headers_seconds_bucket{le=\"+Inf\"} 237",
+      "kyro_http_response_headers_seconds_sum 11.088644157",
+      "kyro_http_response_headers_seconds_count 237"
+    ]
+  },
+  "restore_pause": {
+    "same_project": true,
+    "local_command_terminal_status": "succeeded",
+    "paused_model_status_before_cancel": "pending",
+    "paused_model_attempts": 0,
+    "paused_model_generation": 0,
+    "provider_calls_while_paused": 0,
+    "paused_model_cancel_status": "cancelled"
+  },
+  "restore_source_preconditions": {
+    "projects_are_distinct": true,
+    "prepared_job_status": "running",
+    "prepared_effect_status": "prepared",
+    "prepared_reservation_status": "held",
+    "sending_job_status": "running",
+    "sending_effect_status": "sending",
+    "sending_reservation_status": "held",
+    "sending_provider_call_count": 13
+  },
+  "restore": {
+    "archive_sha256": "9d21a6364985e8cd806bf8b990dde81c1a9b157978b56f6f90b130f0b349d25b",
+    "archive_bytes": 197572,
+    "source_database": "kyro_p1_e2e_26bd77169bfade63",
+    "restore_database": "kyro_restore_26bd77169bfade63",
+    "restore_engine": "managed PowerShell backup/restore CLI",
+    "integrity_fingerprints_match": true,
+    "fingerprinted_tables": 16,
+    "fingerprint_row_counts": {
+      "actors": 4,
+      "organizations": 2,
+      "memberships": 3,
+      "projects": 16,
+      "capability_grants": 19,
+      "app_revisions": 29,
+      "change_commands": 45,
+      "decisions": 16,
+      "jobs": 33,
+      "effects": 14,
+      "budget_reservations": 14,
+      "project_budgets": 16,
+      "usage_ledger": 7,
+      "events": 185,
+      "outbox_events": 183,
+      "sessions": 3
+    },
+    "source_prepared_job_generation": 1,
+    "restored_pending_job_generation": 2,
+    "source_sending_job_status": "running",
+    "source_sending_effect_status": "sending",
+    "restored_sending_job_status": "unknown",
+    "restored_sending_effect_status": "unknown",
+    "source_sending_job_attempts": 1,
+    "restored_sending_job_attempts": 1,
+    "prepared_effect_after_restore": "prepared",
+    "prepared_reservation_after_restore": "held",
+    "prepared_reserved_units_after_restore": 342,
+    "prepared_spent_units_after_restore": 0,
+    "sending_effect_after_restore": "unknown",
+    "sending_reservation_after_restore": "held",
+    "sending_job_after_restore": "unknown",
+    "sending_job_attempts_after_restore": 1,
+    "sending_reserved_units_after_restore": 346,
+    "sending_spent_units_after_restore": 0,
+    "external_sends_enabled_after_restore": false,
+    "running_jobs_after_restore": 0,
+    "sending_effects_after_restore": 0,
+    "active_sessions_after_restore": 0,
+    "login_flows_after_restore": 0,
+    "worker_started_on_restore": false,
+    "worker_restart_after_restore_tested_separately": true,
+    "preexisting_database_modified": false,
+    "worker_started_after_restore_for_verification": true,
+    "integrity_fingerprinted_tables": 16
+  },
+  "restore_database_created": true,
+  "restore_runtime": {
+    "old_cookie_rejected_http_status": 401,
+    "fresh_oidc_login_succeeded": true,
+    "persisted_actor_and_owner_membership_resolved": true,
+    "persisted_project_read_authorized": true,
+    "persisted_execute_grant_authorized": true,
+    "persisted_apply_changes_job_status": "succeeded",
+    "persisted_apply_changes_revision_before_after": [
+      5,
+      6
+    ],
+    "persisted_apply_changes_preference_committed": true,
+    "restored_worker_started": true,
+    "restored_worker_role": "kyro_worker",
+    "restored_worker_idle_observations": 2,
+    "local_job_terminal_status": "succeeded",
+    "local_job_kind": "ReconcileEffect/not_processed",
+    "paused_prepared_model_status_after_resume": "pending",
+    "paused_prepared_model_attempts_before_after": [
+      1,
+      1
+    ],
+    "interrupted_sending_model_status_after_resume": "failed",
+    "interrupted_sending_model_attempts_before_after": [
+      1,
+      1
+    ],
+    "external_sends_enabled_after_worker_start": false,
+    "provider_call_delta_after_worker_start": 0,
+    "fresh_session_logout_http_status": 204,
+    "fresh_session_rejected_after_logout_http_status": 401,
+    "active_sessions_after_logout": 0,
+    "worker_shutdown": "SIGTERM",
+    "worker_exit_code": 0,
+    "inference_calls_before_worker": 13
+  },
+  "source_unchanged": true,
+  "synthetic_secret_sentinel_absent_from_process_logs": true,
+  "database_dropped_after_success": false,
+  "restore_database_dropped_after_success": false,
+  "finished_at": "2026-10-04T01:13:02.347Z",
+  "evidence_path": "docs/suivi/preuves/part1-e2e-20261004T010836-26bd77169bfade63.json"
+}
