@@ -35,4 +35,3 @@ CREATE POLICY jobs_admit_reconciliation ON public.jobs FOR INSERT TO kyro_api
                AND r.status = 'held'
         )
     );
-

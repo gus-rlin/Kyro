@@ -12,7 +12,7 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
-$repoRoot = [IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot)).TrimEnd('\')
+$repoRoot = [IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot)).TrimEnd([IO.Path]::DirectorySeparatorChar, [IO.Path]::AltDirectorySeparatorChar)
 $expectedImage = 'postgres:18.6-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873'
 $volumeName = if ($TargetEnvironment -eq 'Local') { 'kyro-p1-ops_postgres-data' } else { 'kyro-p1-production_postgres-data' }
 $projectName = if ($TargetEnvironment -eq 'Local') { 'kyro-p1-ops' } else { 'kyro-p1-production' }
@@ -155,7 +155,9 @@ if (-not (Test-Path -LiteralPath $composeFile -PathType Leaf) -or -not (Test-Pat
 if (-not (Test-Path -LiteralPath $outputFullPath -PathType Leaf)) {
     throw 'The backup archive does not exist.'
 }
-if ($outputFullPath.StartsWith($repoRoot + '\', [StringComparison]::OrdinalIgnoreCase) -or $outputFullPath -eq $repoRoot) {
+$pathComparison = if ([IO.Path]::DirectorySeparatorChar -eq '\') { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
+if ($outputFullPath.StartsWith($repoRoot + [IO.Path]::DirectorySeparatorChar, $pathComparison) -or
+    [string]::Equals($outputFullPath, $repoRoot, $pathComparison)) {
     throw 'Restore archives must be read from outside the repository.'
 }
 if ((Get-Item -LiteralPath $outputFullPath).Length -eq 0) {
