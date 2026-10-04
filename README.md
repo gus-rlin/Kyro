@@ -1,8 +1,32 @@
-# Kyro — backend de pilotage P1
+# Kyro — interface desktop et backend Rust
 
 Kyro sépare le contrat des applications Rust de l’API HTTP, de la persistance PostgreSQL, de la passerelle de modèles et du worker. Cette tranche fournit un runtime API versionné, des travaux persistés, un budget par projet, une lecture des effets, des commandes asynchrones de rapprochement et un flux d’événements SSE privé. Le fournisseur OIDC et les fournisseurs de modèles restent configurés séparément; aucun fournisseur NVIDIA réel n’est qualifié par ces contrôles.
 
-## Développement local
+## Interface Kyro
+
+Notre frontend React + TypeScript et son enveloppe Electron sont dans [`apps/desktop`](apps/desktop). Il contient l’interface actuelle, les assets, la création de projets, l’explorateur, les worktrees, les menus d’équipe et les réglages du composeur.
+
+Sur Windows, avec Node.js 22.12+ et npm :
+
+```powershell
+cd apps/desktop
+npm ci
+npm run dev
+```
+
+Le lancement prépare le Git privé vérifié par SHA-256, puis ouvre Electron. Pour le rendu web seul : `npx vite --host 127.0.0.1` (les fonctions natives nécessitent Windows). Voir le [guide frontend](apps/desktop/README.md) pour les tests, le packaging et les limites. Les réglages d’agents sont une maquette ; le chat n’est pas encore relié au backend.
+
+### Repères pour les contributeurs et les agents
+
+- `apps/desktop/src/` : composants React, styles et assets de notre interface.
+- `apps/desktop/electron/` : fenêtre native, IPC et gestion des dossiers.
+- `apps/desktop/tests/` : recettes Electron et tests des coûts comparatifs.
+- `crates/` : API, domaine, stockage, passerelle et worker Rust.
+- `docs/backend/` : documentation du backend.
+
+Les futures interfaces des applications générées restent prévues en Leptos ; elles sont distinctes de cette interface de l’IDE.
+
+## Développement local du backend
 
 Le dépôt utilise le toolchain Rust indiqué par [`rust-toolchain.toml`](rust-toolchain.toml). Une base PostgreSQL réelle est nécessaire pour les parcours d’intégration. Les scripts d’infrastructure et le schéma des rôles sont décrits dans [`docs/backend/partie-1/OPERATIONS.md`](docs/backend/partie-1/OPERATIONS.md); exécuter les migrations avec le rôle admin avant de lancer l’API ou le worker.
 

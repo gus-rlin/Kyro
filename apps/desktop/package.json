@@ -1,0 +1,36 @@
+{
+  "name": "kyro-desktop",
+  "productName": "Kyro",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Kyro — enveloppe desktop de démonstration",
+  "license": "UNLICENSED",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "prepare:git": "node scripts/prepare-git.mjs",
+    "predev": "npm run prepare:git",
+    "dev": "node scripts/dev.mjs",
+    "typecheck": "tsc --noEmit",
+    "build": "npm run typecheck && vite build",
+    "package": "npm run prepare:git && npm run build && node scripts/package.mjs",
+    "test": "playwright test",
+    "audit": "npm audit"
+  },
+  "dependencies": {
+    "@fontsource-variable/manrope": "5.3.0",
+    "@phosphor-icons/react": "2.1.10",
+    "@radix-ui/react-tabs": "1.1.21",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@electron/packager": "20.3.0",
+    "@playwright/test": "1.63.0",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.1",
+    "electron": "44.5.1",
+    "typescript": "7.0.2",
+    "vite": "8.3.2"
+  }
+}

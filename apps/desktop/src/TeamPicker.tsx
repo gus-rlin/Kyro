@@ -1,0 +1,50 @@
+import { ComposerChoice } from './ComposerChoice';
+import { useEffect, useRef } from 'react';
+import { CaretDown, Minus, Plus, TreeStructure, Users } from '@phosphor-icons/react';
+import { describeTeam, getTeamModel, modelCostHint, modelCostNote, teamModels, type TeamConfiguration } from './team-models';
+
+export function TeamPicker({ team, onChange }: { team: TeamConfiguration; onChange: (team: TeamConfiguration) => void }) {
+  const picker = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    const closeOutside = (event: PointerEvent) => {
+      if (!picker.current?.contains(event.target as Node)) picker.current?.removeAttribute('open');
+    };
+    document.addEventListener('pointerdown', closeOutside);
+    return () => document.removeEventListener('pointerdown', closeOutside);
+  }, []);
+  const orchestrator = getTeamModel(team.orchestrator);
+  const worker = getTeamModel(team.worker);
+  const modelChoices = teamModels.map((model) => ({ value: model.id, label: model.name, description: modelCostNote(model.id), hint: modelCostHint(model.id) }));
+
+  return <details ref={picker} className="team-picker" name="application-menu" onToggle={(event) => { if (!event.currentTarget.open) event.currentTarget.querySelectorAll('details[open]').forEach((item) => item.removeAttribute('open')); }} onKeyDown={(event) => {
+    if (event.key === 'Escape') {
+      picker.current?.removeAttribute('open');
+      picker.current?.querySelector('summary')?.focus();
+      event.stopPropagation();
+    }
+  }}>
+    <summary className="team-trigger" aria-label={`Configurer l’équipe : ${describeTeam(team)} (démo)`}>
+      <TreeStructure size={17} /><span className="team-trigger-label"><strong>{orchestrator.short}</strong><span className="team-trigger-dot">·</span>{team.workers} {worker.short}</span><CaretDown size={12} />
+    </summary>
+    <section className="team-panel" aria-label="Composition de l’équipe">
+      <header className="team-panel-header"><div><h2>Votre équipe</h2><p>Modèles et nombre de sous-agents.</p></div><span className="team-demo">Démo</span></header>
+      <div className="team-role">
+        <span className="team-role-icon"><TreeStructure size={20} /></span>
+        <div className="team-role-content"><strong>Orchestrateur</strong><p>Planifie, délègue et arbitre.</p>
+          <ComposerChoice label="Orchestrateur" selected={team.orchestrator} choices={modelChoices} onSelect={(orchestrator) => onChange({ ...team, orchestrator })} />
+        </div>
+      </div>
+      <div className="team-role">
+        <span className="team-role-icon workers"><Users size={20} /></span>
+        <div className="team-role-content"><strong>Sous-agents</strong><p>Composent et vérifient les blocs.</p>
+          <ComposerChoice label="Sous-agents" selected={team.worker} choices={modelChoices} onSelect={(worker) => onChange({ ...team, worker })} />
+        </div>
+      </div>
+      <div className="team-capacity"><div><strong>En parallèle</strong><small>Jusqu’à {team.workers} sous-agent{team.workers > 1 ? 's' : ''}</small></div><div className="team-stepper" role="group" aria-label="Nombre de sous-agents">
+        <button type="button" aria-label="Moins de sous-agents" disabled={team.workers <= 1} onClick={() => onChange({ ...team, workers: Math.max(1, team.workers - 1) })}><Minus size={14} /></button>
+        <output aria-live="polite">{team.workers}</output>
+        <button type="button" aria-label="Plus de sous-agents" disabled={team.workers >= 32} onClick={() => onChange({ ...team, workers: Math.min(32, team.workers + 1) })}><Plus size={14} /></button>
+      </div></div>
+    </section>
+  </details>;
+}
