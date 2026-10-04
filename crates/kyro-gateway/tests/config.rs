@@ -104,3 +104,39 @@ fn registry_rejects_non_loopback_pins_and_host_confusion() {
         Err(Error::Invalid(_))
     ));
 }
+
+#[test]
+fn cloud_registry_accepts_public_neighbors_but_rejects_special_purpose_pins() {
+    let mut registry: serde_json::Value = serde_json::from_str(SYNTHETIC_REGISTRY).unwrap();
+    let destination = &mut registry["destinations"][0];
+    destination["kind"] = serde_json::json!("cloud");
+    destination["base_url"] = serde_json::json!("https://provider.example.test/v1/");
+    destination["allowed_host"] = serde_json::json!("provider.example.test");
+    for (pin, allowed) in [
+        ("192.0.1.10:443", true),
+        ("198.51.1.10:443", true),
+        ("[::ffff:192.0.1.10]:443", true),
+        ("[::ffff:198.51.1.10]:443", true),
+        ("192.0.0.1:443", false),
+        ("192.0.2.1:443", false),
+        ("192.168.1.1:443", false),
+        ("198.18.1.1:443", false),
+        ("198.19.1.1:443", false),
+        ("198.51.100.1:443", false),
+        ("[::ffff:192.0.0.1]:443", false),
+        ("[::ffff:192.0.2.1]:443", false),
+        ("[::ffff:198.51.100.1]:443", false),
+    ] {
+        registry["destinations"][0]["pinned_addresses"] = serde_json::json!([pin]);
+        assert_eq!(
+            GatewayConfig::for_admission_from_registry_json(
+                &serde_json::to_vec(&registry).unwrap(),
+                Environment::Production,
+                false,
+            )
+            .is_ok(),
+            allowed,
+            "pin {pin}"
+        );
+    }
+}
