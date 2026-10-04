@@ -466,7 +466,13 @@ fn prepare_provider_request(
         .map_err(|_| Error::ResourceLimit)?
         .checked_add(destination.wire_overhead_tokens)
         .ok_or(Error::ResourceLimit)?;
-    if conservative > model.limits.max_input_tokens {
+    if conservative > model.limits.max_input_tokens
+        || destination.context_tokens.is_some_and(|context| {
+            conservative
+                .checked_add(request.max_output_tokens)
+                .is_none_or(|total| total > context)
+        })
+    {
         return Err(Error::ResourceLimit);
     }
     // Nebius exposes no immutable serving-tokenizer revision. Reserve its entire catalog
@@ -725,7 +731,7 @@ mod nebius_tests {
 
     #[test]
     fn nebius_wire_contract_and_context_reservation_are_bounded() {
-        let config = config();
+        let mut config = config();
         let destination = &config.destinations[0];
         let model = &destination.models[0];
         let request = ModelRequest {
@@ -758,6 +764,19 @@ mod nebius_tests {
                 .unwrap()
                 < 673_500_000
         );
+        let total = prepared.bytes.len() as u32
+            + destination.wire_overhead_tokens
+            + request.max_output_tokens;
+        let destination = &mut config.destinations[0];
+        destination.context_tokens = Some(total);
+        destination.models[0].limits.max_input_tokens = total;
+        assert!(prepare_provider_request(&request, destination, &destination.models[0]).is_ok());
+        destination.context_tokens = Some(total - 1);
+        destination.models[0].limits.max_input_tokens = total - 1;
+        assert!(matches!(
+            prepare_provider_request(&request, destination, &destination.models[0]),
+            Err(Error::ResourceLimit)
+        ));
     }
 
     #[test]

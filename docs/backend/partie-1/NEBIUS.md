@@ -80,4 +80,6 @@ pwsh -NoProfile -File scripts/nebius-runtime.ps1 -Action Stop
 
 This removes the worker and its secret tmpfs, stops the dedicated services and preserves durable budgets. `-Action RefreshPins` explicitly validates new addresses after stopping/removing worker and guard; it does not restart them.
 
+Certificates expire after 30 days. Run `pwsh -NoProfile -File scripts/nebius-runtime.ps1 -Action RefreshTls` to stop the dedicated services and regenerate the CA and server certificates without resetting the campaign, credentials or PostgreSQL volume. Services remain stopped; run `Start` after checking qualification again. PostgreSQL mounts only its server key and certificate; the CA signing key stays on the host. `Start` shuts down all dedicated services if bootstrapping fails after launch.
+
 Recognizable secrets and forbidden categories are rejected before queue persistence and checked again by the worker. This is a limited denylist, not exhaustive DLP. The vault protects local copies; it cannot remove a key already shared in a conversation or protect against a compromised host administrator. Automated provider tests are synthetic. Live activation remains blocked until the missing qualification evidence exists.

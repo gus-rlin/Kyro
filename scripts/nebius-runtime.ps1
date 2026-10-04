@@ -1,4 +1,4 @@
-param([ValidateSet('Prepare','RefreshPins','Start','Stop','Status')][string]$Action = 'Status')
+param([ValidateSet('Prepare','RefreshPins','RefreshTls','Start','Stop','Status')][string]$Action = 'Status')
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $runtimeAction = $Action
@@ -16,6 +16,15 @@ function Read-Json([string]$Name) { Get-Content -LiteralPath (Join-Path $state $
 function Invoke-Compose([string[]]$Arguments) {
     & docker compose --project-name kyro-nebius-p1 --file $compose @Arguments
     if ($LASTEXITCODE -ne 0) { throw 'compose_failed' }
+}
+function Write-Tls {
+    [IO.Directory]::CreateDirectory((Join-Path $state 'tls')) | Out-Null
+    & docker run --rm --network none --entrypoint sh --mount "type=bind,source=$state,target=/state" kyro-nebius-guard:local -ec 'umask 077; openssl req -x509 -newkey rsa:3072 -nodes -days 30 -subj /CN=Kyro-Nebius-P1-CA -keyout /state/tls/ca.key -out /state/tls/ca.crt 2>/dev/null; openssl req -newkey rsa:3072 -nodes -subj /CN=postgres -keyout /state/tls/server.key -out /state/tls/server.csr 2>/dev/null; printf "subjectAltName=DNS:postgres,IP:10.248.73.2\nextendedKeyUsage=serverAuth\n" > /state/tls/server.ext; openssl x509 -req -in /state/tls/server.csr -CA /state/tls/ca.crt -CAkey /state/tls/ca.key -CAcreateserial -days 30 -extfile /state/tls/server.ext -out /state/tls/server.crt 2>/dev/null; chmod 644 /state/tls/ca.crt /state/tls/server.crt'
+    if ($LASTEXITCODE -ne 0) { throw 'tls_generation_failed' }
+}
+function Stop-Runtime {
+    Invoke-Compose @('stop','oidc','api','worker','egress','postgres')
+    Invoke-Compose @('rm','-f','worker')
 }
 function New-Password { [Convert]::ToHexString([Security.Cryptography.RandomNumberGenerator]::GetBytes(32)).ToLowerInvariant() }
 function Protect-State {
@@ -110,8 +119,15 @@ if ($Action -eq 'Status') {
     return
 }
 if ($Action -eq 'Stop') {
-    Invoke-Compose @('stop','worker'); Invoke-Compose @('rm','-f','worker')
-    Invoke-Compose @('stop','oidc','api','egress','postgres')
+    Stop-Runtime
+    return
+}
+if ($Action -eq 'RefreshTls') {
+    if (-not (Test-Path -LiteralPath (Join-Path $state 'campaign.json') -PathType Leaf)) { throw 'state_not_prepared' }
+    Protect-State
+    Stop-Runtime
+    Write-Tls
+    Write-Output 'Certificats TLS renouvelés ; campagne et budget conservés, services arrêtés.'
     return
 }
 if ($Action -eq 'Prepare') {
@@ -140,9 +156,7 @@ if ($Action -eq 'Prepare') {
         $databaseHost = if ($role[0] -eq 'worker') { '10.248.73.2' } else { 'postgres' }
         Write-State ($role[0]+'_database_url') ('postgresql://kyro_'+$role[0]+':'+$role[1]+'@'+$databaseHost+':5432/kyro_nebius?sslmode=verify-full&sslrootcert=/run/secrets/postgres_ca')
     }
-    [IO.Directory]::CreateDirectory((Join-Path $state 'tls')) | Out-Null
-    & docker run --rm --network none --entrypoint sh --mount "type=bind,source=$state,target=/state" kyro-nebius-guard:local -ec 'umask 077; openssl req -x509 -newkey rsa:3072 -nodes -days 30 -subj /CN=Kyro-Nebius-P1-CA -keyout /state/tls/ca.key -out /state/tls/ca.crt 2>/dev/null; openssl req -newkey rsa:3072 -nodes -subj /CN=postgres -keyout /state/tls/server.key -out /state/tls/server.csr 2>/dev/null; printf "subjectAltName=DNS:postgres,IP:10.248.73.2\nextendedKeyUsage=serverAuth\n" > /state/tls/server.ext; openssl x509 -req -in /state/tls/server.csr -CA /state/tls/ca.crt -CAkey /state/tls/ca.key -CAcreateserial -days 30 -extfile /state/tls/server.ext -out /state/tls/server.crt 2>/dev/null; chmod 644 /state/tls/ca.crt /state/tls/server.crt'
-    if ($LASTEXITCODE -ne 0) { throw 'tls_generation_failed' }
+    Write-Tls
     Write-State 'api.env' @"
 KYRO_ENV=development
 KYRO_BIND=0.0.0.0:58090
@@ -200,8 +214,7 @@ if ($Action -eq 'Start') {
     } finally { [Array]::Clear($plain,0,$plain.Length); $process.Dispose() }
     Write-Output 'Worker isolé lancé ; qualification via verify-nebius-p1.mjs, puis Stop obligatoire.'
     } catch {
-        Invoke-Compose @('stop','worker')
-        Invoke-Compose @('rm','-f','worker')
+        Stop-Runtime
         throw
     }
 }

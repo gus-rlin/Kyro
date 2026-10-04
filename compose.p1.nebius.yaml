@@ -12,8 +12,12 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql
       - type: bind
-        source: ${KYRO_NEBIUS_STATE}/tls
-        target: /run/tls
+        source: ${KYRO_NEBIUS_STATE}/tls/server.key
+        target: /run/tls/server.key
+        read_only: true
+      - type: bind
+        source: ${KYRO_NEBIUS_STATE}/tls/server.crt
+        target: /run/tls/server.crt
         read_only: true
       - type: bind
         source: ${KYRO_NEBIUS_STATE}/init.sql
