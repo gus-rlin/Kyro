@@ -194,7 +194,6 @@ struct RequestId(String);
 pub fn router(state: AppState) -> Router {
     let body_limit = state.config.max_body_bytes.min(MAX_HTTP_BODY_BYTES);
     let normal_routes = Router::new()
-        .route("/health/live", get(health_live))
         .route("/health/ready", get(health_ready))
         .route("/metrics", get(metrics))
         .merge(identity::routes())
@@ -207,6 +206,7 @@ pub fn router(state: AppState) -> Router {
         ))
         .route_layer(middleware::from_fn(request_deadline));
     Router::new()
+        .route("/health/live", get(health_live))
         .merge(normal_routes)
         .merge(events::routes())
         .layer(DefaultBodyLimit::max(body_limit))
@@ -431,6 +431,103 @@ mod tests {
     use axum::http::{Method, StatusCode};
 
     use super::{HttpControls, HttpMetrics, safe_http_method};
+
+    #[tokio::test]
+    #[ignore = "requires a migrated PostgreSQL database in KYRO_TEST_DATABASE_URL"]
+    async fn liveness_survives_saturation_of_the_ordinary_request_pool() {
+        use super::*;
+        use crate::identity::OidcProviderConfig;
+        let database_url = std::env::var("KYRO_TEST_DATABASE_URL").unwrap();
+        let store = Store::connect(&database_url, 1).await.unwrap();
+        let config = Config {
+            environment: Environment::Development,
+            database_url,
+            worker_database_url: String::new(),
+            bind: "127.0.0.1:0".parse().unwrap(),
+            max_connections: 1,
+            worker_poll_ms: 100,
+            lease_seconds: 10,
+            max_body_bytes: MAX_HTTP_BODY_BYTES,
+            synthetic_providers: true,
+        };
+        let endpoint = "http://127.0.0.1:9999/".parse::<url::Url>().unwrap();
+        let auth = AuthConfig::new(
+            Environment::Development,
+            OidcProviderConfig {
+                issuer: endpoint.to_string(),
+                authorization_endpoint: endpoint.clone(),
+                token_endpoint: endpoint.clone(),
+                jwks_uri: endpoint.clone(),
+                redirect_uri: endpoint,
+                client_id: "synthetic".into(),
+                client_secret: None,
+            },
+            "http://127.0.0.1:3000",
+            true,
+        )
+        .unwrap();
+        let gateway = Gateway::new(
+            GatewayConfig::from_registry_json(
+                include_bytes!("../../../config/models.synthetic.json"),
+                Environment::Development,
+                true,
+                None,
+            )
+            .unwrap(),
+        )
+        .unwrap();
+        let state = AppState::new(store, Arc::new(config), Arc::new(auth), Arc::new(gateway));
+        let permits = state
+            .http
+            .request_permits
+            .clone()
+            .acquire_many_owned(MAX_IN_FLIGHT_REQUESTS as u32)
+            .await
+            .unwrap();
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let url = format!("http://{}", listener.local_addr().unwrap());
+        let app = router(state.clone());
+        let server = tokio::spawn(async { axum::serve(listener, app).await.unwrap() });
+        let client = reqwest::Client::new();
+        for path in ["/health/ready", "/metrics", "/v1/projects"] {
+            assert_eq!(
+                client
+                    .get(format!("{url}{path}"))
+                    .send()
+                    .await
+                    .unwrap()
+                    .status(),
+                StatusCode::TOO_MANY_REQUESTS
+            );
+        }
+        let live = client
+            .get(format!("{url}/health/live"))
+            .header("origin", "http://127.0.0.1:3000")
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(live.status(), StatusCode::OK);
+        assert!(live.headers().contains_key("x-request-id"));
+        assert_eq!(
+            live.headers()["access-control-allow-origin"],
+            "http://127.0.0.1:3000"
+        );
+        assert_eq!(
+            live.json::<serde_json::Value>().await.unwrap(),
+            serde_json::json!({"status":"live"})
+        );
+        drop(permits);
+        assert_eq!(
+            client
+                .get(format!("{url}/health/ready"))
+                .send()
+                .await
+                .unwrap()
+                .status(),
+            StatusCode::OK
+        );
+        server.abort();
+    }
 
     #[tokio::test]
     async fn cors_allows_only_the_configured_ui_with_credentials_and_bounded_headers() {
