@@ -2458,8 +2458,7 @@
                 "project_specification",
                 "project_source",
                 "diagnostics",
-                "end_user_data",
-                "secret"
+                "end_user_data"
               ]
             },
             "maxItems": 16,
