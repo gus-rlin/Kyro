@@ -2830,7 +2830,6 @@
           "project_id",
           "job_id",
           "destination_id",
-          "fingerprint",
           "reservation_id",
           "reserved_units",
           "request_purpose",
@@ -2856,16 +2855,6 @@
           },
           "destination_id": {
             "type": "string"
-          },
-          "fingerprint": {
-            "type": "array",
-            "minItems": 32,
-            "maxItems": 32,
-            "items": {
-              "type": "integer",
-              "minimum": 0,
-              "maximum": 255
-            }
           },
           "reservation_id": {
             "type": "string",
@@ -3003,7 +2992,6 @@
           "project_id",
           "generation",
           "destination",
-          "fingerprint",
           "status",
           "intent",
           "result",
@@ -3033,16 +3021,6 @@
           },
           "destination": {
             "type": "string"
-          },
-          "fingerprint": {
-            "type": "array",
-            "minItems": 32,
-            "maxItems": 32,
-            "items": {
-              "type": "integer",
-              "minimum": 0,
-              "maximum": 255
-            }
           },
           "status": {
             "$ref": "#/components/schemas/EffectStatus"

@@ -1372,9 +1372,8 @@ fn effect_view(row: PgRow) -> Result<EffectRecordView> {
         project_id: effect.project_id,
         generation: effect.generation,
         destination: effect.destination,
-        fingerprint: effect.fingerprint,
         status: effect.status,
-        intent: effect.intent,
+        intent: effect.intent.into(),
         result: effect
             .result
             .as_ref()
