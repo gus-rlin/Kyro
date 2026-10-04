@@ -1,0 +1,71 @@
+{
+  "format_version": 1,
+  "destinations": [
+    {
+      "kind": "cloud",
+      "secret_ref": "file:KYRO_MODEL_API_KEY_FILE",
+      "qualified": false,
+      "pinned_addresses": [
+        "213.239.161.19:443"
+      ],
+      "id": "nebius-nvidia",
+      "allowed_host": "api.tokenfactory.nebius.com",
+      "provider": "nebius",
+      "retention_seconds": null,
+      "nebius": {
+        "wire_overhead_tokens": 1024,
+        "retention_evidence": null,
+        "json_schema": false,
+        "bounded_completion": true,
+        "context_tokens": 262144
+      },
+      "models": [
+        {
+          "max_deadline_ms": 30000,
+          "max_response_bytes": 16000,
+          "max_input_bytes": 4096,
+          "id": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+          "output_schema": {
+            "id": "nebius-p1-output",
+            "schema": {
+              "type": "object",
+              "required": [
+                "summary",
+                "items"
+              ],
+              "properties": {
+                "summary": {
+                  "maxLength": 300,
+                  "type": "string"
+                },
+                "items": {
+                  "type": "array",
+                  "maxItems": 3,
+                  "items": {
+                    "maxLength": 100,
+                    "type": "string"
+                  }
+                }
+              },
+              "additionalProperties": false
+            },
+            "version": "1"
+          },
+          "max_input_tokens": 262144,
+          "max_output_tokens": 512,
+          "version": null,
+          "pricing": {
+            "effective_date": "2026-10-04",
+            "currency": "USD",
+            "unit_scale": 1000000000,
+            "output_units_per_million_tokens": 240000000,
+            "version": "nebius-2026-10-04",
+            "unit": "usd",
+            "input_units_per_million_tokens": 60000000
+          }
+        }
+      ],
+      "base_url": "https://api.tokenfactory.nebius.com/v1/"
+    }
+  ]
+}

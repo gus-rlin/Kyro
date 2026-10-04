@@ -1,7 +1,7 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { createServer, connect as tcpConnect } from 'node:net';
 import { createHash, randomBytes } from 'node:crypto';
-import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, rmdirSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
@@ -16,13 +16,17 @@ const observedResponseBodies = [];
 let auditCanary = null;
 let testApiPort = 8080;
 let testApiOrigin = 'http://127.0.0.1:8080';
+let testProviderPort = 9090;
+let testControlPort = 9091;
+let syntheticRegistryPath = resolve(repoRoot, 'tests/fixtures/models.synthetic.e2e.json');
+let syntheticRegistryDirectory = null;
 
 function usage() {
   return `Usage:
   node scripts/verify-p1.mjs --help
   node scripts/verify-p1.mjs --fingerprint
   node scripts/verify-p1.mjs --preflight [--execution docker|local] [--db-container NAME] [--db-port PORT] [--admin-url LOOPBACK_URL]
-  node scripts/verify-p1.mjs --run [--execution docker|local] [--db-container NAME] [--db-port PORT] [--admin-url LOOPBACK_URL] [--keep-on-failure] [--source-sha256 SHA256] [--api-port PORT]
+  node scripts/verify-p1.mjs --run [--execution docker|local] [--db-container NAME] [--db-port PORT] [--admin-url LOOPBACK_URL] [--keep-on-failure] [--source-sha256 SHA256] [--api-port PORT] [--provider-port PORT] [--control-port PORT]
   node scripts/verify-p1.mjs --diagnose-p1-06 --database kyro_p1_e2e_<16-hex> --project-id UUID [--db-container NAME] [--db-port PORT]
 
 --source-sha256 permits an uncommitted run only with the exact --fingerprint
@@ -56,6 +60,8 @@ function parseArgs(args) {
     diagnosticProjectId: null,
     sourceSha256: null,
     apiPort: 8080,
+    providerPort: 9090,
+    controlPort: 9091,
   };
   for (let index = 0; index < args.length; index += 1) {
     const value = args[index];
@@ -65,7 +71,7 @@ function parseArgs(args) {
       parsed.mode = value.slice(2);
     } else if (value === '--keep-on-failure') parsed.keepOnFailure = true;
     else if (value === '--db-container' || value === '--db-port' || value === '--execution' ||
-        value === '--admin-url' || value === '--database' || value === '--project-id' || value === '--source-sha256' || value === '--api-port') {
+        value === '--admin-url' || value === '--database' || value === '--project-id' || value === '--source-sha256' || value === '--api-port' || value === '--provider-port' || value === '--control-port') {
       const next = args[index + 1];
       if (!next || next.startsWith('--')) throw new Error(`${value} needs a value`);
       index += 1;
@@ -76,6 +82,8 @@ function parseArgs(args) {
       else if (value === '--project-id') parsed.diagnosticProjectId = next;
       else if (value === '--source-sha256') parsed.sourceSha256 = next;
       else if (value === '--api-port') parsed.apiPort = Number(next);
+      else if (value === '--provider-port') parsed.providerPort = Number(next);
+      else if (value === '--control-port') parsed.controlPort = Number(next);
       else parsed.adminUrl = next;
     } else throw new Error(`unknown option: ${value}`);
   }
@@ -100,7 +108,8 @@ function parseArgs(args) {
   if (parsed.sourceSha256 !== null && !/^[a-f0-9]{64}$/.test(parsed.sourceSha256)) {
     throw new Error('--source-sha256 must be a SHA-256 fingerprint');
   }
-  if (!Number.isInteger(parsed.apiPort) || parsed.apiPort < 1024 || parsed.apiPort > 65535 || [9090,9091,parsed.dbPort].includes(parsed.apiPort)) {
+  if (![parsed.apiPort, parsed.providerPort, parsed.controlPort].every((port) => Number.isInteger(port) && port >= 1024 && port <= 65535) ||
+      new Set([parsed.apiPort, parsed.providerPort, parsed.controlPort, parsed.dbPort]).size !== 4) {
     throw new Error('--api-port must be an unprivileged port distinct from database and providers');
   }
   return parsed;
@@ -190,6 +199,7 @@ function parseJsonOutput(output, label) {
 
 function assertManagedDatabase(inspect, expectedPort) {
   const labels = inspect.Config?.Labels ?? {};
+  const nebiusFixture = inspect.Name === '/kyro-nebius-synthetic-db';
   const bindings = inspect.HostConfig?.PortBindings?.['5432/tcp'] ?? [];
   const dataVolumes = (inspect.Mounts ?? []).filter((mount) => mount.Destination === '/var/lib/postgresql');
   const safe = {
@@ -203,10 +213,10 @@ function assertManagedDatabase(inspect, expectedPort) {
     data_volume: dataVolumes[0]?.Name ?? null,
   };
   if (safe.container_running !== true || safe.health !== 'healthy' ||
-      safe.compose_project !== 'kyro-p1-ops' || safe.compose_service !== 'postgres' ||
+      safe.compose_project !== (nebiusFixture ? 'kyro-nebius-synthetic' : 'kyro-p1-ops') || safe.compose_service !== 'postgres' ||
       !/^postgres:18\.6-alpine@sha256:[a-f0-9]{64}$/.test(String(safe.image)) ||
       bindings.length !== 1 || safe.host_ip !== '127.0.0.1' || safe.host_port !== expectedPort ||
-      dataVolumes.length !== 1 || safe.data_volume !== 'kyro-p1-ops_postgres-data') {
+      dataVolumes.length !== 1 || safe.data_volume !== (nebiusFixture ? 'kyro-nebius-synthetic_postgres-data' : 'kyro-p1-ops_postgres-data')) {
     throw new Error('the selected PostgreSQL container did not match the isolated P1 operations resource identity');
   }
   return safe;
@@ -267,7 +277,7 @@ async function runPreflight(options) {
   if (dockerNetworkProbe.status !== 0) {
     throw new Error('a Linux container could not reach the loopback-published P1 PostgreSQL endpoint');
   }
-  const appPorts = [testApiPort, 9090, 9091];
+  const appPorts = [testApiPort, testProviderPort, testControlPort];
   const portsAvailable = {};
   for (const port of appPorts) portsAvailable[String(port)] = await checkLocalPortFree(port);
   const report = {
@@ -645,8 +655,10 @@ async function startDockerProvider({ apiKey, controlToken, runToken }) {
     docker([
       'run', '--detach', '--name', container,
       '--publish', `127.0.0.1:${testApiPort}:${testApiPort}`,
-      '--publish', '127.0.0.1:9090:9090',
-      '--publish', '127.0.0.1:9091:9091',
+      '--publish', `127.0.0.1:${testProviderPort}:${testProviderPort}`,
+      '--publish', `127.0.0.1:${testControlPort}:${testControlPort}`,
+      '--env', `KYRO_E2E_PROVIDER_PORT=${testProviderPort}`,
+      '--env', `KYRO_E2E_CONTROL_PORT=${testControlPort}`,
       '--env', `KYRO_E2E_CONTROL_TOKEN=${controlToken}`,
       '--env', `KYRO_MODEL_API_KEY=${apiKey}`,
       image,
@@ -656,13 +668,13 @@ async function startDockerProvider({ apiKey, controlToken, runToken }) {
     throw error;
   }
   const provider = {
-    origin: 'http://127.0.0.1:9090',
-    issuer: 'http://127.0.0.1:9090/issuer',
-    authorizationEndpoint: 'http://127.0.0.1:9090/oidc/authorize',
-    tokenEndpoint: 'http://127.0.0.1:9090/oidc/token',
-    jwksUri: 'http://127.0.0.1:9090/oidc/jwks',
-    inferenceBaseUrl: 'http://127.0.0.1:9090/v1',
-    controlOrigin: 'http://127.0.0.1:9091',
+    origin: `http://127.0.0.1:${testProviderPort}`,
+    issuer: `http://127.0.0.1:${testProviderPort}/issuer`,
+    authorizationEndpoint: `http://127.0.0.1:${testProviderPort}/oidc/authorize`,
+    tokenEndpoint: `http://127.0.0.1:${testProviderPort}/oidc/token`,
+    jwksUri: `http://127.0.0.1:${testProviderPort}/oidc/jwks`,
+    inferenceBaseUrl: `http://127.0.0.1:${testProviderPort}/v1`,
+    controlOrigin: `http://127.0.0.1:${testControlPort}`,
     clientId: 'kyro-e2e-client',
     model: 'synthetic-structured',
     remoteControlToken: controlToken,
@@ -1115,7 +1127,7 @@ async function runMigrations(adminUrl, report, dockerContext = null) {
 }
 
 function startDockerRuntime(container, entrypoint, env, dockerContext) {
-  const fixturePath = resolve(repoRoot, 'tests/fixtures/models.synthetic.e2e.json');
+  const fixturePath = syntheticRegistryPath;
   const executableByName = {
     'kyro-api': '/usr/local/bin/kyro-api',
     'kyro-worker': '/usr/local/bin/kyro-worker',
@@ -1203,7 +1215,7 @@ async function startApiProcess(databaseUrl, provider, runToken, dockerContext = 
     KYRO_OIDC_CLIENT_ID: provider.clientId,
     KYRO_OIDC_SYNTHETIC_PROVIDER: 'true',
     KYRO_AUTH_UI_ORIGIN: testApiOrigin,
-    KYRO_MODEL_REGISTRY_PATH: dockerContext ? '/tmp/models.synthetic.e2e.json' : resolve(repoRoot, 'tests/fixtures/models.synthetic.e2e.json'),
+    KYRO_MODEL_REGISTRY_PATH: dockerContext ? '/tmp/models.synthetic.e2e.json' : syntheticRegistryPath,
     KYRO_MODEL_ALLOW_SYNTHETIC_LOOPBACK: '1',
     KYRO_RUN_ID: runToken,
     RUST_LOG: 'info',
@@ -1234,7 +1246,7 @@ function startWorkerProcess(databaseUrl, apiKey, runToken, { pollMs = 25, leaseS
     KYRO_WORKER_POLL_MS: String(pollMs),
     KYRO_LEASE_SECONDS: String(leaseSeconds),
     KYRO_SYNTHETIC_PROVIDERS: 'true',
-    KYRO_MODEL_REGISTRY_PATH: dockerContext ? '/tmp/models.synthetic.e2e.json' : resolve(repoRoot, 'tests/fixtures/models.synthetic.e2e.json'),
+    KYRO_MODEL_REGISTRY_PATH: dockerContext ? '/tmp/models.synthetic.e2e.json' : syntheticRegistryPath,
     KYRO_MODEL_API_KEY: apiKey,
     KYRO_MODEL_ALLOW_SYNTHETIC_LOOPBACK: '1',
     KYRO_RUN_ID: runToken,
@@ -1646,7 +1658,9 @@ async function backupAndRestoreFixture(admin, sourceDatabase, restoreDatabase, p
     let usedOperationsCli = false;
     const backupScript = resolve(repoRoot, 'scripts/backup-p1.ps1');
     const restoreScript = resolve(repoRoot, 'scripts/restore-p1.ps1');
-    if (process.platform === 'win32' && options.execution === 'docker' &&
+    // The operations CLI targets its fixed managed container. Alternate isolated
+    // fixtures use pg_dump/pg_restore below, never a different project's service.
+    if (process.platform === 'win32' && options.execution === 'docker' && options.dbContainer === defaultDbContainer &&
         existsSync(backupScript) && existsSync(restoreScript)) {
       const backup = await runChild('pwsh', [
         '-NoLogo', '-NoProfile', '-File', backupScript,
@@ -2109,7 +2123,7 @@ async function runLocalPreflight(options) {
       return { role, superuser: superRole === 't', bypass_rls: bypassRls === 't' };
     });
   const portsAvailable = {};
-  for (const port of [testApiPort, 9090, 9091]) portsAvailable[String(port)] = await checkLocalPortFree(port);
+  for (const port of [testApiPort, testProviderPort, testControlPort]) portsAvailable[String(port)] = await checkLocalPortFree(port);
   const report = {
     record: 'part1-e2e-preflight',
     status: 'passed_read_only',
@@ -2265,8 +2279,8 @@ async function runAcceptance(options) {
     provider = options.execution === 'docker'
       ? await startDockerProvider({ apiKey: key, controlToken, runToken })
       : await startSyntheticProvider({
-        host: '127.0.0.1', port: 9090, publicHost: '127.0.0.1',
-        controlHost: '127.0.0.1', controlPort: 9091,
+        host: '127.0.0.1', port: testProviderPort, publicHost: '127.0.0.1',
+        controlHost: '127.0.0.1', controlPort: testControlPort,
         clientId: 'kyro-e2e-client', defaultSubject: 'synthetic-user-a',
         controlToken, expectedApiKey: key,
       });
@@ -2852,8 +2866,23 @@ async function runAcceptance(options) {
 
     currentCriterion = 'P1-09';
     const concurrentRequest = syntheticModelRequest('Concurrent synthetic budget probe.');
-    // This registry charges one SYN unit/token; conservative input is UTF-8 bytes +64.
-    const perCallReserve = Buffer.byteLength(JSON.stringify(concurrentRequest.input), 'utf8') + 64 + concurrentRequest.max_output_tokens;
+    // The reservation covers the exact provider envelope and its structured-output schema.
+    const fixtureModel = JSON.parse(readFileSync(resolve(repoRoot, 'tests/fixtures/models.synthetic.e2e.json'), 'utf8')).destinations[0].models[0];
+    const envelope = {
+      model: concurrentRequest.model,
+      messages: [{ role: 'user', content: JSON.stringify(concurrentRequest.input) }],
+      max_tokens: concurrentRequest.max_output_tokens, n: 1, stream: false, store: false,
+      response_format: { type: 'json_schema', json_schema: {
+        name: fixtureModel.output_schema.id, strict: true, schema: {
+          type: 'object', properties: {
+            schema_id: { type: 'string', const: fixtureModel.output_schema.id, maxLength: 128 },
+            schema_version: { type: 'string', const: fixtureModel.output_schema.version, maxLength: 128 },
+            data: fixtureModel.output_schema.schema,
+          }, required: ['schema_id', 'schema_version', 'data'], additionalProperties: false,
+        },
+      } },
+    };
+    const perCallReserve = Buffer.byteLength(JSON.stringify(envelope), 'utf8') + 64 + concurrentRequest.max_output_tokens;
     const nearLimit = await createProject(testApiOrigin, refreshedSession,
       orgA.id, 'Synthetic concurrent budget', { budgetLimitUnits: 2 * perCallReserve });
     await setBudgetLimit(testApiOrigin, nearLimit.id, refreshedSession, 2 * perCallReserve);
@@ -3673,6 +3702,16 @@ try {
   const options = parseArgs(process.argv.slice(2));
   testApiPort = options.apiPort;
   testApiOrigin = `http://127.0.0.1:${testApiPort}`;
+  testProviderPort = options.providerPort;
+  testControlPort = options.controlPort;
+  if (testProviderPort !== 9090 && ['run', 'diagnose-p1-06'].includes(options.mode)) {
+    syntheticRegistryDirectory = mkdtempSync(join(tmpdir(), 'kyro-synthetic-ports-'));
+    syntheticRegistryPath = join(syntheticRegistryDirectory, 'registry.json');
+    const registry = JSON.parse(readFileSync(resolve(repoRoot, 'tests/fixtures/models.synthetic.e2e.json'), 'utf8'));
+    registry.destinations[0].base_url = `http://127.0.0.1:${testProviderPort}/v1/`;
+    registry.destinations[0].pinned_addresses = [`127.0.0.1:${testProviderPort}`];
+    writeFileSync(syntheticRegistryPath, JSON.stringify(registry));
+  }
   if (options.mode === 'fingerprint') process.stdout.write(`${JSON.stringify(captureSourceState(), null, 2)}\n`);
   else if (options.mode === 'help') process.stdout.write(usage());
   else if (options.mode === 'preflight') process.exitCode = await runPreflight(options);
@@ -3681,4 +3720,9 @@ try {
 } catch (error) {
   process.stderr.write(`verify-p1: ${error.message}\n`);
   process.exitCode = 1;
+} finally {
+  if (syntheticRegistryDirectory) {
+    rmSync(join(syntheticRegistryDirectory, 'registry.json'));
+    rmdirSync(syntheticRegistryDirectory);
+  }
 }

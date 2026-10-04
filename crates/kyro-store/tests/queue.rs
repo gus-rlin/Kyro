@@ -632,6 +632,7 @@ async fn exercise_model_queue(destination: &str, reconcile: bool) {
         provider: "synthetic".into(),
         model: model_request.model.clone(),
         model_version: None,
+        provider_request_id: None,
         output: StructuredModelOutput {
             schema_id: "synthetic-output".into(),
             schema_version: "1".into(),

@@ -1490,13 +1490,16 @@ fn validate_preparation(preparation: &ModelEffectPreparation) -> Result<()> {
         || preparation.reservation_units <= 0
         || preparation.input_bytes == 0
         || preparation.conservative_input_tokens
-            != preparation
+            < preparation
                 .input_bytes
                 .checked_add(CONSERVATIVE_TOKEN_OVERHEAD)
                 .ok_or(Error::ResourceLimit)?
+        || preparation.conservative_input_tokens > kyro_domain::model::MAX_INPUT_TOKENS
     {
         return Err(Error::Invalid("préparation d'effet incohérente".into()));
     }
+    // Historical callers counted input bytes +64. The gateway now includes its entire
+    // provider envelope, schema, and (for Nebius) the catalog context ceiling.
     let expected_bytes = serde_json::to_vec(&preparation.request.input)
         .map_err(|_| Error::Invalid("entrée de modèle invalide".into()))?;
     if expected_bytes.len() != preparation.input_bytes as usize {

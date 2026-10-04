@@ -966,6 +966,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "kyro-domain",
+ "libc",
  "reqwest",
  "serde",
  "serde_json",
@@ -974,6 +975,7 @@ dependencies = [
  "tracing",
  "url",
  "uuid",
+ "zeroize",
 ]
 
 [[package]]

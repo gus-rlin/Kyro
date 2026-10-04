@@ -104,6 +104,7 @@ fn persisted_response() -> ModelResponse {
         provider: "synthetic".into(),
         model: "synthetic-structured".into(),
         model_version: None,
+        provider_request_id: None,
         output: StructuredModelOutput {
             schema_id: "synthetic-structured-output".into(),
             schema_version: "1".into(),
@@ -325,27 +326,102 @@ async fn missing_key_reuses_a_known_result_without_sending_or_creating_an_intent
     assert_eq!(store.transition_counts(), (0, 0, 0));
 }
 
+#[test]
+fn historical_result_without_provider_receipt_still_deserializes() {
+    let mut value = serde_json::to_value(persisted_response()).unwrap();
+    value.as_object_mut().unwrap().remove("provider_request_id");
+    let restored: ModelResponse = serde_json::from_value(value).unwrap();
+    assert_eq!(restored.provider_request_id, None);
+}
+
 #[tokio::test]
-async fn provider_failure_is_unknown_and_never_retried() {
+async fn secret_in_input_is_refused_before_effect_persistence_and_network() {
     let (address, requests, server) =
-        mock_provider(http_response("503 Service Unavailable", b"{}", "")).await;
+        mock_provider(http_response("200 OK", &successful_provider_response(), "")).await;
     let gateway = gateway_for(address);
     let store = RecordingStore::default();
-
-    let outcome = gateway
-        .execute_model_effect(&store, context(), request())
-        .await
-        .expect("post-send provider failure is uncertain");
-    let captured = server.await.expect("server task finishes");
-
-    assert_eq!(requests.load(Ordering::SeqCst), 1);
-    assert_eq!(outcome.status, EffectStatus::Unknown);
-    assert_eq!(store.transition_counts(), (1, 1, 1));
-    let sent_body = captured.split_once("\r\n\r\n").expect("HTTP body").1;
-    assert!(
-        !sent_body.contains(SECRET_CANARY),
-        "body must not contain the key"
+    let mut input = request();
+    input.input.content = json!({"goal": SECRET_CANARY});
+    assert_eq!(
+        gateway.execute_model_effect(&store, context(), input).await,
+        Err(Error::Forbidden)
     );
+    assert_eq!(store.transition_counts(), (0, 0, 0));
+    assert_eq!(requests.load(Ordering::SeqCst), 0);
+    server.abort();
+}
+
+#[tokio::test]
+async fn invalid_provider_results_stay_uncertain_without_content_leak_or_retry() {
+    let good: Value = serde_json::from_slice(&successful_provider_response()).unwrap();
+    let mut invalid_json = good.clone();
+    invalid_json["choices"][0]["message"]["content"] = json!("not JSON");
+    let mut refused = good.clone();
+    refused["choices"][0]["message"]["refusal"] = json!("closed test refusal");
+    let mut truncated = good.clone();
+    truncated["choices"][0]["finish_reason"] = json!("length");
+    let mut wrong_usage = good.clone();
+    wrong_usage["usage"]["completion_tokens"] = json!(33);
+    let mut leaked = good.clone();
+    leaked["choices"][0]["message"]["content"] = json!(json!({"schema_id":"synthetic-structured-output","schema_version":"1","data":{"summary":SECRET_CANARY,"items":[]}}).to_string());
+    let mut leaked_receipt = good.clone();
+    leaked_receipt["id"] = json!(SECRET_CANARY);
+    let escaped_secret = SECRET_CANARY
+        .chars()
+        .map(|c| format!("\\u{:04x}", c as u32))
+        .collect::<String>();
+    let escaped_cases = [leaked.clone(), leaked_receipt].map(|value| {
+        serde_json::to_string(&value)
+            .unwrap()
+            .replace(SECRET_CANARY, &escaped_secret)
+    });
+    let plain_cases = [invalid_json, refused, truncated, wrong_usage, leaked]
+        .map(|value| serde_json::to_string(&value).unwrap());
+    for response in plain_cases.into_iter().chain(escaped_cases) {
+        let (address, requests, server) =
+            mock_provider(http_response("200 OK", response.as_bytes(), "")).await;
+        let gateway = gateway_for(address);
+        let store = RecordingStore::default();
+        let outcome = gateway
+            .execute_model_effect(&store, context(), request())
+            .await
+            .unwrap();
+        assert_eq!(outcome.status, EffectStatus::Unknown);
+        assert!(outcome.response.is_none());
+        assert!(!format!("{outcome:?}").contains(SECRET_CANARY));
+        assert_eq!(requests.load(Ordering::SeqCst), 1);
+        assert_eq!(store.transition_counts(), (1, 1, 1));
+        server.await.unwrap();
+    }
+}
+
+#[tokio::test]
+async fn provider_failure_is_unknown_and_never_retried() {
+    for status in [
+        "401 Unauthorized",
+        "403 Forbidden",
+        "429 Too Many Requests",
+        "503 Service Unavailable",
+    ] {
+        let (address, requests, server) = mock_provider(http_response(status, b"{}", "")).await;
+        let gateway = gateway_for(address);
+        let store = RecordingStore::default();
+
+        let outcome = gateway
+            .execute_model_effect(&store, context(), request())
+            .await
+            .expect("post-send provider failure is uncertain");
+        let captured = server.await.expect("server task finishes");
+
+        assert_eq!(requests.load(Ordering::SeqCst), 1);
+        assert_eq!(outcome.status, EffectStatus::Unknown);
+        assert_eq!(store.transition_counts(), (1, 1, 1));
+        let sent_body = captured.split_once("\r\n\r\n").expect("HTTP body").1;
+        assert!(
+            !sent_body.contains(SECRET_CANARY),
+            "body must not contain the key"
+        );
+    }
 }
 
 #[tokio::test]

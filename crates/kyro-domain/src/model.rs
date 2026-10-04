@@ -88,6 +88,7 @@ impl ModelRequest {
         if self.deadline_ms == 0 || self.deadline_ms > MAX_DEADLINE_MS {
             return Err(Error::ResourceLimit);
         }
+        reject_recognizable_secrets(&self.input.content)?;
         Ok(())
     }
 }
@@ -314,6 +315,13 @@ pub struct ModelResponse {
     pub provider: String,
     pub model: String,
     pub model_version: Option<String>,
+    /// Opaque provider receipt, never an authentication credential. Absent on historical results.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "deserialize_provider_request_id"
+    )]
+    pub provider_request_id: Option<String>,
     pub output: StructuredModelOutput,
     /// `None` signifie que le fournisseur n'a pas fourni d'usage vérifiable.
     pub usage: Option<ModelUsage>,
@@ -636,7 +644,31 @@ fn valid_registry_id(value: &str, maximum_bytes: usize) -> bool {
         && matches!(value.as_bytes()[0], b'a'..=b'z')
 }
 
-fn valid_model_id(value: &str) -> bool {
+fn deserialize_provider_request_id<'de, D>(
+    deserializer: D,
+) -> std::result::Result<Option<String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let value = Option::<String>::deserialize(deserializer)?;
+    if value
+        .as_deref()
+        .is_some_and(|id| !valid_provider_request_id(id))
+    {
+        return Err(serde::de::Error::custom("identifiant fournisseur invalide"));
+    }
+    Ok(value)
+}
+
+pub fn valid_provider_request_id(id: &str) -> bool {
+    !id.is_empty()
+        && id.len() <= 256
+        && id
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.'))
+}
+
+pub fn valid_model_id(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= MAX_MODEL_ID_BYTES
         && value.bytes().all(|byte| {
@@ -644,9 +676,79 @@ fn valid_model_id(value: &str) -> bool {
         })
 }
 
+/// A narrow deny-list, not a complete DLP system. Runs before queue persistence and at execution.
+pub fn reject_recognizable_secrets(value: &Value) -> Result<()> {
+    let mut pending = vec![value];
+    let mut nodes = 0_usize;
+    while let Some(value) = pending.pop() {
+        nodes += 1;
+        if nodes > 16_384 {
+            return Err(Error::ResourceLimit);
+        }
+        match value {
+            Value::String(text) => {
+                if text.contains("-----BEGIN PRIVATE KEY-----")
+                    || text.contains("-----BEGIN RSA PRIVATE KEY-----")
+                    || text.contains("-----BEGIN OPENSSH PRIVATE KEY-----")
+                    || text
+                        .split(|c: char| {
+                            !(c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'))
+                        })
+                        .any(|word| {
+                            (word.starts_with("sk-") && word.len() >= 24)
+                                || (word.starts_with("v1.")
+                                    && word.len() >= 64
+                                    && word.matches('.').count() == 2
+                                    && word.bytes().all(|b| {
+                                        b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.')
+                                    }))
+                        })
+                {
+                    return Err(Error::Forbidden);
+                }
+            }
+            Value::Array(values) => pending.extend(values),
+            Value::Object(values) => {
+                for (key, child) in values {
+                    if matches!(
+                        key.to_ascii_lowercase().as_str(),
+                        "api_key"
+                            | "apikey"
+                            | "access_token"
+                            | "private_key"
+                            | "client_secret"
+                            | "authorization"
+                    ) && child.as_str().is_some_and(|text| !text.is_empty())
+                    {
+                        return Err(Error::Forbidden);
+                    }
+                    pending.push(child);
+                }
+            }
+            _ => {}
+        }
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn recognizable_secrets_are_refused_without_echoing_content() {
+        for content in [
+            serde_json::json!({"api_key":"fake-canary-123"}),
+            serde_json::json!({"nested":["-----BEGIN PRIVATE KEY-----"]}),
+            serde_json::json!({"text":format!("v1.{}.{}", "x".repeat(40), "y".repeat(40))}),
+            serde_json::json!({"text":"sk-invented-canary-abcdefghijklmnopqrstuvwxyz"}),
+        ] {
+            let mut input = request();
+            input.input.content = content;
+            assert_eq!(input.validate_shape(), Err(Error::Forbidden));
+        }
+        assert!(request().validate_shape().is_ok());
+    }
 
     fn request() -> ModelRequest {
         ModelRequest {

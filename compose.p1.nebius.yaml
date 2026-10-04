@@ -1,0 +1,153 @@
+name: kyro-nebius-p1
+services:
+  postgres:
+    image: postgres:18.6-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
+    environment:
+      POSTGRES_DB: kyro_nebius
+      POSTGRES_USER: kyro_admin
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256 --auth-local=scram-sha-256
+    entrypoint: [/bin/sh, -ec, 'cp /run/tls/server.key /run/tls/server.crt /run/kyro-tls/; chown -R postgres:postgres /run/kyro-tls; chmod 600 /run/kyro-tls/server.key; exec docker-entrypoint.sh postgres -c ssl=on -c ssl_cert_file=/run/kyro-tls/server.crt -c ssl_key_file=/run/kyro-tls/server.key']
+    tmpfs: ['/run/kyro-tls:size=1m,mode=0700']
+    volumes:
+      - postgres-data:/var/lib/postgresql
+      - type: bind
+        source: ${KYRO_NEBIUS_STATE}/tls
+        target: /run/tls
+        read_only: true
+      - type: bind
+        source: ${KYRO_NEBIUS_STATE}/init.sql
+        target: /docker-entrypoint-initdb.d/roles.sql
+        read_only: true
+    secrets: [postgres_password]
+    networks:
+      control: {ipv4_address: 10.248.73.2}
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U kyro_admin -d kyro_nebius']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  migrate:
+    image: kyro-nebius-p1:local
+    build: .
+    profiles: [migration]
+    entrypoint: [/bin/sh, -ec, 'export KYRO_DATABASE_ADMIN_URL="$$(cat /run/secrets/admin_database_url)"; exec /usr/local/bin/kyro-migrate']
+    depends_on:
+      postgres: {condition: service_healthy}
+    secrets: [admin_database_url, postgres_ca]
+    networks: [control]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+  api:
+    image: kyro-nebius-p1:local
+    entrypoint: [/bin/sh, -ec, 'export KYRO_DATABASE_URL="$$(cat /run/secrets/api_database_url)"; exec /usr/local/bin/kyro-api']
+    env_file: ${KYRO_NEBIUS_STATE}/api.env
+    volumes:
+      - type: bind
+        source: ${KYRO_NEBIUS_STATE}/models.json
+        target: /app/config/models.nebius.json
+        read_only: true
+    secrets: [api_database_url, postgres_ca]
+    networks:
+      control: {ipv4_address: 10.248.73.4}
+      outbound: {}
+    ports: ['127.0.0.1:58090:58090', '127.0.0.1:59090:59090', '127.0.0.1:59091:59091']
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 128
+    mem_limit: 256m
+    cpus: 1
+  oidc:
+    image: kyro-nebius-oidc:local
+    build:
+      context: .
+      dockerfile: tests/fixtures/Dockerfile.synthetic-provider
+    network_mode: service:api
+    environment:
+      KYRO_E2E_PROVIDER_PORT: '59090'
+      KYRO_E2E_PROVIDER_HOST: '0.0.0.0'
+      KYRO_E2E_CONTROL_PORT: '59091'
+      KYRO_MODEL_API_KEY: synthetic-unused-nebius-oidc
+      KYRO_E2E_CONTROL_TOKEN: synthetic-nebius-oidc-control-token-local
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+  egress:
+    image: kyro-nebius-guard:local
+    build: {context: ops/nebius, dockerfile: Dockerfile.guard}
+    networks:
+      control: {ipv4_address: 10.248.73.3}
+      outbound: {}
+    cap_drop: [ALL]
+    cap_add: [NET_ADMIN, SETPCAP]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs: ['/run/guard:size=1m,mode=0700']
+    volumes:
+      - type: bind
+        source: ${KYRO_NEBIUS_STATE}/egress.nft
+        target: /etc/kyro/egress.nft
+        read_only: true
+    healthcheck:
+      test: [CMD-SHELL, 'test -s /run/guard/loaded.nft && test -f /run/guard/ready']
+      interval: 2s
+      timeout: 2s
+      retries: 10
+    pids_limit: 16
+    mem_limit: 64m
+    cpus: 0.25
+  worker:
+    image: kyro-nebius-p1:local
+    entrypoint: [/bin/sh, /opt/kyro/worker-start.sh]
+    network_mode: service:egress
+    depends_on:
+      egress: {condition: service_healthy}
+      postgres: {condition: service_healthy}
+    environment:
+      KYRO_ENV: development
+      KYRO_MODEL_REGISTRY_PATH: /app/config/models.nebius.json
+      KYRO_MODEL_API_KEY_FILE: /run/kyro-secrets/nebius_api_key
+      KYRO_MODEL_ALLOW_SYNTHETIC_LOOPBACK: '0'
+      KYRO_SYNTHETIC_PROVIDERS: 'false'
+      KYRO_WORKER_POLL_MS: '100'
+      KYRO_LEASE_SECONDS: '30'
+      KYRO_MAX_CONNECTIONS: '4'
+      RUST_LOG: kyro_worker=info,kyro_gateway=info
+    volumes:
+      - type: bind
+        source: ${KYRO_NEBIUS_STATE}/models.json
+        target: /app/config/models.nebius.json
+        read_only: true
+      - type: bind
+        source: ./ops/nebius/worker-start.sh
+        target: /opt/kyro/worker-start.sh
+        read_only: true
+    secrets: [worker_database_url, postgres_ca]
+    user: '10001:10001'
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: ['/run/kyro-secrets:size=1m,uid=10001,gid=10001,mode=0700']
+    pids_limit: 64
+    mem_limit: 256m
+    cpus: 1
+    init: true
+    stop_grace_period: 35s
+volumes:
+  postgres-data:
+networks:
+  control:
+    internal: true
+    ipam:
+      config: [{subnet: 10.248.73.0/24}]
+  outbound:
+    ipam:
+      config: [{subnet: 10.248.74.0/24}]
+secrets:
+  postgres_password: {file: '${KYRO_NEBIUS_STATE}/postgres_password'}
+  admin_database_url: {file: '${KYRO_NEBIUS_STATE}/admin_database_url'}
+  api_database_url: {file: '${KYRO_NEBIUS_STATE}/api_database_url'}
+  worker_database_url: {file: '${KYRO_NEBIUS_STATE}/worker_database_url'}
+  postgres_ca: {file: '${KYRO_NEBIUS_STATE}/tls/ca.crt'}
