@@ -6,6 +6,23 @@ use uuid::Uuid;
 
 const SYNTHETIC_REGISTRY: &str = include_str!("../../../config/models.synthetic.json");
 
+#[test]
+fn reservation_bound_includes_schema_and_provider_envelope() {
+    let config = GatewayConfig::for_admission_from_registry_json(
+        SYNTHETIC_REGISTRY.as_bytes(),
+        kyro_domain::Environment::Development,
+        true,
+    )
+    .unwrap();
+    let gateway = Gateway::new(config).unwrap();
+    let mut policy = policy();
+    policy.limits.max_input_tokens = 512;
+    assert_eq!(
+        gateway.validate_request(&request(), &policy),
+        Err(Error::ResourceLimit)
+    );
+}
+
 fn request() -> ModelRequest {
     ModelRequest {
         destination_id: "synthetic-local".into(),

@@ -2713,6 +2713,12 @@
           },
           "pricing": {
             "$ref": "#/components/schemas/PricingSnapshot"
+          },
+          "provider_request_id": {
+            "type": "string",
+            "maxLength": 256,
+            "pattern": "^[A-Za-z0-9_.-]+$",
+            "description": "Optional opaque upstream receipt; absent on historical results."
           }
         },
         "additionalProperties": false

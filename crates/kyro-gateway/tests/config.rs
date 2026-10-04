@@ -2,6 +2,137 @@ use kyro_domain::{Environment, Error};
 use kyro_gateway::{DisabledReason, GatewayConfig};
 
 const SYNTHETIC_REGISTRY: &str = include_str!("../../../config/models.synthetic.json");
+const NEBIUS_REGISTRY: &str = include_str!("../../../config/models.nebius.example.json");
+
+#[test]
+fn nebius_stays_disabled_without_verified_retention_and_capabilities() {
+    let mut registry: serde_json::Value = serde_json::from_str(NEBIUS_REGISTRY).unwrap();
+    let disabled = GatewayConfig::from_registry_json(
+        NEBIUS_REGISTRY.as_bytes(),
+        Environment::Development,
+        false,
+        Some("fake-canary-nebius-key"),
+    )
+    .unwrap();
+    assert!(!disabled.registry()[0].admissible);
+    assert_eq!(
+        disabled.registry()[0].disabled_reason,
+        Some(DisabledReason::NotQualified)
+    );
+    registry["destinations"][0]["qualified"] = serde_json::json!(true);
+    assert!(
+        GatewayConfig::for_admission_from_registry_json(
+            &serde_json::to_vec(&registry).unwrap(),
+            Environment::Development,
+            false
+        )
+        .is_err()
+    );
+    registry["destinations"][0]["retention_seconds"] = serde_json::json!(0);
+    registry["destinations"][0]["nebius"]["json_schema"] = serde_json::json!(true);
+    registry["destinations"][0]["nebius"]["retention_evidence"] =
+        serde_json::json!("https://docs.nebius.com/legal/token-factory");
+    let bytes = serde_json::to_vec(&registry).unwrap();
+    let no_key =
+        GatewayConfig::from_registry_json(&bytes, Environment::Development, false, None).unwrap();
+    assert_eq!(
+        no_key.registry()[0].disabled_reason,
+        Some(DisabledReason::MissingSecret)
+    );
+    for bad in [
+        "http://docs.nebius.com/legal/token-factory",
+        "https://nebius.com.attacker.invalid/",
+        "https://user:secret@nebius.com/",
+    ] {
+        registry["destinations"][0]["nebius"]["retention_evidence"] = serde_json::json!(bad);
+        assert!(
+            GatewayConfig::for_admission_from_registry_json(
+                &serde_json::to_vec(&registry).unwrap(),
+                Environment::Development,
+                false
+            )
+            .is_err()
+        );
+    }
+}
+
+#[test]
+fn cloud_registry_accepts_provider_model_ids() {
+    let mut registry: serde_json::Value = serde_json::from_str(SYNTHETIC_REGISTRY).unwrap();
+    let destination = &mut registry["destinations"][0];
+    destination["id"] = serde_json::json!("cloud-test");
+    destination["provider"] = serde_json::json!("cloud-test");
+    destination["kind"] = serde_json::json!("cloud");
+    destination["base_url"] = serde_json::json!("https://api.tokenfactory.nebius.com/v1/");
+    destination["allowed_host"] = serde_json::json!("api.tokenfactory.nebius.com");
+    destination["pinned_addresses"] = serde_json::json!(["213.239.161.19:443"]);
+    destination["models"][0]["id"] = serde_json::json!("nvidia/Nemotron-3_5-Lightning");
+    GatewayConfig::for_admission_from_registry_json(
+        &serde_json::to_vec(&registry).unwrap(),
+        Environment::Development,
+        false,
+    )
+    .expect("provider identifiers are opaque IDs, not URLs");
+}
+
+#[cfg(unix)]
+#[test]
+fn secret_sources_are_unambiguous_and_admission_never_reads_them() {
+    use std::{fs, os::unix::fs::PermissionsExt, process::Command};
+    let directory =
+        std::env::temp_dir().join(format!("kyro-secret-source-{}", uuid::Uuid::new_v4()));
+    fs::create_dir(&directory).unwrap();
+    let file = directory.join("key");
+    fs::write(&file, "fake-source-canary").unwrap();
+    fs::set_permissions(&file, fs::Permissions::from_mode(0o600)).unwrap();
+    let registry = directory.join("registry.json");
+    fs::write(&registry, NEBIUS_REGISTRY).unwrap();
+    for (admission, both, missing, ok) in [
+        (false, false, false, true),
+        (false, true, false, false),
+        (false, false, true, false),
+        (true, true, true, true),
+    ] {
+        let mut command = Command::new(std::env::current_exe().unwrap());
+        command
+            .args(["--exact", "secret_source_probe", "--ignored"])
+            .env("KYRO_MODEL_REGISTRY_PATH", &registry)
+            .env_remove("KYRO_MODEL_API_KEY")
+            .env(
+                "KYRO_MODEL_API_KEY_FILE",
+                if missing {
+                    directory.join("missing")
+                } else {
+                    file.clone()
+                },
+            )
+            .env("KYRO_PROBE_ADMISSION", if admission { "1" } else { "0" })
+            .env("KYRO_PROBE_EXPECT_OK", if ok { "1" } else { "0" });
+        if both {
+            command.env("KYRO_MODEL_API_KEY", "fake-source-canary");
+        }
+        let output = command.output().unwrap();
+        assert!(output.status.success(), "closed source probe failed");
+        assert!(!String::from_utf8_lossy(&output.stdout).contains("fake-source-canary"));
+    }
+    fs::remove_dir_all(directory).unwrap();
+}
+
+#[cfg(unix)]
+#[test]
+#[ignore = "subprocess fixture invoked by secret_sources_are_unambiguous_and_admission_never_reads_them"]
+fn secret_source_probe() {
+    // Full --include-ignored suites also discover this fixture: no probe context means no-op.
+    let Ok(expected) = std::env::var("KYRO_PROBE_EXPECT_OK") else {
+        return;
+    };
+    let actual = if std::env::var("KYRO_PROBE_ADMISSION").unwrap() == "1" {
+        GatewayConfig::for_admission_from_env(Environment::Development)
+    } else {
+        GatewayConfig::from_env(Environment::Development)
+    };
+    assert_eq!(actual.is_ok(), expected == "1");
+}
 
 #[test]
 fn qualified_keyless_destination_is_admissible_and_enabled_without_a_secret() {

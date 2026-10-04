@@ -3,16 +3,21 @@ use std::{
     net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr},
     path::PathBuf,
     str::FromStr,
+    sync::Arc,
 };
 
 use kyro_domain::{
     Environment, Error, Result,
-    model::{ModelPolicyLimits, ModelProviderKind, ModelRegistrationSnapshot, PricingSnapshot},
+    model::{
+        ModelPolicyLimits, ModelProviderKind, ModelRegistrationSnapshot, PricingSnapshot,
+        valid_model_id,
+    },
 };
 use reqwest::Url;
 use serde::Deserialize;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
+use zeroize::Zeroizing;
 
 const MAX_REGISTRY_BYTES: usize = 1_048_576;
 const MAX_DESTINATIONS: usize = 64;
@@ -23,13 +28,18 @@ const MAX_SCHEMA_DEPTH: usize = 16;
 const MAX_SCHEMA_NODES: usize = 512;
 const MAX_SCHEMA_PROPERTIES: usize = 128;
 const MODEL_API_KEY_ENV: &str = "KYRO_MODEL_API_KEY";
+const MODEL_API_KEY_FILE_ENV: &str = "KYRO_MODEL_API_KEY_FILE";
+const MAX_SECRET_BYTES: usize = 8192;
 const LOOPBACK_OPT_IN_ENV: &str = "KYRO_MODEL_ALLOW_SYNTHETIC_LOOPBACK";
 const REGISTRY_PATH_ENV: &str = "KYRO_MODEL_REGISTRY_PATH";
 
 #[derive(Clone)]
-pub(crate) struct SecretValue(String);
+pub(crate) struct SecretValue(Arc<Zeroizing<String>>);
 
 impl SecretValue {
+    fn new(value: &str) -> Self {
+        Self(Arc::new(Zeroizing::new(value.to_owned())))
+    }
     pub(crate) fn expose(&self) -> &str {
         &self.0
     }
@@ -60,6 +70,8 @@ pub(crate) struct Destination {
     pub(crate) enabled: bool,
     pub(crate) disabled_reason: Option<DisabledReason>,
     pub(crate) models: Vec<RegisteredModel>,
+    pub(crate) wire_overhead_tokens: u32,
+    pub(crate) context_tokens: Option<u32>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -113,6 +125,19 @@ struct DestinationFile {
     qualified: bool,
     retention_seconds: Option<u32>,
     models: Vec<ModelFile>,
+    #[serde(default)]
+    nebius: Option<NebiusQualification>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct NebiusQualification {
+    json_schema: bool,
+    bounded_completion: bool,
+    retention_evidence: Option<String>,
+    wire_overhead_tokens: u32,
+    /// Catalog context ceiling: a hard fallback when the serving tokenizer is unknown.
+    context_tokens: u32,
 }
 
 #[derive(Debug, Deserialize)]
@@ -159,16 +184,33 @@ impl GatewayConfig {
         let registry = fs::read(&path).map_err(|_| Error::Unavailable)?;
         let api_key = match mode {
             GatewayMode::Admission => None,
-            GatewayMode::Execution => env::var(MODEL_API_KEY_ENV)
-                .ok()
-                .filter(|value| !value.is_empty()),
+            GatewayMode::Execution => read_execution_secret()?,
         };
+        if matches!(mode, GatewayMode::Execution) && api_key.is_some() {
+            let file: RegistryFile = serde_json::from_slice(&registry)
+                .map_err(|_| Error::Invalid("registre modèle invalide".into()))?;
+            let source = if env::var_os(MODEL_API_KEY_FILE_ENV).is_some() {
+                "file:KYRO_MODEL_API_KEY_FILE"
+            } else {
+                "env:KYRO_MODEL_API_KEY"
+            };
+            if file.destinations.iter().any(|destination| {
+                destination
+                    .secret_ref
+                    .as_deref()
+                    .is_some_and(|reference| reference != source)
+            }) {
+                return Err(Error::Invalid(
+                    "source différente de la référence de secret".into(),
+                ));
+            }
+        }
         let loopback_opt_in = env::var(LOOPBACK_OPT_IN_ENV).is_ok_and(|value| value == "1");
         Self::from_registry_json_mode(
             &registry,
             environment,
             loopback_opt_in,
-            api_key.as_deref(),
+            api_key.as_ref().map(|key| key.as_str()),
             mode,
         )
     }
@@ -270,6 +312,44 @@ impl GatewayConfig {
     }
 }
 
+fn read_execution_secret() -> Result<Option<Zeroizing<String>>> {
+    let value = env::var_os(MODEL_API_KEY_ENV);
+    let path = env::var_os(MODEL_API_KEY_FILE_ENV);
+    if value.is_some() && path.is_some() {
+        return Err(Error::Invalid("sources de secret ambiguës".into()));
+    }
+    if let Some(path) = path {
+        return crate::secret::read_secret_file(&PathBuf::from(path)).map(Some);
+    }
+    value
+        .map(|value| {
+            let value = value
+                .into_string()
+                .map_err(|_| Error::Invalid("secret invalide".into()))?;
+            if value.is_empty()
+                || value.len() > MAX_SECRET_BYTES
+                || !value.bytes().all(|b| b.is_ascii_graphic())
+            {
+                return Err(Error::Invalid("secret invalide".into()));
+            }
+            Ok(Zeroizing::new(value))
+        })
+        .transpose()
+}
+
+fn valid_nebius_evidence(value: &str) -> bool {
+    Url::parse(value).is_ok_and(|url| {
+        url.scheme() == "https"
+            && matches!(
+                url.host_str(),
+                Some("nebius.com" | "docs.nebius.com" | "docs.tokenfactory.nebius.com")
+            )
+            && url.username().is_empty()
+            && url.password().is_none()
+            && value.len() <= 2048
+    })
+}
+
 fn parse_destination(
     file: DestinationFile,
     environment: Environment,
@@ -277,6 +357,43 @@ fn parse_destination(
     api_key: Option<&str>,
     mode: GatewayMode,
 ) -> Result<Destination> {
+    let wire_overhead_tokens = if file.provider == "nebius" {
+        let qualification = file
+            .nebius
+            .as_ref()
+            .ok_or_else(|| Error::Invalid("qualification Nebius absente".into()))?;
+        if file.kind != ModelProviderKind::Cloud
+            || file.base_url != "https://api.tokenfactory.nebius.com/v1/"
+            || file.allowed_host != "api.tokenfactory.nebius.com"
+            || file.secret_ref.as_deref() != Some("file:KYRO_MODEL_API_KEY_FILE")
+            || (file.qualified
+                && (file.retention_seconds != Some(0)
+                    || !qualification.json_schema
+                    || !qualification.bounded_completion
+                    || !qualification
+                        .retention_evidence
+                        .as_deref()
+                        .is_some_and(valid_nebius_evidence)))
+            || !(1024..=8192).contains(&qualification.wire_overhead_tokens)
+            || qualification.context_tokens == 0
+            || qualification.context_tokens > kyro_domain::model::MAX_INPUT_TOKENS
+            || file.models.iter().any(|model| {
+                !model.id.starts_with("nvidia/")
+                    || model.pricing.currency != "USD"
+                    || model.max_input_tokens != qualification.context_tokens
+                    || model.pricing.input_units_per_million_tokens <= 0
+                    || model.pricing.output_units_per_million_tokens <= 0
+            })
+        {
+            return Err(Error::Invalid("qualification Nebius non conforme".into()));
+        }
+        qualification.wire_overhead_tokens
+    } else {
+        if file.nebius.is_some() {
+            return Err(Error::Invalid("qualification hors fournisseur".into()));
+        }
+        kyro_domain::model::CONSERVATIVE_TOKEN_OVERHEAD
+    };
     if !valid_id(&file.id)
         || !valid_id(&file.provider)
         || !valid_host(&file.allowed_host)
@@ -352,9 +469,9 @@ fn parse_destination(
     }
 
     let secret = match file.secret_ref.as_deref() {
-        Some(reference) if reference == "env:KYRO_MODEL_API_KEY" => api_key
+        Some("env:KYRO_MODEL_API_KEY" | "file:KYRO_MODEL_API_KEY_FILE") => api_key
             .filter(|key| !key.trim().is_empty())
-            .map(|key| SecretValue(key.to_owned())),
+            .map(SecretValue::new),
         Some(_) => return Err(Error::Invalid("référence de secret non autorisée".into())),
         None => None,
     };
@@ -399,6 +516,11 @@ fn parse_destination(
         enabled,
         disabled_reason,
         models,
+        wire_overhead_tokens,
+        context_tokens: file
+            .nebius
+            .as_ref()
+            .map(|qualification| qualification.context_tokens),
     })
 }
 
@@ -409,7 +531,7 @@ fn parse_model(
     retention_seconds: Option<u32>,
     model: ModelFile,
 ) -> Result<RegisteredModel> {
-    if !valid_id(&model.id)
+    if !valid_model_id(&model.id)
         || model
             .version
             .as_deref()

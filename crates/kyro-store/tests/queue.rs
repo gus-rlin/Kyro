@@ -20,9 +20,15 @@ use serde_json::{json, to_vec};
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
+// Wait outside PostgreSQL: a slower fixture owner must not consume the runtime
+// connection's two-second lock timeout in another test. The database advisory
+// lock below still protects against a separate process sharing this test DB.
+static QUEUE_FIXTURES: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
 #[tokio::test]
 #[ignore = "requires a dedicated migrated PostgreSQL database in KYRO_TEST_DATABASE_URL"]
 async fn postgres_queue_admission_requires_each_grant_to_cover_the_full_demand() {
+    let _fixture_guard = QUEUE_FIXTURES.lock().await;
     let database_url = std::env::var("KYRO_TEST_DATABASE_URL")
         .expect("set KYRO_TEST_DATABASE_URL to a disposable kyro_api database");
     let store = Store::connect(&database_url, 8)
@@ -273,6 +279,7 @@ async fn postgres_named_synthetic_reconciliation_accepts_budget_only_and_rejects
 }
 
 async fn exercise_model_queue(destination: &str, reconcile: bool) {
+    let _fixture_guard = QUEUE_FIXTURES.lock().await;
     let database_url = std::env::var("KYRO_TEST_DATABASE_URL")
         .expect("set KYRO_TEST_DATABASE_URL to a disposable kyro_api database");
     let store = Store::connect(&database_url, 8)
@@ -656,6 +663,7 @@ async fn exercise_model_queue(destination: &str, reconcile: bool) {
         provider: "synthetic".into(),
         model: model_request.model.clone(),
         model_version: None,
+        provider_request_id: None,
         output: StructuredModelOutput {
             schema_id: "synthetic-output".into(),
             schema_version: "1".into(),
