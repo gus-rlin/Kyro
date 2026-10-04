@@ -1,8 +1,16 @@
 # Recette indépendante P1-01 à P1-14
 
+## Qualification SUIVI-0015 — Huit nouvelles remarques de la PR
+
+**P1 validée dans le périmètre synthétique convenu**, le 2026-10-04 (Europe/Paris), sur `a718deb5a51e33601effa83250b4276636f6811f` / `e2886f97905f2c61349c8ba8c8842a66944a3c4fb73a00aad308b688f2092b89`, 95 fichiers inchangés. [Rapport](part1-pr-review2-corrections.md), [bilan consolidé](../preuves/part1-pr-review2-qualification-20261004.json).
+
+La [recette finale](../preuves/part1-e2e-20261004T001514-1c895e888d1d0961.json) passe P1-01 à P1-13, y compris pagination HTTP, avec PostgreSQL/API/worker réels et OIDC/inférence synthétiques. 13 appels synthétiques ; restauration de 16 empreintes, ancienne session refusée, ApplyChanges 5→6 et rapprochement interne sans émission externe. Le brut conserve P1-14 partial/review_pending ; la [revue indépendante Sol](../preuves/part1-pr-review2-sol-20261004.json) conclut séparément PASS 9,5/10 sans constat actionnable restant.
+
+[86 tests Rust/PostgreSQL](../preuves/part1-pr-review2-controls-20261004.json) passent, zéro échec/ignoré. Installation neuve et upgrade 0016→0017 concurrente/rejouée, checksums 0001–0016 et privilèges inchangés ; guards backup/restore Windows/Linux et Compose de production local synthétique vérifiés. Les essais échoués et leurs bases restent conservés dans SUIVI-0015. NVIDIA/Nebius réels restent non qualifiés ; aucun merge ou déploiement.
+
 ## Clôture SUIVI-0012 — Version finale
 
-**P1 validée dans le périmètre synthétique convenu**, le 2026-10-03 (Europe/Paris). Les entrées qui suivent restent l'historique des contributions et échecs antérieurs ; le verdict courant vient du [rapport final](part1-cloture.md).
+**P1 validée dans le périmètre synthétique convenu**, le 2026-10-03 (Europe/Paris). Les entrées qui suivent restent l'historique des contributions et échecs antérieurs ; le verdict de ce cycle vient du [rapport final](part1-cloture.md).
 
 La [recette intégrale E2E-12](../preuves/part1-e2e-20261003T204435-4ef16a288963cbbf.json) passe P1-01 à P1-13 sur la version `d2d7fba` + empreinte `8da46273d2f17bb9abef667e05c7de7af54babdac8c203e089e5464d00a1fd4d`, identique avant/après. PostgreSQL/API/worker réels, OIDC/inférence synthétiques ; 13 requêtes synthétiques. Le brut laisse P1-14 partiel car la [revue Sol](part1-revue-finale.md), réalisée séparément, conclut PASS 9,5/10 sans constat critique/élevé non résolu. Le [bilan consolidé](../preuves/part1-close-qualification-final-20261003.json) réunit les quatorze critères.
 

@@ -6,22 +6,24 @@ Dernière mise à jour : 2026-10-04 (Europe/Paris).
 
 | Élément | État observé | Preuve ou limite |
 | --- | --- | --- |
-| Socle Rust, API et worker | Implémentés et vérifiés en intégration ; 79 tests Rust/PostgreSQL passent, zéro échec/ignoré | [Contrôle final après revue GitHub](preuves/part1-pr-review-controls-20261004.json) |
-| PostgreSQL et migrations | 0001–0016 ; installation neuve, mise à niveau depuis 0015, concurrence et rejeu vérifiés ; 0001–0015 intactes | [Migration](preuves/part1-close-upgrade-20261003.json), [privilèges runtime inchangés](preuves/part1-close-runtime-table-privileges-20261003.json), D34 |
-| Identité, sessions et droits | Parcours OIDC synthétique, isolation lecture/mutation/SSE, CSRF, limites et révocation vérifiés | [Recette intégrale finale](preuves/part1-e2e-20261003T225540-118a0a9e88945932.json), P1-02/03/07/12 |
+| Socle Rust, API et worker | Implémentés et vérifiés en intégration ; 86 tests Rust/PostgreSQL passent, zéro échec/ignoré | [Contrôle final après les huit nouvelles remarques](preuves/part1-pr-review2-controls-20261004.json) |
+| PostgreSQL et migrations | 0001–0017 ; installation neuve, mise à niveau depuis 0016, concurrence et rejeu vérifiés ; 0001–0016 intactes | [Migration finale](preuves/part1-pr-review2-upgrade-after-20261004.json), [privilèges runtime inchangés](preuves/part1-pr-review2-privileges-after-20261004.json), D34 |
+| Identité, sessions et droits | Parcours OIDC synthétique, isolation lecture/mutation/SSE, CSRF, limites et révocation vérifiés | [Recette intégrale finale](preuves/part1-e2e-20261004T001514-1c895e888d1d0961.json), P1-02/03/07/12 |
 | Projets, révisions et commandes | CAS, idempotence, déduplication concurrente et file durable vérifiés | P1-04 à P1-08 dans la recette finale |
 | Budgets, effets et passerelle | Réserves concurrentes, règlement unique, effets inconnus, rapprochement Budget-only et validation de preuve/registre/schéma vérifiés | P1-09 à P1-11 ; modèle synthétique uniquement |
 | Sauvegarde et restauration | CLI réels, 16 empreintes conservées, sessions révoquées, sending→unknown, réserves maintenues ; reprise interne et rapprochement sans émission externe | P1-13 ; ApplyChanges révision 5→6, émissions false et delta fournisseur 0 |
-| Revue indépendante finale | Sol PASS 9,5/10 ; aucun constat critique/élevé non résolu | [Revue P1-14 renouvelée](preuves/part1-pr-review-sol-20261004.json) |
-| Audit des dépendances | Aucun avis dans les 194 packages Linux actifs ; avis RSA verrouillé inactif conservé | [Audit classifié](preuves/part1-close-audit-summary-20261003.json) ; audit brut sort 1, classification sort 0 |
+| Revue indépendante finale | Sol PASS 9,5/10 ; aucun constat critique/élevé non résolu | [Revue P1-14 renouvelée](preuves/part1-pr-review2-sol-20261004.json) |
+| Audit des dépendances | Aucun avis dans les 194 packages Linux actifs ; avis RSA verrouillé inactif conservé | [Audit courant classifié](preuves/part1-pr-review2-audit-summary-20261004.json) ; audit brut sort 1, classification sort 0 |
 | Documentation de conception | Onze pages de référence conservées ; manifeste de 180 IDs, dont 160 capacités backend | [Index](../nvidia-hackathon/README.md), [manifeste](../backend/partie-1/MANIFESTE.md) ; les blocs des parties suivantes ne sont pas livrés par P1 |
-| Configuration production | Smoke local Docker antérieur vérifié avec certificats et données synthétiques | [Opérations](essais/part1-ops.md) ; aucun déploiement réel |
+| Configuration production | Backup/restore réels locaux Docker, certificats et données synthétiques, 16 empreintes conservées ; gardes Windows/Linux vérifiées | [Opérations finales](preuves/part1-pr-review2-operations-20261004.json) ; aucun déploiement réel |
 | NVIDIA/Nebius réels | Non qualifiés | Aucun appel d'inférence réel ; cette limite demeure explicite |
 | Comparatif Codex/Kyro et dossier du jury | Non réalisés par cette tâche | Aucun gain de coût/qualité/performance, déploiement ou soumission annoncé |
 
 ## Version et traçabilité
 
-Version fonctionnelle corrigée : `77105d3667cb0892bcde6b00f52d38ae61f55edc`, branche `gus-rlin/p1-delivery`. Les neuf remarques de la PR sont corrigées ; 79 tests et recette intégrale réussis, revue Sol renouvelée PASS 9,5/10. Empreinte `f96a14525c4e02e6a44f3dbd5e9cf1985eadb0227ba8d71ed9249c44ee29bfc0` inchangée avant/après recette. [Rapport des corrections](essais/part1-pr-review-corrections.md), [bilan consolidé](preuves/part1-pr-review-qualification-20261004.json) et [inventaire source](preuves/part1-pr-review-source-20261004.json).
+Version fonctionnelle corrigée : `a718deb5a51e33601effa83250b4276636f6811f`, branche `gus-rlin/p1-delivery`. Les huit nouvelles remarques et les compléments de revue sont corrigés ; 86 tests et recette intégrale réussis, revue Sol renouvelée PASS 9,5/10. Empreinte `e2886f97905f2c61349c8ba8c8842a66944a3c4fb73a00aad308b688f2092b89`, 95 fichiers identiques avant/après recette. [Rapport des nouvelles corrections](essais/part1-pr-review2-corrections.md), [bilan consolidé](preuves/part1-pr-review2-qualification-20261004.json) et [inventaire source](preuves/part1-pr-review2-source-final-20261004.json).
+
+Les neuf corrections précédentes restent qualifiées sur `77105d3` / `f96a145...` (79 tests), avec leurs [rapport](essais/part1-pr-review-corrections.md) et [preuves](preuves/part1-pr-review-qualification-20261004.json) conservés. Les refus et erreurs de la nouvelle campagne sont explicités dans SUIVI-0015 ; aucun échec n'est remplacé par un succès.
 
 Qualification historique conservée :
 
@@ -38,4 +40,4 @@ La clôture de P1 est achevée dans le périmètre convenu. Aucune partie 2, cam
 
 À la demande explicite de l'utilisateur, le socle complet est préparé sur gus-rlin/p1-delivery, issue du main GitHub e277840. La qualification ci-dessus porte sur les sources avant normalisation Git des fins de ligne ; leur archive exacte reste fournie. Voir SUIVI-0013 dans le journal.
 
-[PR #1](https://github.com/gus-rlin/Kyro/pull/1) ouverte sur main, branche gus-rlin/p1-delivery poussée. Les deux contrôles GitHub sur d8fdc9c ont réussi. Les neuf corrections suivantes sont validées localement ; leurs contrôles GitHub seront distincts après push. Aucun merge ni déploiement.
+[PR #1](https://github.com/gus-rlin/Kyro/pull/1) ouverte sur main, branche gus-rlin/p1-delivery. Les deux contrôles GitHub sur 0573e25 ont réussi. Les nouvelles corrections sont qualifiées localement ; les contrôles GitHub après leur push restent distincts. Aucun merge ni déploiement.

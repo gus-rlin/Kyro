@@ -1,0 +1,5 @@
+Source/target integrity fingerprints match for grants, revisions, jobs, effects, budgets, reservations, ledger, events, outbox, projects, actors and sessions.
+Restored trusted custom archive to new database 'kyro_restore_review2_prod_final'.
+Archive SHA-256: E0919859088E0A6526CCCED62DC6530C8996A9477C000E9FABB81B1DA0FE5BB7. Runtime control is disabled; no worker service was started.
+external_sends_enabled=false|running_jobs=0|sending_effects=0|active_sessions=0|login_flows=0
+Previous event/outbox rows and sequences were preserved; clients must fetch a full snapshot and reset their event cursor before resuming.

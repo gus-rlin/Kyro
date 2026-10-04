@@ -1,0 +1,15 @@
+✔ an active vulnerable package is refused (1.7977ms)
+✔ a locked but inactive advisory is classified without claiming cargo audit passed (0.2299ms)
+✔ malformed audit JSON fails closed (0.2668ms)
+✔ a missing Cargo resolution graph fails closed (0.1033ms)
+✔ unparseable cargo tree output fails closed (0.1593ms)
+✔ audit command failure fails closed even with a valid no-finding JSON document (0.1184ms)
+✔ the public summary does not copy local workspace paths (0.109ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 80.7034
