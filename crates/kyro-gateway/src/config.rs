@@ -558,16 +558,11 @@ fn validate_instance_node(schema: &Value, instance: &Value, depth: usize) -> Res
             }
         }
         Some("number" | "integer") => {
-            let number = instance.as_f64().ok_or_else(|| Error::Internal)?;
-            if definition
-                .get("minimum")
-                .and_then(Value::as_f64)
-                .is_some_and(|minimum| number < minimum)
-                || definition
-                    .get("maximum")
-                    .and_then(Value::as_f64)
-                    .is_some_and(|maximum| number > maximum)
-            {
+            if definition.get("minimum").is_some_and(|minimum| {
+                numeric_order(instance, minimum) == Some(std::cmp::Ordering::Less)
+            }) || definition.get("maximum").is_some_and(|maximum| {
+                numeric_order(instance, maximum) == Some(std::cmp::Ordering::Greater)
+            }) {
                 return Err(Error::Invalid(
                     "valeur numérique de sortie hors limites".into(),
                 ));
@@ -577,6 +572,86 @@ fn validate_instance_node(schema: &Value, instance: &Value, depth: usize) -> Res
         _ => return Err(Error::Internal),
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod numeric_tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn schema_bounds_preserve_large_signed_unsigned_and_float_written_integers() {
+        for (minimum, maximum, inside, outside) in [
+            (
+                json!(0),
+                json!(9007199254740992_u64),
+                json!(9007199254740992_u64),
+                json!(9007199254740993_u64),
+            ),
+            (
+                json!(-9007199254740992_i64),
+                json!(0),
+                json!(-9007199254740992_i64),
+                json!(-9007199254740993_i64),
+            ),
+            (
+                json!(0),
+                json!(u64::MAX - 1),
+                json!(u64::MAX - 1),
+                json!(u64::MAX),
+            ),
+            (
+                json!(i64::MIN + 1),
+                json!(0),
+                json!(i64::MIN + 1),
+                json!(i64::MIN),
+            ),
+            (
+                json!(0),
+                json!(9007199254740992.0_f64),
+                json!(9007199254740992_u64),
+                json!(9007199254740993_u64),
+            ),
+            (json!(-1.5), json!(1.5), json!(1), json!(2)),
+        ] {
+            let schema = json!({"type":"object", "properties":{"n":{"type":"integer", "minimum":minimum, "maximum":maximum}}, "required":["n"], "additionalProperties":false});
+            validate_output_schema(&schema).unwrap();
+            validate_schema_instance(&schema, &json!({"n":inside})).unwrap();
+            assert!(matches!(
+                validate_schema_instance(&schema, &json!({"n":outside})),
+                Err(Error::Invalid(_))
+            ));
+        }
+        let reversed = json!({"type":"object", "properties":{"n":{"type":"integer", "minimum":9007199254740993_u64, "maximum":9007199254740992_u64}}, "required":["n"], "additionalProperties":false});
+        assert!(validate_output_schema(&reversed).is_err());
+        let extremes = json!({"type":"integer", "minimum":i64::MIN, "maximum":u64::MAX});
+        validate_schema_instance(&extremes, &json!(i64::MIN)).unwrap();
+        validate_schema_instance(&extremes, &json!(u64::MAX)).unwrap();
+        let float_edge = json!({"type":"integer", "maximum":18446744073709551616.0_f64});
+        validate_schema_instance(&float_edge, &json!(u64::MAX)).unwrap();
+    }
+}
+
+fn numeric_order(left: &Value, right: &Value) -> Option<std::cmp::Ordering> {
+    fn exact_integer(value: &Value) -> Option<i128> {
+        if let Some(value) = value.as_i64() {
+            return Some(i128::from(value));
+        }
+        if let Some(value) = value.as_u64() {
+            return Some(i128::from(value));
+        }
+        let value = value.as_f64()?;
+        // Include floating bounds such as 2^64, just beyond the JSON integer range.
+        (value.fract() == 0.0
+            && (-18_446_744_073_709_551_616.0..=18_446_744_073_709_551_616.0).contains(&value))
+        .then_some(value as i128)
+    }
+    match (exact_integer(left), exact_integer(right)) {
+        (Some(left), Some(right)) => Some(left.cmp(&right)),
+        // Fractional floats are below 2^53; floats beyond the integer range cannot
+        // round a JSON integer across a bound. Only these cases use f64.
+        _ => left.as_f64()?.partial_cmp(&right.as_f64()?),
+    }
 }
 
 fn validate_schema_node(schema: &Value, depth: usize, nodes: &mut usize, root: bool) -> Result<()> {
@@ -664,11 +739,7 @@ fn validate_schema_node(schema: &Value, depth: usize, nodes: &mut usize, root: b
         return Err(Error::Invalid("borne numérique de schéma invalide".into()));
     }
     if let (Some(minimum), Some(maximum)) = (object.get("minimum"), object.get("maximum")) {
-        if minimum
-            .as_f64()
-            .zip(maximum.as_f64())
-            .is_some_and(|(min, max)| min > max)
-        {
+        if numeric_order(minimum, maximum) == Some(std::cmp::Ordering::Greater) {
             return Err(Error::Invalid("bornes numériques inversées".into()));
         }
     }
