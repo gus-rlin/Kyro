@@ -1,0 +1,14 @@
+{
+  "destination_id": "synthetic-local",
+  "model": "synthetic-structured",
+  "input": {
+    "purpose": "structured_extraction",
+    "categories": ["user_request"],
+    "content": {
+      "instruction": "Extract the title from this synthetic project description.",
+      "text": "Synthetic project title: Cedar."
+    }
+  },
+  "max_output_tokens": 64,
+  "deadline_ms": 4000
+}

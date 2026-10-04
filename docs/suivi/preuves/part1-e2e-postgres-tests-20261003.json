@@ -1,0 +1,40 @@
+{
+  "record": "part1-postgres-integration-tests",
+  "observed_date_paris": "2026-10-03",
+  "exact_time_paris": null,
+  "time_limitation": "The exact wall-clock time was not retained with the primary command output; no time is inferred.",
+  "source_revision": {
+    "e2e_worktree_head": "f377ebb1dd192f16c8955a8ae6080c6637cf3b52",
+    "integrated_runtime_commit": "2060211"
+  },
+  "environment": {
+    "postgresql": "18.6 real PostgreSQL",
+    "rust": "1.96.1 in Linux Docker builder",
+    "database": "kyro_p1_test_e2e15_a901",
+    "migrations_applied_through": 15,
+    "runtime_role": "kyro_api; non-superuser, no BYPASSRLS",
+    "admin_role": "kyro_admin"
+  },
+  "command": "cargo test --locked --workspace -- --include-ignored postgres_",
+  "exit_code": 0,
+  "elapsed_seconds": 4.95,
+  "test_results": [
+    {
+      "name": "postgres_persists_flows_sessions_and_organization_membership",
+      "result": "passed"
+    },
+    {
+      "name": "postgres_event_feed_tracks_global_bounds_with_hidden_events_and_purge",
+      "result": "passed"
+    },
+    {
+      "name": "postgres_projects_enforce_isolation_cas_and_idempotency",
+      "result": "passed"
+    },
+    {
+      "name": "job_status_values_match_postgres_contract",
+      "result": "passed"
+    }
+  ],
+  "scope_limit": "These are real-PostgreSQL integration/unit checks only; they do not qualify the complete HTTP/worker P1 runner."
+}

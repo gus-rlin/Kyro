@@ -1,0 +1,96 @@
+{
+  "record": "part1-e2e-targeted-runtime-start",
+  "status": "passed_diagnostic_only",
+  "recorded_at": "2026-10-03T18:28:58+02:00",
+  "execution_timestamp_note": "The successful command returned during this work session; exact start/end timestamps were not captured. Tool-reported elapsed time was 5.916 seconds.",
+  "execution": "Docker Desktop Linux Engine from Windows host",
+  "versions": {
+    "node": "v24.18.0",
+    "docker_engine": "29.8.0",
+    "postgresql": "18.6"
+  },
+  "source": {
+    "commit": "3a296ab8ee209e8e8f984ba3a36910361b43a04a",
+    "worktree_clean": false,
+    "scope_note": "This was a focused startup diagnostic, not the acceptance run. The runtime image contains the integrated Rust binaries; the synthetic E2E registry was mounted from the corrected fixture."
+  },
+  "images": {
+    "kyro_runtime_image_id": "sha256:40a75ff7b63eca009c05b00a5b145fb2383540bbc0cd3dac8e3cddb905c1ff2a",
+    "synthetic_provider_image_id": "sha256:a0b23d8c386f3a16097e97968ed69dfe21b160a51ec77f4a6e99f86336441264"
+  },
+  "database": {
+    "service": "kyro-p1-ops-postgres-1",
+    "name": "kyro_p1_e2e_d8c181ed1b9af322",
+    "roles_used": ["kyro_api", "kyro_worker"],
+    "url_validation": "Node URL parser confirmed each pathname matched the target DB and sslmode=disable; URLs were not recorded.",
+    "business_row_counts_before": {
+      "jobs": 0,
+      "projects": 0,
+      "outbox_events": 0
+    },
+    "business_row_counts_after": {
+      "jobs": 0,
+      "projects": 0,
+      "outbox_events": 0
+    },
+    "database_deleted": false
+  },
+  "api": {
+    "runtime_binary": true,
+    "absolute_entrypoint": "/usr/local/bin/kyro-api",
+    "health_ready_http_status": 200,
+    "host_windows_path_forwarded": false
+  },
+  "worker": {
+    "runtime_binary": true,
+    "role": "kyro_worker",
+    "absolute_entrypoint": "/usr/local/bin/kyro-worker",
+    "idle_observations": 2,
+    "shutdown": "SIGTERM",
+    "exit_code": 0,
+    "host_windows_path_forwarded": false
+  },
+  "synthetic_provider": {
+    "identity_and_inference_mock": true,
+    "ephemeral_rsa_and_control_credentials": true,
+    "real_secrets_used": false,
+    "inference_requests": 0
+  },
+  "fixture_bounds": {
+    "model_response_limit_bytes": 48000,
+    "oversized_mock_scenario_bytes": 65536,
+    "oversized_scenario_still_exceeds_limit": true,
+    "runner_asserts_single_call_and_terminal_refusal": true
+  },
+  "diagnostics_preserved": [
+    {
+      "symptom": "A prior PowerShell diagnostic built a malformed PostgreSQL URL and psql returned FATAL: database \"=disable\" does not exist.",
+      "cause": "PowerShell variable interpolation consumed the query suffix when the database variable was followed by ?sslmode.",
+      "classification": "diagnostic-command error; not a runner or backend defect",
+      "correction": "The successful probe used explicit concatenation and verified the parsed pathname and sslmode with Node before any Docker command."
+    },
+    {
+      "symptom": "An earlier API startup returned Error: ResourceLimit.",
+      "cause": "The synthetic registry fixture requested max_response_bytes=1048576, above the product limit of 48000.",
+      "classification": "fail-closed rejection of an invalid test fixture",
+      "correction": "The fixture now uses 48000; the oversized-provider scenario remains 65536 and is expected to fail without retry."
+    },
+    {
+      "symptom": "The prior full run part1-e2e-20261003T155759-d8c181ed1b9af322.json ended with Docker exit 127 before provider/API/worker scenarios.",
+      "cause": "The old runner passed a Windows PATH into a Linux container and used a relative entrypoint; the container remained in Created state.",
+      "classification": "test-runner configuration defect; the historical raw report is unchanged",
+      "correction": "The runner now allowlists KYRO_* and RUST_LOG, uses absolute runtime entrypoints, verifies the container configuration, and removes only an identified container it created."
+    }
+  ],
+  "acceptance": {
+    "P1_01_full_criterion": "not_verified",
+    "P1_02_through_P1_13": "not_run_in_this_diagnostic",
+    "P1_14_independent_review": "pending",
+    "limitation": "This startup check does not replace a fresh integrated --run containing build, concurrent/idempotent migrations, RLS checks, and all acceptance scenarios. Older raw reports that marked P1-01 passed stopped before API and worker readiness and are interpreted as partial evidence."
+  },
+  "cleanup": {
+    "diagnostic_containers_removed": true,
+    "runtime_image_kept_until_id_recorded": true,
+    "existing_ops_postgres_container_or_volume_modified": false
+  }
+}

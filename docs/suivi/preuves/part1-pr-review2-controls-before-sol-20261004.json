@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-04",
+  "status": "PASS",
+  "functionalCommit": "4ae2cf11f40d855ea3d99d7e65854700e3f88205",
+  "sourceSha256": "b19d8b7d5cae46ec9b1978fcf706438b11b5a5055779ed21bcd735b0be27bf31",
+  "sourceFileCount": 95,
+  "versions": {
+    "rust": "1.96.1",
+    "image": "rust:1.96.1-bookworm@sha256:a339861ae23e9abb272cea45dfafde21760d2ce6577a70f8a926153677902663",
+    "node": "v24.18.0",
+    "docker": "Docker version 29.8.0, build 88096ef",
+    "postgres": "18.6"
+  },
+  "database": "kyro_p1_test_review2_final_b",
+  "sourceMountReadOnly": true,
+  "commands": [
+    "cargo clean -p kyro-api -p kyro-domain -p kyro-gateway -p kyro-store -p kyro-worker",
+    "cargo fmt --all -- --check",
+    "cargo check --locked --workspace --all-targets",
+    "cargo run --locked -p kyro-store --bin kyro-migrate",
+    "cargo test --locked --workspace -- --include-ignored"
+  ],
+  "containerExitCode": 0,
+  "tests": {
+    "passed": 86,
+    "failed": 0,
+    "ignored": 0
+  },
+  "openapi": {
+    "status": "ok",
+    "version": "1.0.0",
+    "pathCount": 27,
+    "operationCount": 34
+  },
+  "dependencyClassifierTests": {
+    "passed": 7
+  },
+  "migrations": {
+    "freshVersions": 17,
+    "upgradeFrom": 16,
+    "upgradeTo": 17,
+    "concurrentRuns": 2,
+    "replayPassed": true,
+    "historicalChecksumsUnchanged": true,
+    "runtimeTablePrivilegesUnchanged": true
+  },
+  "provider": "synthetic_only",
+  "failuresRetained": [
+    "part1-pr-review2-baseline-20261004.log",
+    "part1-pr-review2-baseline-other-20261004.log",
+    "part1-pr-review2-controls-final-20261004.log",
+    "part1-pr-review2-upgrade-cached-baseline-20261004.log"
+  ]
+}

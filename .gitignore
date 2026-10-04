@@ -1,0 +1,9 @@
+/target/
+/.env
+/.env.*
+!/.env.example
+!/.env.p1.local.example
+!/.env.p1.production.example
+*.log
+*.dump
+*.sql.gz

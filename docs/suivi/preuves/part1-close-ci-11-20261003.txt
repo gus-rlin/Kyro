@@ -1,0 +1,196 @@
+migrations are up to date
+info: syncing channel updates for 1.96.1-x86_64-unknown-linux-gnu
+
+running 23 tests
+test error::tests::typed_domain_errors_map_to_stable_statuses_without_using_their_text ... ok
+test error::tests::budget_precondition_requires_one_strong_nonnegative_budget_tag ... ok
+test error::tests::revision_precondition_requires_one_strong_nonnegative_revision_tag ... ok
+test events::tests::cursor_is_project_scoped_and_parses_nonnegative_sequence ... ok
+test events::tests::header_and_query_cursors_must_match ... ok
+test error::tests::invalid_domain_details_never_appear_in_the_http_error_body ... ok
+test events::tests::physical_bounds_detect_pruned_prefix_and_entire_history ... ok
+test events::tests::initial_cursor_uses_atomic_physical_bounds_and_global_sequence ... ok
+test events::tests::snapshot_and_hidden_only_sequences_are_valid_cursors ... ok
+info: latest update on 2026-06-30 for version 1.96.1 (31fca3adb 2026-06-26)
+test events::tests::visible_event_sequences_may_skip_events_from_other_environments ... ok
+info: downloading component clippy
+test identity::tests::create_grant_request_defaults_limits_and_rejects_unknown_fields ... ok
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.51s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.30s
+     Running `/build/debug/kyro-migrate`
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.44s
+     Running unittests src/lib.rs (/build/debug/deps/kyro_api-4e4105ca9098ba1a)
+     Running unittests src/main.rs (/build/debug/deps/kyro_api-81ee9453b4261324)
+     Running tests/oidc.rs (/build/debug/deps/oidc-b0c3605636f290c2)
+     Running unittests src/lib.rs (/build/debug/deps/kyro_domain-8c6c30c5a9f39de9)
+test identity::tests::opaque_cookies_require_exactly_32_bytes ... ok
+test jobs::tests::job_cursor_rejects_malformed_and_oversized_values_without_echoing_them ... ok
+test identity::tests::production_rejects_http_and_synthetic_provider ... ok
+test identity::tests::session_and_csrf_cookies_have_distinct_browser_access ... ok
+test identity::tests::origin_and_csrf_are_checked_on_mutations ... ok
+test projects::tests::idempotency_key_requires_one_bounded_header_value ... ok
+test jobs::tests::job_cursor_round_trips_in_url_safe_form ... ok
+test projects::tests::revision_response_emits_a_strong_revision_tag ... ok
+test tests::observability_normalizes_unrecognized_client_methods ... ok
+     Running unittests src/lib.rs (/build/debug/deps/kyro_gateway-dbf9473eb8fa9cd9)
+test tests::prometheus_metrics_are_emitted_with_only_bounded_labels ... ok
+test tests::metrics_route_returns_prometheus_text ... ok
+test identity::tests::id_token_validation_rejects_issuer_audience_nonce_and_signature ... ok
+
+test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+
+running 0 tests
+
+     Running tests/admission.rs (/build/debug/deps/admission-7b342ec01c55d7ca)
+     Running tests/config.rs (/build/debug/deps/config-ac9cd44ee8910ec1)
+     Running tests/mock_http.rs (/build/debug/deps/mock_http-9b2cddcdd6125c45)
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 5 tests
+test auth_error_codes_and_statuses_are_stable ... ok
+test synthetic_provider_requires_explicit_development_and_loopback_configuration ... ok
+test global_session_admission_limit_is_bounded_and_configurable ... ok
+test provider_debug_output_redacts_the_client_secret ... ok
+test postgres_persists_flows_sessions_and_organization_membership ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.45s
+
+
+running 29 tests
+test config::tests::numeric_configuration_bounds_reject_values_outside_the_limit ... ok
+test config::tests::debug_redacts_database_urls ... ok
+test config::tests::production_requires_explicit_resource_limits ... ok
+test config::tests::synthetic_providers_require_an_explicit_true_value ... ok
+test config::tests::production_api_configuration_does_not_retain_worker_credentials ... ok
+test config::tests::database_urls_must_use_a_postgresql_scheme_and_endpoint ... ok
+     Running unittests src/lib.rs (/build/debug/deps/kyro_store-5420755358b92c01)
+     Running unittests src/bin/kyro-migrate.rs (/build/debug/deps/kyro_migrate-07b5d9dc97f1a381)
+test identity::tests::absent_limits_are_omitted_and_unknown_fields_are_rejected ... ok
+test identity::tests::each_limit_accepts_its_bounds_and_rejects_overflow_or_out_of_range_values ... ok
+test config::tests::unset_numeric_configuration_uses_the_development_default ... ok
+test identity::tests::one_grant_must_cover_every_demand_dimension ... ok
+test model::tests::data_policy_is_deny_all_by_default_and_checks_all_dimensions ... ok
+test model::tests::model_request_does_not_accept_client_controlled_urls_or_unknown_fields ... ok
+test model::tests::prices_reject_overflow_instead_of_wrapping ... ok
+test model::tests::prices_round_up_and_missing_usage_stays_unknown ... ok
+test model::tests::secret_category_is_rejected_even_if_other_policy_dimensions_match ... ok
+test model::tests::reported_usage_cannot_be_negative_or_exceed_input ... ok
+test spec::tests::add_and_remove_are_id_checked ... ok
+test spec::tests::project_limits_apply_bounded_defaults_and_reject_out_of_range_values ... ok
+test spec::tests::changes_preserve_stable_ids_and_untargeted_properties ... ok
+test spec::tests::rejects_unknown_operations_and_fields_during_deserialization ... ok
+test task::tests::job_payload_rejects_unhandled_kinds ... ok
+test task::tests::job_result_rejects_unapproved_fields ... ok
+test task::tests::job_result_serializes_as_a_non_sensitive_reference ... ok
+test task::tests::job_status_values_match_postgres_contract ... ok
+test task::tests::model_jobs_reject_secret_category_before_persistence ... ok
+test task::tests::public_job_json_does_not_expose_lease_capabilities ... ok
+test task::tests::public_job_payload_summary_omits_model_input_content ... ok
+test task::tests::reconcile_job_summary_omits_evidence_and_model_output ... ok
+test spec::tests::rejects_duplicate_ids_deep_values_and_oversized_changesets ... ok
+
+test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 1 test
+     Running tests/projects.rs (/build/debug/deps/projects-7625b3bd56cb0ab5)
+test admission_without_key_preflights_but_cannot_prepare_or_send ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 3 tests
+test registry_rejects_non_loopback_pins_and_host_confusion ... ok
+test admission_registry_is_eligible_without_enabling_execution ... ok
+test synthetic_registry_requires_development_opt_in_and_server_secret ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 8 tests
+test reconciliation_requires_the_registered_schema_and_unchanged_registration ... ok
+test missing_key_reuses_a_known_result_without_sending_or_creating_an_intent ... ok
+test provider_failure_is_unknown_and_never_retried ... ok
+test oversized_provider_body_is_bounded_and_marked_unknown ... ok
+test stricter_project_response_limit_is_applied_to_provider_body ... ok
+test structured_success_is_one_pinned_loopback_request_with_secret_header ... ok
+test redirects_are_not_followed ... ok
+test lost_response_times_out_to_unknown_without_a_retry ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.00s
+
+
+running 1 test
+test budget::tests::settlement_releases_only_its_hold_for_smaller_equal_and_larger_usage ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 2 tests
+test postgres_event_feed_tracks_global_bounds_with_hidden_events_and_purge ... ok
+test postgres_projects_enforce_isolation_cas_and_idempotency ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.71s
+
+
+running 2 tests
+test postgres_model_queue_admission_does_not_require_write_and_enforces_input_limit ... ok
+test postgres_queue_admission_requires_each_grant_to_cover_the_full_demand ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.45s
+
+
+     Running tests/queue.rs (/build/debug/deps/queue-cca7c02c8d7551f1)
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (/build/debug/deps/kyro_worker-7a298157097be825)
+     Running unittests src/main.rs (/build/debug/deps/kyro_worker-598e84ab6d465321)
+
+   Doc-tests kyro_api
+   Doc-tests kyro_domain
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+   Doc-tests kyro_gateway
+   Doc-tests kyro_store
+
+   Doc-tests kyro_worker
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

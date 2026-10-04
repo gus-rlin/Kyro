@@ -1,0 +1,388 @@
+{
+  "commit": "a718deb5a51e33601effa83250b4276636f6811f",
+  "worktree_clean": false,
+  "dirty_path_count": 16,
+  "sha256": "e2886f97905f2c61349c8ba8c8842a66944a3c4fb73a00aad308b688f2092b89",
+  "files": [
+    {
+      "path": ".dockerignore",
+      "sha256": "98b47fd5f533212e0b4eb405fa6d22c1901f33ebd49b352dbf250137c80bc9c3"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "sha256": "131bdc95f462f264824476cb21f8904a3e10704f9bcee57b26c969bd5c682764"
+    },
+    {
+      "path": "Cargo.lock",
+      "sha256": "2f9b27849eba4274a53982d587e795c9d2a5914627b6bf6333fa0197fca567e3"
+    },
+    {
+      "path": "Cargo.toml",
+      "sha256": "05f78fd5b4e3e898a9aa08bc3045012be3f49d8c2d67b68f26a4ae7acd2ded7a"
+    },
+    {
+      "path": "Dockerfile",
+      "sha256": "04d6ac13491cfbe895c6c540b2cd8e9a167e94a5937099d62ea80b433a41911f"
+    },
+    {
+      "path": "compose.p1.production.yaml",
+      "sha256": "02e3e7ee5f6e69288253d15afcbef1c74013eb029e3af5a4d6fe7577d78a5ca2"
+    },
+    {
+      "path": "compose.p1.yaml",
+      "sha256": "c8e2973495970202e0b5d2ed499f501b3afb42d73ce2414c1354bca7bbf0927a"
+    },
+    {
+      "path": "config/models.example.json",
+      "sha256": "b8c88cbe3117a52c65d1895eed21a8df00481b87b6050e4d40ca93b33b45c341"
+    },
+    {
+      "path": "config/models.synthetic.json",
+      "sha256": "849bae418928c99fc0a254fe031c1abbd90781b8a4aff3bf293701ab57c3b15e"
+    },
+    {
+      "path": "config/postgres/pg_hba.production.conf",
+      "sha256": "f1c82a32fbeffec010166faaeb082848b67386bb25501bce3417c2b6cb24e7bb"
+    },
+    {
+      "path": "crates/kyro-api/Cargo.toml",
+      "sha256": "b2a24fd1e7177316e272a5a237f233d98095b549a0509331bd7af633a6af8cae"
+    },
+    {
+      "path": "crates/kyro-api/src/budgets.rs",
+      "sha256": "e90f4ad5cd2d9af31973885864173fd2bbd87e47a7c5cccb9133d18f07958779"
+    },
+    {
+      "path": "crates/kyro-api/src/error.rs",
+      "sha256": "c3bb75739ff1a8e60202b0edf19ee987376e2ef0a4ffa4840f6a7e2a11dea91b"
+    },
+    {
+      "path": "crates/kyro-api/src/events.rs",
+      "sha256": "347cf76872e6f3dbf9d22f3bbc882e1f93eac6c02ef2647f192932ff9fb26e54"
+    },
+    {
+      "path": "crates/kyro-api/src/identity.rs",
+      "sha256": "ed634f058f22c99e60b4efb571eb73939f7fcee8066e6ad58577d4dc2c04c710"
+    },
+    {
+      "path": "crates/kyro-api/src/jobs.rs",
+      "sha256": "b91dbb70a417070956ffb028c9d249a431f6e808e0ab65bfec51a8c078d38d06"
+    },
+    {
+      "path": "crates/kyro-api/src/lib.rs",
+      "sha256": "654913e63bceaefba76e343570993af83754ec9ecba743222710be32488fe206"
+    },
+    {
+      "path": "crates/kyro-api/src/main.rs",
+      "sha256": "1f71ed1b534c6549c0ed7012fc6936a9f6b7b6fce0ac06e8302e0841e87a06bd"
+    },
+    {
+      "path": "crates/kyro-api/src/projects.rs",
+      "sha256": "677dd2872cb507c66d8253f9dfd06275362de2897be90f6d0e45a8069e3ff352"
+    },
+    {
+      "path": "crates/kyro-api/tests/oidc.rs",
+      "sha256": "c963396a60a20cfed62e5cf794b29c584a39f0f205f0ecb2f5a85cfe887fa8c2"
+    },
+    {
+      "path": "crates/kyro-domain/Cargo.toml",
+      "sha256": "c864028c9cffe509519132e6ac65d97835129dd78eb52f057409ce8cd80de7d3"
+    },
+    {
+      "path": "crates/kyro-domain/src/config.rs",
+      "sha256": "66649244e529e49cd185f26a228a1c40f729489e62c18ba6bd7de05ee0d558e4"
+    },
+    {
+      "path": "crates/kyro-domain/src/contracts.rs",
+      "sha256": "27481990d00ae1976d59cb24ba541c45932d9c59c382a1af192fd3f1b3931df2"
+    },
+    {
+      "path": "crates/kyro-domain/src/error.rs",
+      "sha256": "022f92748865c0c1a90bf6a74837b2437fe58ce177b21c3b17fe38bdfe318490"
+    },
+    {
+      "path": "crates/kyro-domain/src/identity.rs",
+      "sha256": "adbd2c189377a8f7b223ce461025124e11eb9ea0b0af258df930cb1460b07508"
+    },
+    {
+      "path": "crates/kyro-domain/src/lib.rs",
+      "sha256": "aef028e450824a2d4c5e36e48d4060378c614d401675682d9389539ce080a39c"
+    },
+    {
+      "path": "crates/kyro-domain/src/model.rs",
+      "sha256": "22571e5f099cd27dc693b21923fc462bb4dca9b54e1c839487693b7446c5d401"
+    },
+    {
+      "path": "crates/kyro-domain/src/spec.rs",
+      "sha256": "5a225802953b8893ceb04762edeedd7a8524cae278c0b30aa7018b45f9362962"
+    },
+    {
+      "path": "crates/kyro-domain/src/task.rs",
+      "sha256": "6d024f67d3838023f8811571b65e1ab0bb373dce093b870cc0fc66b9c169bbc1"
+    },
+    {
+      "path": "crates/kyro-gateway/Cargo.toml",
+      "sha256": "1279e0627357971b4a51643c3b9e0f18a7128fd2c5c74fe4c4cca34afdf900c6"
+    },
+    {
+      "path": "crates/kyro-gateway/src/client.rs",
+      "sha256": "0d63167bc7e6c8721bf2047bc2cba7d3ff2bad7aa87a66ac765aad8b8707c5eb"
+    },
+    {
+      "path": "crates/kyro-gateway/src/config.rs",
+      "sha256": "479096560a88b67790f8a889f4d7a84f5d26433ff2dd32fbeab422b94e0d1236"
+    },
+    {
+      "path": "crates/kyro-gateway/src/lib.rs",
+      "sha256": "ef03dbdaed2b96d1df958f88a75051c59f084fcd3c3c384d3d0571bf9b6aaf06"
+    },
+    {
+      "path": "crates/kyro-gateway/tests/admission.rs",
+      "sha256": "1d78f4e347d004d8ef18326492c1fd046d4250e6d0263e3fd7efc41980c0b2d9"
+    },
+    {
+      "path": "crates/kyro-gateway/tests/config.rs",
+      "sha256": "a4b51921ccba4430fedbe35785c6c3c9a2b5cd056d1914cda4e283e15d172702"
+    },
+    {
+      "path": "crates/kyro-gateway/tests/mock_http.rs",
+      "sha256": "5ef8558ffde17af03656b31b0ee0cd00c0ea6c2286b8524344dc37e2a85eecf2"
+    },
+    {
+      "path": "crates/kyro-store/Cargo.toml",
+      "sha256": "d31a00bc7f1693126dcbf14926d35df5838676caee9fc037584aae2e96969f48"
+    },
+    {
+      "path": "crates/kyro-store/migrations/0001_foundation.sql",
+      "sha256": "aefddea2d6797a401028ea4cbfcce20681aa2d1b515665e3d8c61b73261d96a5"
+    },
+    {
+      "path": "crates/kyro-store/migrations/0002_initial_revision_zero.sql",
+      "sha256": "311b9cb5535c7b152797403163848a1ff9cc621f685c6cb62d0c68f03528a2bb"
+    },
+    {
+      "path": "crates/kyro-store/migrations/0003_isolate_queue_and_accounting_context.sql",
+      "sha256": "4b109efce95b1075582abb1cd2e430e11cae7329fc4a54efad922bbf93ba5595"
+    },
+    {
+      "path": "crates/kyro-store/migrations/0004_actor_scoped_job_cancellation.sql",
+      "sha256": "96c0f1bd3472f97756e3262f3e8efb47a1424d70fe1b0e31d5c2e95eb0382e97"
+    },
+    {
+      "path": "crates/kyro-store/migrations/0005_jsonb_object_size_compat.sql",
+      "sha256": "2978fcc7181e88c66c93bee6426643f404884df596109e219cacc01b92f65883"
+    },
+    {
+      "path": "crates/kyro-store/migrations/0006_resolve_event_parameter_names.sql",
+      "sha256": "d8c6d2e9b046c0f17efa0f92814dfbe1f8517f608c05d1b83f99f000714ae68f"
+    },
+    {
+      "path": "crates/kyro-store/migrations/0007_lock_project_before_job.sql",
+      "sha256": "6714fed54c5126ac1cd2a958240caa60238a434d31a13098c9b9763fd10b1c3e"
+    },
+    {
+      "path": "crates/kyro-store/migrations/0008_fail_closed_job_lock_context.sql",
+      "sha256": "9b451a1a89215f824684e8b617bff8e435c9a927f49169583e62baecf0e07da8"
+    },
+    {
+      "path": "crates/kyro-store/migrations/0009_api_exec_worker_predicates.sql",
+      "sha256": "9047b9a560d99b36d99a0bb0d0656efbadbd5e2deb9b0a105fa44eadad66a2d6"
+    },
+    {
+      "path": "crates/kyro-store/migrations/0010_scoped_accounting_job_visibility.sql",
+      "sha256": "0922dccea94cbdd415d0def1b478570086596be307e2f63d9153c937260ba67f"
+    },
+    {
+      "path": "crates/kyro-store/migrations/0011_effect_reservation_required.sql",
+      "sha256": "19921260f4fbcfe45bdfe346988397c25a6678e3acb51c7f69aafe816797a7ae"
+    },
+    {
+      "path": "crates/kyro-store/migrations/0012_capability_limits_and_environment_isolation.sql",
+      "sha256": "dfa807cbfb6f296a0dc2728fbd8f92ceda1a1b0424efcd9d2d4fd7fff95c066c"
+    },
+    {
+      "path": "crates/kyro-store/migrations/0013_event_history_bounds.sql",
+      "sha256": "04b7d8cdc7b675caaa95e01ae5e165e199f413c8fcfba00bd2f3dde69b712459"
+    },
+    {
+      "path": "crates/kyro-store/migrations/0014_auth_maintenance.sql",
+      "sha256": "3c2e2749e5c50cd7701b40d921b128452d86c0a289694289b11cbf5251d87db3"
+    },
+    {
+      "path": "crates/kyro-store/migrations/0015_lock_actor_grants.sql",
+      "sha256": "bac32898b4705248c541da1009781847e7a0f181d92231eaa1d87469db128e7b"
+    },
+    {
+      "path": "crates/kyro-store/migrations/0016_scoped_admission_locks.sql",
+      "sha256": "f22e5ec074463a953fb2f8b2ea57fa63e797dec0dc1580b63fa1deb3a1d27405"
+    },
+    {
+      "path": "crates/kyro-store/migrations/0017_named_synthetic_reconciliation.sql",
+      "sha256": "095b8bff8f13d7b4404b391de441db5a005f3612fed77f4185ec2f7766d56988"
+    },
+    {
+      "path": "crates/kyro-store/src/bin/kyro-migrate.rs",
+      "sha256": "b1556809cd9f5cf9f8935a9fc056f27cd1452c933f4aa908423400a267f613b0"
+    },
+    {
+      "path": "crates/kyro-store/src/budget.rs",
+      "sha256": "2ef6da63dfdd6023c8ed77044f39eb219a9df78baaf6a968004f246f975d372e"
+    },
+    {
+      "path": "crates/kyro-store/src/identity.rs",
+      "sha256": "19523f447035fb3abfbd0ee3c6d057755047eec5fa84157492fcd9a87bf10aec"
+    },
+    {
+      "path": "crates/kyro-store/src/lib.rs",
+      "sha256": "d05783a32a0e9002bec2518cccc8511e1b5dc6c08bc396676712b288dcae84d2"
+    },
+    {
+      "path": "crates/kyro-store/src/migrate.rs",
+      "sha256": "056b5ef42cf70df08057d1edc549deff6407fa369983445035a4aa0add8a440d"
+    },
+    {
+      "path": "crates/kyro-store/src/projects.rs",
+      "sha256": "cb3a62825b1bc03307df8d245d8cc4e1e584c818bf275fb0a41aa017c1c9c2d1"
+    },
+    {
+      "path": "crates/kyro-store/src/queue.rs",
+      "sha256": "c454fa2aa3e318af921b147b2de974a625bf2e34d62ba6dea79e721c52fef0d0"
+    },
+    {
+      "path": "crates/kyro-store/src/store.rs",
+      "sha256": "49a2737b6573410665f480e6378df3dd16b65842c31c1b297bc0a8846dc383a1"
+    },
+    {
+      "path": "crates/kyro-store/tests/projects.rs",
+      "sha256": "4d8fab43efd1b9ad353885c9b9c612701c02b343177f2ccbf7846a2db1b68a07"
+    },
+    {
+      "path": "crates/kyro-store/tests/queue.rs",
+      "sha256": "cf0830f36286776068ae2a4d459dcf4ba176f531402a64d0e324f2e011777d3e"
+    },
+    {
+      "path": "crates/kyro-worker/Cargo.toml",
+      "sha256": "a4c57aae503bd62eda30d4cf884f0a1d9471ba6f6c1c9f54db9bbf78ab13d8ec"
+    },
+    {
+      "path": "crates/kyro-worker/src/lib.rs",
+      "sha256": "aa70aaba80bac51091f587c603fff67ae7dec7b8af3f7963de7287cc141610b4"
+    },
+    {
+      "path": "crates/kyro-worker/src/main.rs",
+      "sha256": "10da94bcd98f5f518855e4b2f35ede8df644efeafac403571c0e9d3cb8c8f8f0"
+    },
+    {
+      "path": "docs/backend/partie-1/ACCEPTATION.md",
+      "sha256": "695674ca05be267e70ec5b386c5756cb435e3babfa0f9dad3a99e8ac41a61710"
+    },
+    {
+      "path": "docs/backend/partie-1/ARCHITECTURE.md",
+      "sha256": "08b4456637a8f2516e615bf86982658e617f968a6d927cfbbae81070ea3b51c8"
+    },
+    {
+      "path": "docs/backend/partie-1/CONFORMITE.md",
+      "sha256": "e92ce5382e02a65959aa4d9199110962b0d80e79503b507c6d5bf0ab25cfee44"
+    },
+    {
+      "path": "docs/backend/partie-1/HTTP.md",
+      "sha256": "ccefa06939b3266ccf464b35046e89fc817a862ef2f246e49f775d68c1085d69"
+    },
+    {
+      "path": "docs/backend/partie-1/MANIFESTE.md",
+      "sha256": "732274a6e5efc6bb37800472a10595ea031ecb3b3c41a9042efb18bb951edfb5"
+    },
+    {
+      "path": "docs/backend/partie-1/OPERATIONS.md",
+      "sha256": "f428eef6709164dc4373d80c99fbfb8d828d3b7eda02b3011f4cf22259fd7622"
+    },
+    {
+      "path": "docs/backend/partie-1/PERIMETRE.md",
+      "sha256": "5c240838953820a092b30d4670426a2d4dfc1717107bef215cd684777f207363"
+    },
+    {
+      "path": "docs/backend/partie-1/openapi.v1.json",
+      "sha256": "0358050c282f1d81063743924bb3974bb095e4daffe896263ec2e08e72e80b10"
+    },
+    {
+      "path": "rust-toolchain.toml",
+      "sha256": "d378cc6bc4c46cf85f3bc26a191bcb13a6f9efab78f758b39029555f88dc6e79"
+    },
+    {
+      "path": "scripts/backup-p1.ps1",
+      "sha256": "8420b9aaf963b34477cea0b985c118dd3c78e1cc88eb52e8efb7d734734a9007"
+    },
+    {
+      "path": "scripts/check-dependencies.mjs",
+      "sha256": "98c33378c22ef057150ba2299d3b51a25b2fd057a3388a1fa6e4119dfee44f26"
+    },
+    {
+      "path": "scripts/check-dependencies.test.mjs",
+      "sha256": "7e93d34d2793f5346ea413a176d657a62b9e98eaaf29a7fd8f8a54b6d726213f"
+    },
+    {
+      "path": "scripts/check-openapi.mjs",
+      "sha256": "4a7414f0cb13669b93f6c78e1aba3563663150bef5b80002cdb3b6daad0d452e"
+    },
+    {
+      "path": "scripts/infra-p1.ps1",
+      "sha256": "df174c229dc39231d452ef5888a87e56354d62b1f62ee70d4d680636e02258f0"
+    },
+    {
+      "path": "scripts/restore-p1.ps1",
+      "sha256": "e9b5cf752f5f7564086fa6fb17a9eab0611561d409e93b4419dd5b547fe6a80e"
+    },
+    {
+      "path": "scripts/synthetic-provider.mjs",
+      "sha256": "95d49737239733aa73d1091979d1e835b03baef7c7cb2b5411faa820318f83f1"
+    },
+    {
+      "path": "scripts/verify-p1.mjs",
+      "sha256": "3c1896896ff552f886ff735230e2e3190582d7d988c57aeb8ac8d0abaa83b5a4"
+    },
+    {
+      "path": "scripts/verify-p1.ps1",
+      "sha256": "f70c225871ec373888dd7d9bb90518b55974d9cff29205d0194adf7d55f822ab"
+    },
+    {
+      "path": "tests/fixtures/Dockerfile.synthetic-provider",
+      "sha256": "0a7261bf406c172912fc6a7bf923d207c3ce727c8ecf917a714b8a98fda9ae06"
+    },
+    {
+      "path": "tests/fixtures/Dockerfile.synthetic-provider.dockerignore",
+      "sha256": "17ccab5e429ef8f2c2a518708290f76989a5b8b4911490e5bcfef91858aa5275"
+    },
+    {
+      "path": "tests/fixtures/app-spec-initial.json",
+      "sha256": "ed9e7639d9a3e12df3a7044412d76729460b2e13c84bffd5b0262f0145c7b9f0"
+    },
+    {
+      "path": "tests/fixtures/changeset-set-property.json",
+      "sha256": "43208d1fa9828b3bc9f38b2f1f9413ffe64376a084cc819aae644a6557887643"
+    },
+    {
+      "path": "tests/fixtures/changeset-unknown-op.json",
+      "sha256": "f52bc87369fbb33f73cd74c478d0a3b9fd9d648318ac8f94f6972a6e3eba3d90"
+    },
+    {
+      "path": "tests/fixtures/model-request-valid.json",
+      "sha256": "d91d01b41792d8dd8d1050086248526809423583dba8e67fa8ff6f476f244528"
+    },
+    {
+      "path": "tests/fixtures/models.synthetic.e2e.json",
+      "sha256": "d48be931b09a79907258e2240101d79b0b448b3939725b411757e72a03384c6c"
+    },
+    {
+      "path": "tests/fixtures/synthetic-provider-control-smoke.mjs",
+      "sha256": "d0bb5d5fc0d9e1aafe8700d4176877e9191767315be2d7768c9dabf81718122d"
+    },
+    {
+      "path": "tests/fixtures/synthetic-provider-docker-smoke.mjs",
+      "sha256": "572866cfc8f01d4e17eecfbb529fc22539d9e0bf833b66719dc7cdb850a44b1b"
+    },
+    {
+      "path": "tests/fixtures/synthetic-provider-smoke.mjs",
+      "sha256": "e19e91b83e504866a75e74f32c83b39bdc975e0cd947a2b887c91eb90af4990d"
+    }
+  ]
+}

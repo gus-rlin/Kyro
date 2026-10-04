@@ -1,0 +1,55 @@
+{
+  "record": "part1-e2e-p1-03-diagnostic",
+  "observed_at": "2026-10-03T19:25:30.227+02:00",
+  "source_commit_tested": "bb1aadbd3627b375d825a1855a3377e0d92cbe3d",
+  "failed_run": {
+    "run_id": "20261003T171914-784ce4185e175a21",
+    "started_at_paris": "2026-10-03T19:19:14.887+02:00",
+    "finished_at_paris": "2026-10-03T19:19:31.744+02:00",
+    "exit_code": 1,
+    "source_worktree_clean": true,
+    "database": "kyro_p1_e2e_784ce4185e175a21",
+    "database_preserved": true,
+    "existing_database_modified": false,
+    "runtime_image_id": "sha256:64cbf3bcace37075b9dd3df98a21ef21703f875652371ac375d1adde80a0cbc0",
+    "criteria": {
+      "P1-01": "passed: binaries, migrations, API readiness, worker idle/readiness, RLS role controls",
+      "P1-02": "passed: synthetic OIDC and session/CSRF checks",
+      "P1-03": "failed before the role query: psql could not run (ENOENT)",
+      "P1-04_through_P1-14": "not_run"
+    },
+    "migration_concurrent_exit_codes": [0, 0],
+    "migration_replay_exit_code": 0,
+    "synthetic_inference_requests": 0,
+    "real_secrets_used": false,
+    "raw_report": "part1-e2e-20261003T171914-784ce4185e175a21.json"
+  },
+  "cause": {
+    "classification": "test_runner_defect",
+    "confirmed_path": "P1-03 parsed the kyro_api URL into a new object, losing the existing Docker execution mode and container name; runPsql then attempted host psql, which is not installed.",
+    "error": "psql could not run (ENOENT)",
+    "other_role_probe_paths": "rg found no other runtime-role SQL probe that parses a role URL; remaining parseAdminUrl calls are admin setup or local preflight."
+  },
+  "read_only_reproduction": {
+    "time_paris": "2026-10-03T19:25:30.227+02:00",
+    "command": "docker exec kyro-p1-ops-postgres-1 psql -X -q -v ON_ERROR_STOP=1 -U kyro_api -d kyro_p1_e2e_784ce4185e175a21 -At -F '|' -c 'SELECT count(*) FROM public.projects;'",
+    "invocation_detail": "Executed with Node spawnSync and the same argument construction as runPsql's Docker branch, passing { user: 'kyro_api' }.",
+    "exit_code": 0,
+    "database_exists": true,
+    "database_modified": false,
+    "role": "kyro_api",
+    "rolsuper": false,
+    "rolbypassrls": false,
+    "unscoped_project_rows_visible": 0
+  },
+  "correction": {
+    "file": "scripts/verify-p1.mjs",
+    "change": "Keep the Docker/local admin execution descriptor and pass the runtime role as runPsql's user option.",
+    "new_full_run_after_correction": false
+  },
+  "limits": [
+    "The read-only reproduction used the same Docker command branch but did not invoke the private runPsql function directly.",
+    "P1-03 through P1-14 have not passed in an integrated run.",
+    "P1-14 still requires independent review."
+  ]
+}

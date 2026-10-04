@@ -1,0 +1,53 @@
+{
+  "format_version": 1,
+  "destinations": [
+    {
+      "id": "synthetic-local",
+      "provider": "synthetic",
+      "kind": "synthetic",
+      "base_url": "http://127.0.0.1:4318/v1/",
+      "allowed_host": "127.0.0.1",
+      "pinned_addresses": ["127.0.0.1:4318"],
+      "secret_ref": "env:KYRO_MODEL_API_KEY",
+      "qualified": true,
+      "retention_seconds": 0,
+      "models": [
+        {
+          "id": "synthetic-structured",
+          "version": null,
+          "output_schema": {
+            "id": "synthetic-structured-output",
+            "version": "1",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "summary": { "type": "string", "maxLength": 2000 },
+                "items": {
+                  "type": "array",
+                  "items": { "type": "string", "maxLength": 256 },
+                  "maxItems": 32
+                }
+              },
+              "required": ["summary", "items"],
+              "additionalProperties": false
+            }
+          },
+          "pricing": {
+            "version": "synthetic-2026-10-03",
+            "effective_date": "2026-10-03",
+            "currency": "SYN",
+            "unit": "synthetic_budget_unit",
+            "unit_scale": 1,
+            "input_units_per_million_tokens": 1000000,
+            "output_units_per_million_tokens": 1000000
+          },
+          "max_input_bytes": 65536,
+          "max_input_tokens": 16384,
+          "max_output_tokens": 2048,
+          "max_deadline_ms": 10000,
+          "max_response_bytes": 48000
+        }
+      ]
+    }
+  ]
+}

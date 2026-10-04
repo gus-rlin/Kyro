@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "nodes": [
+    {
+      "id": "synthetic-panel-1",
+      "kind": "layout.panel",
+      "properties": {
+        "title": "Synthetic overview",
+        "visible": true
+      }
+    },
+    {
+      "id": "synthetic-heading-1",
+      "kind": "text.heading",
+      "properties": {
+        "text": "Synthetic project"
+      }
+    }
+  ],
+  "preferences": {
+    "theme": "dark",
+    "density": "comfortable"
+  }
+}

@@ -1,0 +1,191 @@
+{
+  "record": "part1-e2e-run",
+  "run_id": "20261003T173000-aac0784a5a1e6590",
+  "started_at": "2026-10-03T17:30:00.048Z",
+  "status": "failed_or_blocked",
+  "execution": "docker",
+  "source": {
+    "commit": "f62279840b39796a89db84232aa8f31ed397623b",
+    "worktree_clean": true,
+    "dirty_path_count": 0
+  },
+  "database_name_prefix": "kyro_p1_e2e_",
+  "services": {
+    "postgres": "real",
+    "api": "real binary",
+    "worker": "real binary",
+    "oidc": "synthetic mock",
+    "inference": "synthetic mock"
+  },
+  "migrations": {
+    "concurrent_runs": [
+      {
+        "exit_code": 0,
+        "signal": null
+      },
+      {
+        "exit_code": 0,
+        "signal": null
+      }
+    ],
+    "replay_exit_code": 0
+  },
+  "database_created": true,
+  "existing_database_modified": false,
+  "real_secrets_used": false,
+  "measured_provider_requests": 0,
+  "measured_model_usage": "unknown until returned by the synthetic provider and persisted ledger",
+  "criteria": {
+    "P1-01": {
+      "status": "passed",
+      "checks": [
+        "locked binaries built",
+        "two concurrent migrations succeeded",
+        "migration replay succeeded",
+        "real PostgreSQL schema applied",
+        "API ready over HTTP",
+        "worker connected as kyro_worker and remained idle for two observations",
+        "API/worker roles are non-admin with forced RLS",
+        "Docker runtime used absolute API/worker entrypoints without forwarding a Windows host PATH"
+      ]
+    },
+    "P1-02": {
+      "status": "passed",
+      "checks": [
+        "RS256 synthetic OIDC success",
+        "bad issuer/audience/nonce refused",
+        "opaque cookie session",
+        "CSRF/Origin refusal",
+        "callback replay refusal",
+        "refresh revoked prior session",
+        "logout revoked persisted session",
+        "database-expired session refused"
+      ]
+    },
+    "P1-03": {
+      "status": "passed",
+      "checks": [
+        "two real identities/projects isolated across HTTP surfaces",
+        "non-owner runtime role sees zero unscoped rows",
+        "FORCE ROW LEVEL SECURITY verified after project fixture creation"
+      ]
+    },
+    "P1-04": {
+      "status": "passed",
+      "checks": [
+        "revision 0 preserved",
+        "revision 1 contains only the declared node",
+        "stale CAS 412",
+        "missing If-Match 428",
+        "unknown and over-limit operations refused"
+      ]
+    },
+    "P1-05": {
+      "status": "passed",
+      "checks": [
+        "8 simultaneous same-key/same-fingerprint requests returned one result",
+        "same key with changed fingerprint refused 409",
+        "one revision and one event appended"
+      ]
+    },
+    "P1-06": {
+      "status": "failed",
+      "reason": "job was not durably pending while its worker was stopped"
+    },
+    "P1-07": {
+      "status": "not_run"
+    },
+    "P1-08": {
+      "status": "not_run"
+    },
+    "P1-09": {
+      "status": "not_run"
+    },
+    "P1-10": {
+      "status": "not_run"
+    },
+    "P1-11": {
+      "status": "not_run"
+    },
+    "P1-12": {
+      "status": "not_run"
+    },
+    "P1-13": {
+      "status": "not_run"
+    },
+    "P1-14": {
+      "status": "not_run"
+    }
+  },
+  "failure": "job was not durably pending while its worker was stopped",
+  "open_api_validation": {
+    "command": "node scripts/check-openapi.mjs",
+    "node": "v24.18.0",
+    "response_schema_validator": "runner JSON Schema subset, OpenAPI 3.1 components",
+    "exit_code": 0
+  },
+  "build": {
+    "command": "docker build -f Dockerfile .",
+    "exit_code": 0,
+    "image_pinned_runtime": true,
+    "image_id": "sha256:7db9f378c3be836f44ebfe4f2d369875cd5b1ffbbc6c9c12d012ed608f0bd293"
+  },
+  "database_security": {
+    "runtime_roles_non_admin": true,
+    "forced_rls_tables": 9,
+    "runtime_context_cleared_after_commit": true,
+    "unscoped_project_rows_visible": 0
+  },
+  "secret_sentinel_included_in_test_input": false,
+  "api_readiness": {
+    "status": "ready",
+    "bind": "0.0.0.0:8080 (container; loopback-published)",
+    "runtime": "docker",
+    "absolute_entrypoint": "/usr/local/bin/kyro-api",
+    "host_windows_path_forwarded": false
+  },
+  "worker_readiness": {
+    "status": "connected_idle_stable",
+    "role": "kyro_worker",
+    "idle_observations": 2,
+    "shutdown": "SIGTERM",
+    "exit_code": 0,
+    "absolute_entrypoint": "/usr/local/bin/kyro-worker",
+    "host_windows_path_forwarded": false
+  },
+  "identity": {
+    "distinct_actors": true,
+    "bad_claims_rejected": 3,
+    "csrf_refused": true,
+    "origin_refused": true,
+    "refreshed_session_rotated": true,
+    "callback_replay_refused": true,
+    "logout_revoked": true,
+    "expired_session_refused": true
+  },
+  "cross_project": {
+    "routes_refused": 6,
+    "all_refused": true,
+    "runtime_unscoped_project_rows": 0,
+    "context_cleared_after_commit": true
+  },
+  "revisions": {
+    "revision_zero_immutable": true,
+    "current_revision": 1,
+    "stale_refused": true,
+    "missing_if_match_refused": true,
+    "unknown_operation_refused": true,
+    "oversized_operation_count_refused": true
+  },
+  "idempotency": {
+    "concurrent_replays": 8,
+    "one_stable_result": true,
+    "fingerprint_mismatch_status": 409,
+    "revision_delta": 1,
+    "event_sequence_delta": 1
+  },
+  "synthetic_secret_sentinel_absent_from_process_logs": null,
+  "database_dropped_after_success": false,
+  "restore_database_dropped_after_success": false,
+  "finished_at": "2026-10-03T17:30:19.519Z"
+}

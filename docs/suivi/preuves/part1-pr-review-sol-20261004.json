@@ -1,0 +1,38 @@
+{
+  "date": "2026-10-04",
+  "status": "PASS",
+  "score": 9.5,
+  "agent": "Sol independent p1_independent_review",
+  "reviewedDiff": "d8fdc9c5534ce5c50f91d21346b88da5535ef169..77105d3667cb0892bcde6b00f52d38ae61f55edc",
+  "sourceSha256": "f96a14525c4e02e6a44f3dbd5e9cf1985eadb0227ba8d71ed9249c44ee29bfc0",
+  "manifestFilesVerified": 94,
+  "manifestDifferences": 0,
+  "unresolved": {
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "actionable": 0
+  },
+  "scores": {
+    "correction": 3,
+    "validation": 1.7,
+    "security": 3,
+    "compatibility": 1,
+    "maintainability": 0.8
+  },
+  "personallyVerified": [
+    "94 file hashes against source and E2E manifests",
+    "CI-C logs: 79 passed, zero failed/ignored",
+    "P1-01..13 E2E run with immutable sources",
+    "SQLx parser aliases and precedence from v0.8.6 source",
+    "Compose, HTTP CORS and packaging proofs",
+    "OpenAPI 27 paths/34 operations",
+    "seven dependency classifier tests",
+    "git diff --check"
+  ],
+  "limits": [
+    "long suites executed by root and independently reviewed from evidence",
+    "OIDC and inference synthetic",
+    "NVIDIA/Nebius real and deployment not qualified"
+  ]
+}

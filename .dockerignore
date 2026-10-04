@@ -1,0 +1,12 @@
+.git
+.github
+.env
+.env.*
+target
+node_modules
+*.log
+*.dump
+*.sql.gz
+docs
+scripts
+tests

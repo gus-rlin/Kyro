@@ -1,0 +1,71 @@
+{
+  "record": "part1-preflight",
+  "date": "2026-10-03",
+  "status": "preparation_only",
+  "baseline": {
+    "commit": "7b5f3e60dbde2fb32525ffe92ec421bcca62cc49",
+    "branch": "gus-rlin/part1-e2e",
+    "worktree": "C:\\Users\\Gus\\Documents\\ChatGPT\\Kyro_v2-worktrees\\part1-e2e"
+  },
+  "tools": {
+    "node": "v24.18.0",
+    "cargo": "1.96.1",
+    "docker_compose": "v5.5.1",
+    "postgresql_server_version_observed": "18.6"
+  },
+  "commands": [
+    "node --version",
+    "cargo --version",
+    "docker compose version",
+    "docker ps --format '{{.Names}} {{.Ports}}'",
+    "docker inspect --format '{{.Config.Labels}} {{.State.Health.Status}} {{.HostConfig.PortBindings}} {{range .Mounts}}{{.Name}}={{.Destination}};{{end}}' kyro-p1-ops-postgres-1",
+    "docker exec kyro-p1-ops-postgres-1 psql -X -v ON_ERROR_STOP=1 -U kyro_admin -d kyro_p1 -At -c 'SHOW server_version;'",
+    "docker exec kyro-p1-ops-postgres-1 psql -X -v ON_ERROR_STOP=1 -U kyro_admin -d kyro_p1 -At -F '|' -c \"SELECT rolname, rolsuper, rolbypassrls FROM pg_roles WHERE rolname LIKE 'kyro_%' ORDER BY 1;\"",
+    "git rev-parse HEAD",
+    "git worktree list --porcelain"
+  ],
+  "database_preflight": {
+    "port_55440_published_by": "kyro-p1-ops-postgres-1",
+    "container_health": "healthy",
+    "compose_project": "kyro-p1-ops",
+    "volume": "kyro-p1-ops_postgres-data",
+    "port_55432_published_by_existing_service": "restaurant-dev-db-1",
+    "host_psql_available": false,
+    "docker_exec_psql_available": true,
+    "runtime_roles_observed_in_existing_db": [],
+    "admin_role_flags": {
+      "role": "kyro_admin",
+      "rolsuper": true,
+      "rolbypassrls": true
+    },
+    "database_created": false,
+    "existing_data_modified": false
+  },
+  "providers": {
+    "oidc": "synthetic provider smoke passed; API integration not run",
+    "inference": "synthetic provider smoke passed; API integration not run",
+    "real_secrets_used": false
+  },
+  "acceptance": {
+    "P1-01": "not_run",
+    "P1-02": "not_run",
+    "P1-03": "not_run",
+    "P1-04": "not_run",
+    "P1-05": "not_run",
+    "P1-06": "not_run",
+    "P1-07": "not_run",
+    "P1-08": "not_run",
+    "P1-09": "not_run",
+    "P1-10": "not_run",
+    "P1-11": "not_run",
+    "P1-12": "not_run",
+    "P1-13": "not_run",
+    "P1-14": "not_run"
+  },
+  "limits": [
+    "API, worker, schema migrations, routes, and restoration are still being integrated.",
+    "The existing kyro_p1 database currently exposes only the admin role among kyro_* roles; its data is not the E2E target.",
+    "This record is preflight evidence only and does not demonstrate any P1 behavior.",
+    "An independent acceptance review is outside this E2E script's authority."
+  ]
+}

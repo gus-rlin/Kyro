@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-04",
+  "status": "PASS",
+  "api": "real_Docker_process",
+  "checks": [
+    {
+      "method": "OPTIONS",
+      "requestOrigin": "http://127.0.0.1:18080",
+      "status": 200,
+      "allowOrigin": "http://127.0.0.1:18080",
+      "credentials": "true",
+      "allowHeaders": "content-type,if-match,x-csrf-token,idempotency-key,last-event-id"
+    },
+    {
+      "method": "OPTIONS",
+      "requestOrigin": "https://attacker.invalid",
+      "status": 200,
+      "allowOrigin": null,
+      "credentials": "true",
+      "allowHeaders": "content-type,if-match,x-csrf-token,idempotency-key,last-event-id"
+    },
+    {
+      "method": "GET",
+      "requestOrigin": "http://127.0.0.1:18080",
+      "status": 401,
+      "allowOrigin": "http://127.0.0.1:18080",
+      "credentials": "true",
+      "allowHeaders": null
+    },
+    {
+      "method": "GET",
+      "requestOrigin": "https://attacker.invalid",
+      "status": 401,
+      "allowOrigin": null,
+      "credentials": "true",
+      "allowHeaders": null
+    }
+  ],
+  "authorizationBypassed": false
+}

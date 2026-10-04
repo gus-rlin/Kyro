@@ -1,0 +1,65 @@
+{
+  "record": "part1-e2e-p1-06-admission-diagnostic",
+  "run_id": "20261003T182744-p106-93dc640e7cfa38cc",
+  "started_at": "2026-10-03T18:27:44.212Z",
+  "status": "diagnostic_completed",
+  "source": {
+    "commit": "f62279840b39796a89db84232aa8f31ed397623b",
+    "worktree_clean": false,
+    "dirty_path_count": 3
+  },
+  "execution": "docker",
+  "database_name": "kyro_p1_e2e_aac0784a5a1e6590",
+  "database_reset": false,
+  "migrations_run": false,
+  "real_secrets_used": false,
+  "runtime_image_id": "sha256:4c5ce3640ec77cf52bb331b78adbcaf2674783c23bf56f9cf1d3752067ead979",
+  "services": {
+    "postgres": "real PostgreSQL 18.6",
+    "api": "real binary",
+    "worker": "real binary",
+    "oidc": "synthetic mock"
+  },
+  "worker_config": {
+    "poll_ms": 25,
+    "poll_min_ms": 10,
+    "poll_max_ms": 10000,
+    "lease_seconds": 2,
+    "lease_min_seconds": 2,
+    "lease_max_seconds": 120,
+    "within_config_bounds": true
+  },
+  "worker": {
+    "started": true,
+    "idle_connection_observed": true,
+    "stopped": true,
+    "exit_code": 0
+  },
+  "session": {
+    "synthetic_actor_resolved": true,
+    "created": true,
+    "revoked": true,
+    "logout_http_status": 204
+  },
+  "admission": {
+    "method": "POST",
+    "route": "/v1/projects/{project_id}/jobs",
+    "payload_kind": "apply_changes",
+    "operation": "add_node",
+    "project_id": "d39e78bb-4bfe-4432-bb7e-8826427945ce",
+    "revision": 2,
+    "http_status": 500,
+    "error_code": "internal_error",
+    "response_job_status": null,
+    "error_envelope_matches_openapi": true
+  },
+  "jobs_before": 0,
+  "jobs_after": 0,
+  "job_row_delta": 0,
+  "synthetic_provider_inference_requests": 0,
+  "failure_stage": null,
+  "evidence_path": null,
+  "api_ready": true,
+  "result": "http_refused_before_job_persistence",
+  "finished_at": "2026-10-03T18:27:54.411Z"
+}

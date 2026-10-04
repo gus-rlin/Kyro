@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-04",
+  "status": "PASS",
+  "gitTree": "77105d3",
+  "trackedRequiredExamples": [
+    ".env.p1.local.example",
+    ".env.p1.production.example"
+  ],
+  "packageLicenses": [
+    {
+      "name": "kyro-domain",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "kyro-store",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "kyro-gateway",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "kyro-api",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "kyro-worker",
+      "license": "Apache-2.0"
+    }
+  ],
+  "migrationsUnchanged": true,
+  "repositoryLicenseUnchanged": true
+}

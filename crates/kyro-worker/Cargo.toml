@@ -1,0 +1,15 @@
+[package]
+name = "kyro-worker"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+kyro-domain = { path = "../kyro-domain" }
+kyro-gateway = { path = "../kyro-gateway" }
+kyro-store = { path = "../kyro-store" }
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+uuid.workspace = true

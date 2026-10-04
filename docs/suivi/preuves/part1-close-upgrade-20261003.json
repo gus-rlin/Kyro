@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-03",
+  "database": "kyro_p1_test_close_upgrade_20261003",
+  "versions_before": 15,
+  "versions_after": 16,
+  "migrations_1_15_checksums_preserved": true,
+  "migration_source_files_1_15_unchanged": true,
+  "project_and_grants_including_limits_fingerprints_preserved": true,
+  "concurrent_migrations_exit_codes": [
+    0,
+    0
+  ],
+  "replay_exit_code": 0,
+  "old_runtime_image": "kyro-dev:d2d7fba",
+  "current_runtime": "Linux debug migrator from CI06",
+  "before": "part1-close-upgrade-before-20261003.txt",
+  "after": "part1-close-upgrade-after-20261003.txt"
+}

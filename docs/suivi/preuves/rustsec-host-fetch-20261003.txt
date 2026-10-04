@@ -1,0 +1,24 @@
+Started from configured RustSec advisory-db cache
+Remote: https://github.com/RustSec/advisory-db.git
+Before status:
+## main...origin/main [ahead 84]
+Before HEAD:
+ef6173cbc5c50ec8166f9a5b28f07834144373ee
+2026-10-03T10:14:03+02:00
+Assigned RUSTSEC-2024-0448 to rutie
+Command: git fetch origin
+Fetch exit code: 0
+Fetch output:
+From https://github.com/RustSec/advisory-db
+   5a0ebedf..ef6173cb  main                   -> origin/main
+ * [new branch]        chrono-unmaintained    -> origin/chrono-unmaintained
+   f839bfdf..022894c7  gh-pages               -> origin/gh-pages
+ * [new branch]        no-advisory-urls       -> origin/no-advisory-urls
+   5de7d5be..09154c7b  osv                    -> origin/osv
+ * [new branch]        quinn-proto-advisories -> origin/quinn-proto-advisories
+After status:
+## main...origin/main
+After HEAD:
+ef6173cbc5c50ec8166f9a5b28f07834144373ee
+2026-10-03T10:14:03+02:00
+Assigned RUSTSEC-2024-0448 to rutie
