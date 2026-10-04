@@ -22,7 +22,7 @@ function createChatService(options = {}) {
   const oidcOrigin = options.oidcOrigin || 'http://127.0.0.1:59190';
   if (!/^http:\/\/127\.0\.0\.1:\d+$/.test(origin) || !/^http:\/\/127\.0\.0\.1:\d+$/.test(oidcOrigin)) throw new Error('Invalid local chat origin');
   const fetcher = options.fetch || fetch;
-  let session, project, initPromise;
+  let session, project, initPromise, renewalPromise;
   const jobs = new Set();
   const readJson = async (name) => JSON.parse(await readFile(join(stateDir, name), 'utf8'));
   const save = async (value) => { await mkdir(stateDir, { recursive: true }); await writeFile(join(stateDir,'client.json.tmp'), JSON.stringify(value)+'\n', { mode:0o600 }); await rename(join(stateDir,'client.json.tmp'),join(stateDir,'client.json')); };
@@ -48,12 +48,22 @@ function createChatService(options = {}) {
     throw new Error('Chat provisioning is busy');
   }
   function cookie(headers, name) { return headers.getSetCookie().map(v=>v.split(';')[0]).find(v=>v.startsWith(`${name}=`)); }
-  async function request(path, { method='GET', body, headers={}, auth=true, signal }={}) {
+  async function request(path, { method='GET', body, headers={}, auth=true, signal, retryAuth=true }={}) {
     const url = new URL(path, origin);
     if (url.origin !== origin && !(auth===false && url.origin===oidcOrigin)) throw new Error('Forbidden local endpoint');
+    if(auth && retryAuth && renewalPromise) await renewalPromise;
+    const sentSession=session;
     if (auth && session) { headers.cookie=session.cookie; if(method!=='GET') { headers.origin=origin; headers['x-csrf-token']=session.csrf; } }
     if(body) headers['content-type']='application/json';
     const response=await fetcher(url,{method,headers,body:body&&JSON.stringify(body),redirect:'manual',signal:signal||AbortSignal.timeout(15000)});
+    if(auth && sentSession && response.status===401 && (await response.clone().json().catch(()=>null))?.error?.code==='unauthenticated') {
+      if(!retryAuth) { if(session===sentSession) {session=null;initPromise=null;} return response; }
+      if(!await qualification()) throw Object.assign(new Error(blocked.message),{code:blocked.code});
+      // Retry only a confirmed authentication refusal, sharing renewal across concurrent requests.
+      if(!renewalPromise && session===sentSession) renewalPromise=login().catch(error=>{session=null;initPromise=null;throw error;}).finally(()=>{renewalPromise=null;});
+      await renewalPromise;
+      return request(path,{method,body,headers,auth,signal,retryAuth:false});
+    }
     return response;
   }
   async function jsonRequest(path, opts) {
@@ -90,7 +100,7 @@ function createChatService(options = {}) {
     const cookies=[cookie(completed.headers,'kyro_session'),cookie(completed.headers,'kyro_csrf')];
     if(cookies.some(v=>!v)) throw new Error('Local login failed');
     session={cookie:cookies.join('; ')};
-    session.csrf=(await jsonRequest('/v1/auth/session')).data.csrf_token;
+    session.csrf=(await jsonRequest('/v1/auth/session',{retryAuth:false})).data.csrf_token;
   }
   async function initialize() {
     await login(); const budget=await readJson('budget.json');
@@ -105,6 +115,11 @@ function createChatService(options = {}) {
       if(current.limit_units===0 && current.spent_units===0 && current.reserved_units===0) {
         const initial=await jsonRequest(`/v1/projects/${project}/budget`);
         await jsonRequest(`/v1/projects/${project}/budget`,{method:'PUT',headers:{'if-match':initial.response.headers.get('etag')},body:{limit_units:budget.limit_units,currency:'USD',unit_scale:1e9}});
+      }
+      const snapshot=await jsonRequest(`/v1/projects/${project}`);
+      const policy=(snapshot.data.project||snapshot.data).data_policy;
+      if(policy.allow_unknown_provider_retention!==standard) {
+        await jsonRequest(`/v1/projects/${project}/data-policy`,{method:'PUT',headers:{'if-match':snapshot.response.headers.get('etag')},body:{...policy,allow_unknown_provider_retention:standard}});
       }
       return;
     }
