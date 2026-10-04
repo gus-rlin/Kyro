@@ -105,16 +105,14 @@ if ($TargetEnvironment -eq 'Local') {
 }
 else {
     $secretMount = @($container.Mounts | Where-Object { $_.Destination -eq '/run/secrets/postgres_admin_password' })
-    $caMount = @($container.Mounts | Where-Object { $_.Destination -eq '/run/secrets/postgres_ca' })
     $tlsMount = @($container.Mounts | Where-Object { $_.Destination -eq '/run/postgres/tls' })
     $hbaMount = @($container.Mounts | Where-Object { $_.Destination -eq '/etc/postgresql/pg_hba.conf' })
-    $portBindings = $container.HostConfig.PortBindings
+    $publishedPorts = @($container.HostConfig.PortBindings.PSObject.Properties | Where-Object { @($_.Value | Where-Object { $_ }).Count -gt 0 })
     $commandText = [string]::Join(' ', $container.Config.Cmd)
     if ($secretMount.Count -ne 1 -or $secretMount[0].RW -or
-        $caMount.Count -ne 1 -or $caMount[0].RW -or
         $tlsMount.Count -ne 1 -or $tlsMount[0].RW -or
         $hbaMount.Count -ne 1 -or $hbaMount[0].RW -or
-        ($null -ne $portBindings -and $portBindings.Count -gt 0) -or
+        $publishedPorts.Count -ne 0 -or
         $containerEnvironment['POSTGRES_PASSWORD_FILE'] -ne '/run/secrets/postgres_admin_password' -or
         $containerEnvironment['POSTGRES_INITDB_ARGS'] -notmatch '--auth-host=scram-sha-256' -or
         $containerEnvironment['POSTGRES_HOST_AUTH_METHOD'] -or
