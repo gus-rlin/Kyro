@@ -1,11 +1,25 @@
-param([ValidateSet('Prepare','RefreshPins','RefreshTls','Start','Stop','Status')][string]$Action = 'Status')
+param([ValidateSet('Prepare','RefreshPins','RefreshTls','Start','Stop','Status')][string]$Action = 'Status',
+    [Alias('Profile')][ValidateSet('P1','Chat')][string]$RuntimeProfile = 'P1')
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $runtimeAction = $Action
 . (Join-Path $PSScriptRoot 'nebius-vault.ps1') -Action Library
 $Action = $runtimeAction
 $repo = Split-Path -Parent $PSScriptRoot
-$state = Join-Path ([Environment]::GetFolderPath('UserProfile')) '.kyro\nebius-p1'
+$isChat = $RuntimeProfile -eq 'Chat'
+$state = Join-Path ([Environment]::GetFolderPath('UserProfile')) $(if ($isChat) { '.kyro\nebius-chat' } else { '.kyro\nebius-p1' })
+$projectName = if ($isChat) { 'kyro-nebius-chat' } else { 'kyro-nebius-p1' }
+$budgetFile = if ($isChat) { 'budget.json' } else { 'campaign.json' }
+$apiPort = if ($isChat) { 58190 } else { 58090 }
+$oidcPort = if ($isChat) { 59190 } else { 59090 }
+$controlPort = $oidcPort + 1
+$networkPrefix = if ($isChat) { '10.248.75' } else { '10.248.73' }
+$env:KYRO_NEBIUS_API_PORT = "$apiPort"
+$env:KYRO_NEBIUS_OIDC_PORT = "$oidcPort"
+$env:KYRO_NEBIUS_CONTROL_PORT = "$controlPort"
+$env:KYRO_NEBIUS_SUBNET_PREFIX = $networkPrefix
+$env:KYRO_NEBIUS_OUTBOUND_SUBNET = if ($isChat) { '10.248.76.0/24' } else { '10.248.74.0/24' }
+$env:KYRO_NEBIUS_IMAGE = if ($isChat) { 'kyro-nebius-chat:local' } else { 'kyro-nebius-p1:local' }
 $env:KYRO_NEBIUS_STATE = $state.Replace('\','/')
 $compose = Join-Path $repo 'compose.p1.nebius.yaml'
 $utf8 = [Text.UTF8Encoding]::new($false)
@@ -14,12 +28,13 @@ function Write-State([string]$Name, [string]$Value) { [IO.File]::WriteAllText((J
 function Write-Json([string]$Name, $Value) { Write-State $Name (($Value | ConvertTo-Json -Depth 30) + "`n") }
 function Read-Json([string]$Name) { Get-Content -LiteralPath (Join-Path $state $Name) -Raw | ConvertFrom-Json }
 function Invoke-Compose([string[]]$Arguments) {
-    & docker compose --project-name kyro-nebius-p1 --file $compose @Arguments
+    & docker compose --project-name $projectName --file $compose @Arguments
     if ($LASTEXITCODE -ne 0) { throw 'compose_failed' }
 }
 function Write-Tls {
     [IO.Directory]::CreateDirectory((Join-Path $state 'tls')) | Out-Null
-    & docker run --rm --network none --entrypoint sh --mount "type=bind,source=$state,target=/state" kyro-nebius-guard:local -ec 'umask 077; openssl req -x509 -newkey rsa:3072 -nodes -days 30 -subj /CN=Kyro-Nebius-P1-CA -keyout /state/tls/ca.key -out /state/tls/ca.crt 2>/dev/null; openssl req -newkey rsa:3072 -nodes -subj /CN=postgres -keyout /state/tls/server.key -out /state/tls/server.csr 2>/dev/null; printf "subjectAltName=DNS:postgres,IP:10.248.73.2\nextendedKeyUsage=serverAuth\n" > /state/tls/server.ext; openssl x509 -req -in /state/tls/server.csr -CA /state/tls/ca.crt -CAkey /state/tls/ca.key -CAcreateserial -days 30 -extfile /state/tls/server.ext -out /state/tls/server.crt 2>/dev/null; chmod 644 /state/tls/ca.crt /state/tls/server.crt'
+    $tlsScript = 'umask 077; openssl req -x509 -newkey rsa:3072 -nodes -days 30 -subj /CN=Kyro-Nebius-P1-CA -keyout /state/tls/ca.key -out /state/tls/ca.crt 2>/dev/null; openssl req -newkey rsa:3072 -nodes -subj /CN=postgres -keyout /state/tls/server.key -out /state/tls/server.csr 2>/dev/null; printf "subjectAltName=DNS:postgres,IP:10.248.73.2\nextendedKeyUsage=serverAuth\n" > /state/tls/server.ext; openssl x509 -req -in /state/tls/server.csr -CA /state/tls/ca.crt -CAkey /state/tls/ca.key -CAcreateserial -days 30 -extfile /state/tls/server.ext -out /state/tls/server.crt 2>/dev/null; chmod 644 /state/tls/ca.crt /state/tls/server.crt'
+    & docker run --rm --network none --entrypoint sh --mount "type=bind,source=$state,target=/state" kyro-nebius-guard:local -ec ($tlsScript.Replace('10.248.73.2', "$networkPrefix.2"))
     if ($LASTEXITCODE -ne 0) { throw 'tls_generation_failed' }
 }
 function Stop-Runtime {
@@ -60,7 +75,7 @@ table inet kyro_egress {
     tcp dport 53 counter reject
     meta nfproto ipv6 counter reject
     ct state established,related accept
-    ip daddr 10.248.73.2 tcp dport 5432 counter accept
+    ip daddr $networkPrefix.2 tcp dport 5432 counter accept
     ip daddr @nebius_v4 tcp dport 443 counter accept
     counter reject
   }
@@ -93,23 +108,38 @@ function Import-Catalog {
         $minimum = ($models | Measure-Object profile_usd -Minimum).Minimum
         $ties = @($models | Where-Object profile_usd -eq $minimum)
         $ids = [string[]]@($ties | ForEach-Object id); [Array]::Sort($ids,[StringComparer]::Ordinal)
+        if ($isChat) {
+            $nano = $models | Where-Object id -CEQ 'nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B'
+            if ($null -eq $nano) { throw 'nano_unavailable' }
+            return $nano
+        }
         return ($ties | Where-Object id -CEQ $ids[0])
     } finally { [Array]::Clear($plain,0,$plain.Length); $client.Dispose(); $handler.Dispose() }
 }
 function Check-Qualification {
+    if ($isChat -and -not (Test-Path -LiteralPath (Join-Path $state 'qualification.json') -PathType Leaf)) { throw 'zero_retention_account_confirmation_missing' }
     $qualification = Read-Json 'qualification.json'
+    $standard = $isChat -and $qualification.PSObject.Properties['retention_mode'] -and $qualification.retention_mode -ceq 'provider_standard'
+    if ($standard) {
+        if (-not $qualification.PSObject.Properties['standard_retention_accepted'] -or $qualification.standard_retention_accepted -ne $true -or
+            -not $qualification.PSObject.Properties['consent_reference'] -or [string]::IsNullOrWhiteSpace($qualification.consent_reference) -or
+            $qualification.zero_retention_confirmed -ne $false) { throw 'standard_retention_consent_missing' }
+    } elseif ($isChat -and (-not $qualification.PSObject.Properties['account_evidence'] -or [string]::IsNullOrWhiteSpace($qualification.account_evidence))) { throw 'account_retention_evidence_missing' }
     $registry = Read-Json 'models.json'
     $destination = $registry.destinations[0]
     $vaultHash = (Get-FileHash -LiteralPath (Get-NebiusVaultPath) -Algorithm SHA256).Hash.ToLowerInvariant()
-    $age = [DateTimeOffset]::Now - [DateTimeOffset]::Parse($qualification.checked_at)
+    # ConvertFrom-Json can return a DateTime. Avoid culture-dependent reformatting (04/10 vs 10/04).
+    $checkedAt = if ($qualification.checked_at -is [DateTime]) { $qualification.checked_at.ToString('o') } else { [string]$qualification.checked_at }
+    $age = [DateTimeOffset]::Now - [DateTimeOffset]::Parse($checkedAt, [Globalization.CultureInfo]::InvariantCulture)
     if ($qualification.endpoint -cne $destination.base_url -or $qualification.model -cne $destination.models[0].id -or
         $qualification.vault_sha256 -cne $vaultHash -or $age.TotalDays -lt 0 -or $age.TotalDays -gt 30 -or
-        $qualification.zero_retention_confirmed -ne $true -or $qualification.json_schema_supported -ne $true -or
+        (-not $standard -and $qualification.zero_retention_confirmed -ne $true) -or (-not $isChat -and $qualification.json_schema_supported -ne $true) -or
         $qualification.max_completion_tokens_includes_reasoning -ne $true) { throw 'qualification_unconfirmed' }
     $source = [Uri]$qualification.source
     if ($source.Scheme -ne 'https' -or $source.Host -notin @('nebius.com','docs.nebius.com','docs.tokenfactory.nebius.com')) { throw 'qualification_source_invalid' }
-    $destination.qualified = $true; $destination.retention_seconds=0
-    $destination.nebius.json_schema=$true; $destination.nebius.bounded_completion=$true
+    $destination.qualified = $true; $destination.retention_seconds=if ($standard) { $null } else { 0 }
+    if ($isChat) { $destination.nebius | Add-Member -NotePropertyName provider_standard_retention_accepted -NotePropertyValue ([bool]$standard) -Force }
+    $destination.nebius.json_schema=(-not $isChat); $destination.nebius.bounded_completion=$true
     $destination.nebius.retention_evidence=$qualification.source
     Write-Json 'models.json' $registry
 }
@@ -123,7 +153,7 @@ if ($Action -eq 'Stop') {
     return
 }
 if ($Action -eq 'RefreshTls') {
-    if (-not (Test-Path -LiteralPath (Join-Path $state 'campaign.json') -PathType Leaf)) { throw 'state_not_prepared' }
+    if (-not (Test-Path -LiteralPath (Join-Path $state $budgetFile) -PathType Leaf)) { throw 'state_not_prepared' }
     Protect-State
     Stop-Runtime
     Write-Tls
@@ -132,7 +162,7 @@ if ($Action -eq 'RefreshTls') {
 }
 if ($Action -eq 'Prepare') {
     Protect-State
-    if (Test-Path -LiteralPath (Join-Path $state 'campaign.json')) { throw 'state_already_prepared_preserve_budget' }
+    if (Test-Path -LiteralPath (Join-Path $state $budgetFile)) { throw 'state_already_prepared_preserve_budget' }
     $model = Import-Catalog
     if ($model.context_length -gt 262144 -or [decimal]$model.pricing.request -ne 0) { throw 'model_cost_not_bounded' }
     $schema = @{ type='object'; properties=@{ summary=@{type='string';maxLength=300};items=@{type='array';items=@{type='string';maxLength=100};maxItems=3} };required=@('summary','items');additionalProperties=$false }
@@ -141,6 +171,15 @@ if ($Action -eq 'Prepare') {
     Write-Json 'models.json' @{format_version=1;destinations=@(@{ id='nebius-nvidia';provider='nebius';kind='cloud';base_url='https://api.tokenfactory.nebius.com/v1/';allowed_host='api.tokenfactory.nebius.com';pinned_addresses=@();secret_ref='file:KYRO_MODEL_API_KEY_FILE';qualified=$false;retention_seconds=$null;
         nebius=@{json_schema=$false;bounded_completion=$true;retention_evidence=$null;wire_overhead_tokens=1024;context_tokens=[int]$model.context_length};
         models=@(@{id=$model.id;version=$null;output_schema=@{id='nebius-p1-output';version='1';schema=$schema};pricing=$pricing;max_input_bytes=4096;max_input_tokens=[int]$model.context_length;max_output_tokens=512;max_deadline_ms=30000;max_response_bytes=16000}) })}
+    if ($isChat) {
+        $chatRegistry = Read-Json 'models.json'
+        $chatRegistry.destinations[0].id = 'nebius-chat'
+        $chatModel = $chatRegistry.destinations[0].models[0]
+        $chatModel | Add-Member -NotePropertyName output_mode -NotePropertyValue 'text_chat'
+        $chatModel.output_schema = @{id='chat-reply';version='1';schema=@{type='object';required=@('text','truncated');properties=@{text=@{type='string';maxLength=32768};truncated=@{type='boolean'}};additionalProperties=$false}}
+        $chatModel.max_input_bytes=32768; $chatModel.max_output_tokens=2048; $chatModel.max_deadline_ms=60000; $chatModel.max_response_bytes=48000
+        Write-Json 'models.json' $chatRegistry
+    }
     Write-Pins (Get-PublicPins)
     $xml = [xml](Invoke-WebRequest -Uri 'https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml').Content
     $rate = [decimal]($xml.Envelope.Cube.Cube.Cube | Where-Object currency -eq USD).rate
@@ -153,29 +192,29 @@ if ($Action -eq 'Prepare') {
     Write-State 'init.sql' "CREATE ROLE kyro_api LOGIN NOINHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD '$api';`nCREATE ROLE kyro_worker LOGIN NOINHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD '$worker';`n"
     foreach ($role in @(@('admin',$admin),@('api',$api),@('worker',$worker))) {
         # The worker shares a DNS-denied namespace and connects to the fixed database IP.
-        $databaseHost = if ($role[0] -eq 'worker') { '10.248.73.2' } else { 'postgres' }
+        $databaseHost = if ($role[0] -eq 'worker') { "$networkPrefix.2" } else { 'postgres' }
         Write-State ($role[0]+'_database_url') ('postgresql://kyro_'+$role[0]+':'+$role[1]+'@'+$databaseHost+':5432/kyro_nebius?sslmode=verify-full&sslrootcert=/run/secrets/postgres_ca')
     }
     Write-Tls
     Write-State 'api.env' @"
 KYRO_ENV=development
-KYRO_BIND=0.0.0.0:58090
+KYRO_BIND=0.0.0.0:$apiPort
 KYRO_MAX_CONNECTIONS=4
 KYRO_MAX_BODY_BYTES=49152
 KYRO_SYNTHETIC_PROVIDERS=true
-KYRO_OIDC_ISSUER=http://127.0.0.1:59090/issuer
-KYRO_OIDC_AUTHORIZATION_ENDPOINT=http://127.0.0.1:59090/oidc/authorize
-KYRO_OIDC_TOKEN_ENDPOINT=http://127.0.0.1:59090/oidc/token
-KYRO_OIDC_JWKS_URI=http://127.0.0.1:59090/oidc/jwks
-KYRO_OIDC_REDIRECT_URI=http://127.0.0.1:58090/v1/auth/callback
+KYRO_OIDC_ISSUER=http://127.0.0.1:$oidcPort/issuer
+KYRO_OIDC_AUTHORIZATION_ENDPOINT=http://127.0.0.1:$oidcPort/oidc/authorize
+KYRO_OIDC_TOKEN_ENDPOINT=http://127.0.0.1:$oidcPort/oidc/token
+KYRO_OIDC_JWKS_URI=http://127.0.0.1:$oidcPort/oidc/jwks
+KYRO_OIDC_REDIRECT_URI=http://127.0.0.1:$apiPort/v1/auth/callback
 KYRO_OIDC_CLIENT_ID=kyro-e2e-client
 KYRO_OIDC_SYNTHETIC_PROVIDER=true
-KYRO_AUTH_UI_ORIGIN=http://127.0.0.1:58090
+KYRO_AUTH_UI_ORIGIN=http://127.0.0.1:$apiPort
 KYRO_MODEL_REGISTRY_PATH=/app/config/models.nebius.json
 KYRO_MODEL_ALLOW_SYNTHETIC_LOOPBACK=0
 RUST_LOG=kyro_api=info
 "@
-    Write-Json 'campaign.json' $campaign
+    Write-Json $budgetFile $campaign
     Write-Output 'Configuration isolée préparée ; génération désactivée tant que la qualification est absente.'
     return
 }
@@ -187,15 +226,15 @@ if ($Action -eq 'RefreshPins') {
     return
 }
 if ($Action -eq 'Start') {
-    $campaign=Read-Json 'campaign.json'
-    if ($campaign.pending -or $campaign.stopped_on_uncertainty -or $campaign.attempts -ge $campaign.max_calls) { throw 'campaign_closed_or_uncertain' }
+    $campaign=Read-Json $budgetFile
+    if (-not $isChat -and ($campaign.pending -or $campaign.stopped_on_uncertainty -or $campaign.attempts -ge $campaign.max_calls)) { throw 'campaign_closed_or_uncertain' }
     Check-Qualification
     try {
     Invoke-Compose @('up','-d','--wait','postgres','egress')
     Invoke-Compose @('--profile','migration','run','--rm','migrate')
     Invoke-Compose @('up','-d','--force-recreate','api','oidc')
     Invoke-Compose @('up','-d','worker')
-    $container = (& docker compose --project-name kyro-nebius-p1 --file $compose ps -q worker).Trim()
+    $container = (& docker compose --project-name $projectName --file $compose ps -q worker).Trim()
     $ready=$false
     for ($index=0; $index -lt 100; $index++) {
         & docker exec $container test -p /run/kyro-secrets/key.pipe 2>$null
@@ -212,7 +251,8 @@ if ($Action -eq 'Start') {
         $process.StandardInput.BaseStream.Write($plain,0,$plain.Length); $process.StandardInput.Close()
         if (-not $process.WaitForExit(10000) -or $process.ExitCode -ne 0) { throw 'worker_secret_delivery_failed' }
     } finally { [Array]::Clear($plain,0,$plain.Length); $process.Dispose() }
-    Write-Output 'Worker isolé lancé ; qualification via verify-nebius-p1.mjs, puis Stop obligatoire.'
+    if ($isChat) { Write-Output "Runtime du chat lancé ; budget durable inchangé, prêt pour l’interface." }
+    else { Write-Output 'Worker isolé lancé ; qualification via verify-nebius-p1.mjs, puis Stop obligatoire.' }
     } catch {
         Stop-Runtime
         throw

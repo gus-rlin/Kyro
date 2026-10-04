@@ -9,8 +9,8 @@ use std::{
 use kyro_domain::{
     Environment, Error, Result,
     model::{
-        ModelPolicyLimits, ModelProviderKind, ModelRegistrationSnapshot, PricingSnapshot,
-        valid_model_id,
+        ModelOutputMode, ModelPolicyLimits, ModelProviderKind, ModelRegistrationSnapshot,
+        PricingSnapshot, valid_model_id,
     },
 };
 use reqwest::Url;
@@ -132,6 +132,8 @@ struct DestinationFile {
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct NebiusQualification {
+    #[serde(default)]
+    provider_standard_retention_accepted: bool,
     json_schema: bool,
     bounded_completion: bool,
     retention_evidence: Option<String>,
@@ -143,6 +145,8 @@ struct NebiusQualification {
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct ModelFile {
+    #[serde(default)]
+    output_mode: ModelOutputMode,
     id: String,
     version: Option<String>,
     output_schema: OutputSchemaFile,
@@ -362,13 +366,29 @@ fn parse_destination(
             .nebius
             .as_ref()
             .ok_or_else(|| Error::Invalid("qualification Nebius absente".into()))?;
+        let standard_chat = qualification.provider_standard_retention_accepted
+            && environment == Environment::Development
+            && file.id == "nebius-chat"
+            && file.retention_seconds.is_none()
+            && file.models.len() == 1
+            && file.models[0].output_mode == ModelOutputMode::TextChat
+            && file.models[0].id == "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B";
+        if qualification.provider_standard_retention_accepted && !standard_chat {
+            return Err(Error::Invalid(
+                "acceptation de conservation hors conversation de développement".into(),
+            ));
+        }
         if file.kind != ModelProviderKind::Cloud
             || file.base_url != "https://api.tokenfactory.nebius.com/v1/"
             || file.allowed_host != "api.tokenfactory.nebius.com"
             || file.secret_ref.as_deref() != Some("file:KYRO_MODEL_API_KEY_FILE")
             || (file.qualified
-                && (file.retention_seconds != Some(0)
-                    || !qualification.json_schema
+                && ((file.retention_seconds != Some(0) && !standard_chat)
+                    || (!qualification.json_schema
+                        && file
+                            .models
+                            .iter()
+                            .any(|model| model.output_mode == ModelOutputMode::StructuredJson))
                     || !qualification.bounded_completion
                     || !qualification
                         .retention_evidence
@@ -556,6 +576,7 @@ fn parse_model(
     limits.validate()?;
     Ok(RegisteredModel {
         registration: ModelRegistrationSnapshot {
+            output_mode: model.output_mode,
             destination_id: destination_id.to_owned(),
             provider: provider.to_owned(),
             provider_kind,

@@ -39,6 +39,7 @@ pub enum DataCategory {
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ModelPurpose {
+    Conversation,
     Planning,
     Generation,
     Review,
@@ -142,6 +143,10 @@ impl ModelPolicyLimits {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct DataPolicy {
+    /// Explicit consent for conversations whose provider retention duration is unknown.
+    /// Absent/false keeps the historical fail-closed rule.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub allow_unknown_provider_retention: bool,
     pub allowed_destinations: BTreeSet<String>,
     pub allowed_categories: BTreeSet<DataCategory>,
     pub allowed_purposes: BTreeSet<ModelPurpose>,
@@ -151,6 +156,7 @@ pub struct DataPolicy {
 impl Default for DataPolicy {
     fn default() -> Self {
         Self {
+            allow_unknown_provider_retention: false,
             allowed_destinations: BTreeSet::new(),
             allowed_categories: BTreeSet::new(),
             allowed_purposes: BTreeSet::new(),
@@ -203,6 +209,8 @@ impl DataPolicy {
             Some(seconds)
                 if seconds <= self.limits.max_retention_seconds
                     && seconds <= MAX_RETENTION_SECONDS => {}
+            None if self.allow_unknown_provider_retention
+                && request.input.purpose == ModelPurpose::Conversation => {}
             _ => return Err(Error::Forbidden),
         }
         Ok(())
@@ -433,9 +441,41 @@ pub enum ModelProviderKind {
     Cloud,
 }
 
+/// Trusted wire format; historical registrations retain their structured contract.
+#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ModelOutputMode {
+    #[default]
+    StructuredJson,
+    TextChat,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ChatInput {
+    pub messages: Vec<ChatMessage>,
+    pub context_tokens: u32,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ChatMessage {
+    pub role: ChatRole,
+    pub content: String,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ChatRole {
+    User,
+    Assistant,
+}
+
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct ModelRegistrationSnapshot {
+    #[serde(default, skip_serializing_if = "is_structured_mode")]
+    pub output_mode: ModelOutputMode,
     pub destination_id: String,
     pub provider: String,
     pub provider_kind: ModelProviderKind,
@@ -445,8 +485,16 @@ pub struct ModelRegistrationSnapshot {
     pub output_schema_version: String,
     pub output_schema_hash: [u8; 32],
     pub pricing: PricingSnapshot,
-    /// `None` signifie que la rétention du fournisseur n'est pas qualifiée et interdit l'envoi.
+    /// `None` means unknown retention; refused unless explicitly accepted by the conversation policy.
     pub retention_seconds: Option<u32>,
+}
+
+fn is_structured_mode(mode: &ModelOutputMode) -> bool {
+    *mode == ModelOutputMode::StructuredJson
+}
+
+fn is_false(value: &bool) -> bool {
+    !*value
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -639,6 +687,22 @@ pub struct EffectReconcileOutcome {
 /// Port persistant implémenté par `kyro-store`; les transactions finissent avant toute requête HTTP.
 #[allow(async_fn_in_trait)]
 pub trait ModelEffectStore: Send + Sync {
+    /// Only a current worker lease may publish provisional text. Defaults fail closed.
+    async fn append_chat_delta(
+        &self,
+        _context: &ModelEffectContext,
+        _effect_id: Uuid,
+        _text: &str,
+    ) -> Result<()> {
+        Err(Error::Unavailable)
+    }
+    async fn check_chat_active(
+        &self,
+        _context: &ModelEffectContext,
+        _effect_id: Uuid,
+    ) -> Result<()> {
+        Err(Error::Unavailable)
+    }
     async fn prepare_model_effect(
         &self,
         preparation: ModelEffectPreparation,
@@ -807,6 +871,7 @@ mod tests {
 
     fn policy() -> DataPolicy {
         DataPolicy {
+            allow_unknown_provider_retention: false,
             allowed_destinations: ["synthetic-local".into()].into_iter().collect(),
             allowed_categories: [DataCategory::UserRequest].into_iter().collect(),
             allowed_purposes: [ModelPurpose::Planning].into_iter().collect(),
@@ -841,6 +906,36 @@ mod tests {
         );
         assert_eq!(
             policy().authorize_request(&request(), input_bytes, tokens, None),
+            Err(Error::Forbidden)
+        );
+    }
+
+    #[test]
+    fn unknown_retention_requires_explicit_conversation_consent() {
+        let mut policy = policy();
+        let mut input = request();
+        input.input.purpose = ModelPurpose::Conversation;
+        policy.allowed_purposes.insert(ModelPurpose::Conversation);
+        assert_eq!(
+            policy.authorize_request(&input, 100, 100, None),
+            Err(Error::Forbidden)
+        );
+        assert!(
+            !serde_json::to_value(&policy)
+                .unwrap()
+                .as_object()
+                .unwrap()
+                .contains_key("allow_unknown_provider_retention")
+        );
+        policy.allow_unknown_provider_retention = true;
+        assert!(policy.authorize_request(&input, 100, 100, None).is_ok());
+        assert_eq!(
+            policy.authorize_request(&input, 100, 100, Some(1)),
+            Err(Error::Forbidden)
+        );
+        input.input.purpose = ModelPurpose::Planning;
+        assert_eq!(
+            policy.authorize_request(&input, 100, 100, None),
             Err(Error::Forbidden)
         );
     }

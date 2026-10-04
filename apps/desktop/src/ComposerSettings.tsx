@@ -1,4 +1,5 @@
 import { ComposerChoice } from './ComposerChoice';
+import { useTooltip } from './useTooltip';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, Folder, Globe, SlidersHorizontal, Terminal, Warning, X } from '@phosphor-icons/react';
 
@@ -29,7 +30,8 @@ export function describePreferences(preferences: ComposerPreferences) {
   return `${accessChoices.find((item) => item.value === preferences.access)!.label} · ${reasoningChoices.find((item) => item.value === preferences.reasoning)!.label} · ${contextChoices.find((item) => item.value === preferences.contextTokens)!.label}`;
 }
 
-export function ComposerSettings({ preferences, onChange }: { preferences: ComposerPreferences; onChange: (value: ComposerPreferences) => void }) {
+export function ComposerSettings({ preferences, onChange, chatOnly=false }: { preferences: ComposerPreferences; onChange: (value: ComposerPreferences) => void; chatOnly?:boolean }) {
+  const { triggerProps, tooltip } = useTooltip('Réglages');
   const container = useRef<HTMLDetailsElement>(null);
   const accessDialog = useRef<HTMLDialogElement>(null);
   const [confirmFullAccess, setConfirmFullAccess] = useState(false);
@@ -62,12 +64,13 @@ export function ComposerSettings({ preferences, onChange }: { preferences: Compo
       event.stopPropagation();
     }
   }}>
-    <summary aria-label="Réglages du message" title={describePreferences(preferences)}><SlidersHorizontal size={18} /></summary>
+    <summary {...triggerProps} aria-label="Réglages du message"><SlidersHorizontal size={18} /></summary>
+    {tooltip}
     <section className="composer-preferences-panel" aria-label="Réglages du message">
-      <header className="team-panel-header"><div><h2>Réglages</h2><p>Les préférences de votre message.</p></div><span className="team-demo">Démo</span></header>
-      <div className="preference-field"><strong>Accès</strong><ComposerChoice label="Accès" selected={preferences.access} choices={accessChoices} onSelect={chooseAccess} /></div>
-      <fieldset className="preference-field"><legend>Raisonnement de l’orchestrateur</legend><div className="preference-options">{reasoningChoices.map((item) => <button type="button" key={item.value} aria-pressed={preferences.reasoning === item.value} title={item.description} onClick={() => onChange({ ...preferences, reasoning: item.value })}>{item.label}</button>)}</div></fieldset>
-      <fieldset className="preference-field"><legend>Contexte par agent</legend><div className="preference-options context-options">{contextChoices.map((item) => <button type="button" key={item.value} aria-pressed={preferences.contextTokens === item.value} title={item.description} onClick={() => onChange({ ...preferences, contextTokens: item.value })}>{item.label}</button>)}</div></fieldset>
+      <header className="team-panel-header"><div><h2>Réglages</h2><p>Les préférences de votre message.</p></div>{!chatOnly && <span className="team-demo">Démo</span>}</header>
+      <div className="preference-field"><strong>Accès</strong>{chatOnly?<button type="button" disabled>Outils indisponibles</button>:<ComposerChoice label="Accès" selected={preferences.access} choices={accessChoices} onSelect={chooseAccess} />}</div>
+      <fieldset className="preference-field" disabled={chatOnly}><legend>{chatOnly?'Raisonnement · non qualifié':'Raisonnement de l’orchestrateur'}</legend><div className="preference-options">{reasoningChoices.map((item) => <button type="button" key={item.value} aria-pressed={!chatOnly && preferences.reasoning === item.value} title={item.description} onClick={() => onChange({ ...preferences, reasoning: item.value })}>{item.label}</button>)}</div></fieldset>
+      <fieldset className="preference-field"><legend>{chatOnly?'Contexte de la conversation':'Contexte par agent'}</legend><div className="preference-options context-options">{contextChoices.map((item) => <button type="button" key={item.value} aria-pressed={preferences.contextTokens === item.value} title={item.description} onClick={() => onChange({ ...preferences, contextTokens: item.value })}>{item.label}</button>)}</div></fieldset>
     </section>
     <dialog ref={accessDialog} className="project-dialog access-confirm-dialog" aria-labelledby="access-confirm-title" aria-describedby="access-confirm-description" onClose={() => {
       setConfirmFullAccess(false);

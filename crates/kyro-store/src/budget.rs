@@ -1699,6 +1699,17 @@ fn require_one_row(rows: u64) -> Result<()> {
 }
 
 impl ModelEffectStore for Store {
+    async fn append_chat_delta(
+        &self,
+        context: &ModelEffectContext,
+        effect_id: Uuid,
+        text: &str,
+    ) -> Result<()> {
+        self.persist_chat_delta(context, effect_id, text).await
+    }
+    async fn check_chat_active(&self, context: &ModelEffectContext, effect_id: Uuid) -> Result<()> {
+        self.chat_active(context, effect_id).await
+    }
     async fn prepare_model_effect(
         &self,
         preparation: ModelEffectPreparation,

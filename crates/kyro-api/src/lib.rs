@@ -28,6 +28,7 @@ use tracing::Instrument;
 use uuid::Uuid;
 
 pub mod budgets;
+mod chat;
 pub mod error;
 pub mod events;
 pub mod identity;
@@ -209,6 +210,7 @@ pub fn router(state: AppState) -> Router {
         .route("/health/live", get(health_live))
         .merge(normal_routes)
         .merge(events::routes())
+        .merge(chat::routes())
         .layer(DefaultBodyLimit::max(body_limit))
         .layer(middleware::from_fn_with_state(
             state.http.clone(),

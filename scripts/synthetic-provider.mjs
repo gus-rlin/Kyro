@@ -152,6 +152,8 @@ export async function startSyntheticProvider({
     lastModel: null,
     lastStructuredFormat: null,
     lastRequestBodyBytes: 0,
+    lastChatRoles: [],
+    lastChatRememberedCedar: false,
   };
   const setNextIdentity = (sub, email = `${sub}@example.invalid`) => {
     if (!/^synthetic-user-[a-z0-9-]+$/.test(sub)) throw new Error('synthetic subject must use the synthetic-user-* namespace');
@@ -167,7 +169,7 @@ export async function startSyntheticProvider({
       throw new Error('invalid synthetic inference scenario');
     }
     const mode = scenario.mode ?? 'success';
-    if (!['success', 'status', 'malformed', 'oversized', 'hold'].includes(mode)) {
+    if (!['success', 'status', 'malformed', 'oversized', 'hold', 'chat', 'chat_cut', 'chat_length', 'chat_secret', 'chat_silent'].includes(mode)) {
       throw new Error(`unsupported synthetic inference mode: ${mode}`);
     }
     if ((scenario.failuresRemaining !== undefined &&
@@ -309,6 +311,39 @@ export async function startSyntheticProvider({
         const model = typeof body.model === 'string' ? body.model : DEFAULT_MODEL;
         counters.lastModel = model;
         counters.lastStructuredFormat = body.response_format?.type ?? null;
+
+        if (scenario.mode.startsWith('chat')) {
+          if (body.stream!==true || body.store!==false || body.stream_options?.include_usage!==true || body.response_format?.type!=='text' || body.max_completion_tokens!==2048 || body.max_tokens!==undefined || body.tool_choice!=='none') {
+            sendJson(res,400,{error:{message:'invalid synthetic chat contract'}}); return;
+          }
+          counters.lastChatRoles=body.messages?.map(m=>m.role) || [];
+          counters.lastChatRememberedCedar=body.messages?.some(m=>m.role==='assistant' && m.content.includes('Cèdre')) || false;
+          const id=`chatcmpl-${randomBytes(8).toString('hex')}`;
+          res.writeHead(200,{'content-type':'text/event-stream; charset=utf-8','cache-control':'no-store'});
+          const frame=(delta,finish=null)=>`data: ${JSON.stringify({id,model,choices:[{index:0,delta,finish_reason:finish}]})}\r\n\r\n`;
+          const write=(wire)=>{ counters.inferenceBytesReturned+=Buffer.byteLength(wire); return res.write(wire); };
+          write(': synthetic SSE\r\n\r\n');
+          if(scenario.mode==='chat_silent') { await new Promise(resolve=>res.once('close',resolve)); counters.inferenceAborted++; return; }
+          const text=scenario.mode==='chat_secret'? expectedApiKey : counters.lastChatRememberedCedar
+            ? 'Je me souviens de Cèdre 🍋, le nom choisi au premier échange. Cette réponse de test vérifie la mémoire de la conversation.'
+            : 'Cèdre 🍋 est le nom retenu pour votre application. Cette réponse synthétique arrive progressivement et peut être interrompue.';
+          const slices=scenario.mode==='chat_secret'?[...text]:[text.slice(0,65),text.slice(65)];
+          for(const content of slices) {
+            if(res.destroyed) {counters.inferenceAborted++;return;}
+            const wire=Buffer.from(frame({content,reasoning_content:'internal-test-reasoning-never-display'}));
+            // Split raw UTF-8 and JSON arbitrarily to exercise the provider decoder.
+            const split=wire.indexOf(Buffer.from('🍋'))+1;
+            write(wire.subarray(0,Math.max(1,split)));
+            write(wire.subarray(Math.max(1,split)));
+            await new Promise(resolve=>setTimeout(resolve,scenario.mode==='chat_secret'?10:200));
+          }
+          await new Promise(resolve=>setTimeout(resolve,scenario.delayMs??1200));
+          if(res.destroyed) {counters.inferenceAborted++;return;}
+          if(scenario.mode==='chat_cut') { counters.inferenceAborted++;res.destroy();return; }
+          write(frame({},scenario.mode==='chat_length'?'length':'stop'));
+          write(`data: ${JSON.stringify({id,model,choices:[],usage:{prompt_tokens:17,completion_tokens:11,total_tokens:28}})}\r\n\r\n`);
+          write('data: [DONE]\r\n\r\n'); res.end(); counters.inferenceCompleted++; return;
+        }
 
         let aborted = false;
         let releaseThisCall;

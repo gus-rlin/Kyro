@@ -25,14 +25,14 @@ services:
         read_only: true
     secrets: [postgres_password]
     networks:
-      control: {ipv4_address: 10.248.73.2}
+      control: {ipv4_address: '${KYRO_NEBIUS_SUBNET_PREFIX:-10.248.73}.2'}
     healthcheck:
       test: [CMD-SHELL, 'pg_isready -U kyro_admin -d kyro_nebius']
       interval: 2s
       timeout: 3s
       retries: 30
   migrate:
-    image: kyro-nebius-p1:local
+    image: ${KYRO_NEBIUS_IMAGE:-kyro-nebius-p1:local}
     build: .
     profiles: [migration]
     entrypoint: [/bin/sh, -ec, 'export KYRO_DATABASE_ADMIN_URL="$$(cat /run/secrets/admin_database_url)"; exec /usr/local/bin/kyro-migrate']
@@ -44,7 +44,7 @@ services:
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
   api:
-    image: kyro-nebius-p1:local
+    image: ${KYRO_NEBIUS_IMAGE:-kyro-nebius-p1:local}
     entrypoint: [/bin/sh, -ec, 'export KYRO_DATABASE_URL="$$(cat /run/secrets/api_database_url)"; exec /usr/local/bin/kyro-api']
     env_file: ${KYRO_NEBIUS_STATE}/api.env
     volumes:
@@ -54,9 +54,9 @@ services:
         read_only: true
     secrets: [api_database_url, postgres_ca]
     networks:
-      control: {ipv4_address: 10.248.73.4}
+      control: {ipv4_address: '${KYRO_NEBIUS_SUBNET_PREFIX:-10.248.73}.4'}
       outbound: {}
-    ports: ['127.0.0.1:58090:58090', '127.0.0.1:59090:59090', '127.0.0.1:59091:59091']
+    ports: ['127.0.0.1:${KYRO_NEBIUS_API_PORT:-58090}:${KYRO_NEBIUS_API_PORT:-58090}', '127.0.0.1:${KYRO_NEBIUS_OIDC_PORT:-59090}:${KYRO_NEBIUS_OIDC_PORT:-59090}', '127.0.0.1:${KYRO_NEBIUS_CONTROL_PORT:-59091}:${KYRO_NEBIUS_CONTROL_PORT:-59091}']
     read_only: true
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
@@ -70,9 +70,9 @@ services:
       dockerfile: tests/fixtures/Dockerfile.synthetic-provider
     network_mode: service:api
     environment:
-      KYRO_E2E_PROVIDER_PORT: '59090'
+      KYRO_E2E_PROVIDER_PORT: '${KYRO_NEBIUS_OIDC_PORT:-59090}'
       KYRO_E2E_PROVIDER_HOST: '0.0.0.0'
-      KYRO_E2E_CONTROL_PORT: '59091'
+      KYRO_E2E_CONTROL_PORT: '${KYRO_NEBIUS_CONTROL_PORT:-59091}'
       KYRO_MODEL_API_KEY: synthetic-unused-nebius-oidc
       KYRO_E2E_CONTROL_TOKEN: synthetic-nebius-oidc-control-token-local
     read_only: true
@@ -82,7 +82,7 @@ services:
     image: kyro-nebius-guard:local
     build: {context: ops/nebius, dockerfile: Dockerfile.guard}
     networks:
-      control: {ipv4_address: 10.248.73.3}
+      control: {ipv4_address: '${KYRO_NEBIUS_SUBNET_PREFIX:-10.248.73}.3'}
       outbound: {}
     cap_drop: [ALL]
     cap_add: [NET_ADMIN, SETPCAP]
@@ -103,7 +103,7 @@ services:
     mem_limit: 64m
     cpus: 0.25
   worker:
-    image: kyro-nebius-p1:local
+    image: ${KYRO_NEBIUS_IMAGE:-kyro-nebius-p1:local}
     entrypoint: [/bin/sh, /opt/kyro/worker-start.sh]
     network_mode: service:egress
     depends_on:
@@ -145,10 +145,10 @@ networks:
   control:
     internal: true
     ipam:
-      config: [{subnet: 10.248.73.0/24}]
+      config: [{subnet: '${KYRO_NEBIUS_SUBNET_PREFIX:-10.248.73}.0/24'}]
   outbound:
     ipam:
-      config: [{subnet: 10.248.74.0/24}]
+      config: [{subnet: '${KYRO_NEBIUS_OUTBOUND_SUBNET:-10.248.74.0/24}'}]
 secrets:
   postgres_password: {file: '${KYRO_NEBIUS_STATE}/postgres_password'}
   admin_database_url: {file: '${KYRO_NEBIUS_STATE}/admin_database_url'}

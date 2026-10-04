@@ -2,6 +2,8 @@ const { app, BrowserWindow, nativeTheme, session, dialog, ipcMain } = require('e
 const { join } = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { createWorkspaceService } = require('./workspaces.cjs');
+const { createChatService } = require('./chat.cjs');
+const { registerChatIpc } = require('./chat-ipc.cjs');
 
 // Profiles supplied by the test runner keep smoke tests out of the user's preferences.
 const profile = process.argv.find((value) => value.startsWith('--kyro-profile='));
@@ -12,6 +14,13 @@ nativeTheme.themeSource = 'light';
 const devUrl = !app.isPackaged && process.env.KYRO_DESKTOP_DEV === '1'
   ? 'http://127.0.0.1:5174' : null;
 let window;
+const chat = createChatService();
+let closingChat = false;
+app.on('before-quit', (event) => {
+  if (closingChat) return;
+  event.preventDefault(); closingChat = true;
+  chat.close().catch(()=>{}).finally(()=>app.quit());
+});
 
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
@@ -22,6 +31,10 @@ else {
   });
 
   app.whenReady().then(() => {
+    registerChatIpc(ipcMain, chat, (event) => {
+      const expected = devUrl ? `${devUrl}/` : pathToFileURL(join(__dirname, '../dist/index.html')).href;
+      if (!window || event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame || event.senderFrame.url.split('#')[0] !== expected) throw new Error('Accès refusé.');
+    });
     const workspaces = createWorkspaceService(dialog, () => window, () => app.getPath('documents'));
     for (const action of ['choose', 'select', 'list', 'branches', 'create', 'prepareProject', 'createProject', 'trust', 'discard']) {
       ipcMain.handle(`workspace:${action}`, async (event, ...args) => {
