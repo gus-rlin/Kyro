@@ -101,6 +101,29 @@ WHERE actual.column_name IS NULL;
     if ($missing) {
         throw "Restored target schema does not satisfy the P1 restore contract; missing columns: $missing. The target database was retained and no workers were started."
     }
+    if (Test-FactorySchema -Database $Database) {
+        $factoryColumns = @'
+WITH required(table_name, column_name) AS (VALUES
+ ('factory_catalogue_state','revision'),('factory_catalogue_state','catalogue_digest'),('factory_catalogue_state','signed_catalogue'),
+ ('factory_artifacts','id'),('factory_artifacts','project_id'),('factory_artifacts','job_id'),('factory_artifacts','job_generation'),
+ ('factory_artifacts','lease_owner'),('factory_artifacts','application_id'),('factory_artifacts','environment'),('factory_artifacts','source_revision'),
+ ('factory_artifacts','image_digest'),('factory_artifacts','lock_digest'),('factory_artifacts','source_digest'),('factory_artifacts','evidence_digest'),
+ ('factory_artifacts','release_digest'),('factory_artifacts','signed_release'),('factory_artifacts','signed_evidence'),('factory_artifacts','source_manifest'),('factory_artifacts','created_at'))
+SELECT count(*) FROM required LEFT JOIN information_schema.columns actual
+ ON actual.table_schema='public' AND actual.table_name=required.table_name AND actual.column_name=required.column_name
+ WHERE actual.column_name IS NULL;
+'@
+        $missingFactory = (Invoke-AdminSql -Database $Database -Sql $factoryColumns) -join ''
+        if ($missingFactory.Trim() -ne '0') { throw 'Factory restore schema is incomplete; target retained without starting workers.' }
+    }
+}
+
+function Test-FactorySchema {
+    param([Parameter(Mandatory)][string]$Database)
+    $count = (Invoke-AdminSql -Database $Database -Sql "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_name IN ('factory_catalogue_state','factory_artifacts');") -join ''
+    if ($count.Trim() -eq '0') { return $false }
+    if ($count.Trim() -eq '2') { return $true }
+    throw 'Partial factory schema; restoration cannot be qualified.'
 }
 
 function Get-IntegrityManifest {
@@ -124,6 +147,14 @@ UNION ALL SELECT 'events|' || count(*)::text || '|' || COALESCE(md5(string_agg(m
 UNION ALL SELECT 'outbox_events|' || count(*)::text || '|' || COALESCE(md5(string_agg(md5(to_jsonb(q)::text), '' ORDER BY q.id)), md5('')) FROM (SELECT id, project_id, event_sequence, topic, payload, available_at, delivered_at, attempts, created_at FROM public.outbox_events) q
 UNION ALL SELECT 'sessions|' || count(*)::text || '|' || COALESCE(md5(string_agg(md5(to_jsonb(q)::text), '' ORDER BY q.id)), md5('')) FROM (SELECT id, token_hash, actor_id, csrf_hash, expires_at, created_at FROM public.sessions) q;
 '@
+    $hasFactory = Test-FactorySchema -Database $Database
+    if ($hasFactory) {
+        $sql = $sql.TrimEnd().TrimEnd(';') + @'
+
+UNION ALL SELECT 'factory_catalogue_state|' || count(*)::text || '|' || COALESCE(md5(string_agg(md5(to_jsonb(q)::text), '' ORDER BY q.singleton)), md5('')) FROM (SELECT * FROM public.factory_catalogue_state) q
+UNION ALL SELECT 'factory_artifacts|' || count(*)::text || '|' || COALESCE(md5(string_agg(md5(to_jsonb(q)::text), '' ORDER BY q.id)), md5('')) FROM (SELECT * FROM public.factory_artifacts) q;
+'@
+    }
     $rows = Invoke-AdminSql -Database $Database -Sql $sql
     $manifest = @{}
     foreach ($row in $rows) {
@@ -133,7 +164,8 @@ UNION ALL SELECT 'sessions|' || count(*)::text || '|' || COALESCE(md5(string_agg
         }
         $manifest[$parts[0]] = "$($parts[1])|$($parts[2])"
     }
-    if ($manifest.Count -ne 16) {
+    $expectedCount = if ($hasFactory) { 18 } else { 16 }
+    if ($manifest.Count -ne $expectedCount) {
         throw 'The source/target integrity manifest was incomplete.'
     }
     return $manifest
@@ -421,6 +453,7 @@ COMMIT;
 
     $targetManifest = Get-IntegrityManifest -Database $TargetDatabase
     if ($sourceManifest) {
+        if ($sourceManifest.Count -ne $targetManifest.Count) { throw 'Source/target factory schema inventories differ; target retained with external sends disabled.' }
         $mismatches = @($sourceManifest.Keys | Where-Object { $sourceManifest[$_] -ne $targetManifest[$_] } | Sort-Object)
         if ($mismatches.Count -gt 0) {
             throw "Source/target integrity mismatch in: $($mismatches -join ', '). Target '$TargetDatabase' was retained with external sends disabled."
@@ -439,6 +472,9 @@ COMMIT;
     Write-Output "Archive SHA-256: $actualSha256. Runtime control is disabled; no worker service was started."
     Write-Output $summary
     Write-Output 'Previous event/outbox rows and sequences were preserved; clients must fetch a full snapshot and reset their event cursor before resuming.'
+    if (Test-FactorySchema -Database $TargetDatabase) {
+        Write-Output 'Factory catalogue, signatures and artifact references were preserved. Restore the separately backed-up immutable archive root and pinned tools before enabling artifact delivery; PostgreSQL contains no OCI/source bytes or signing keys.'
+    }
 }
 finally {
     if ($containerId) {

@@ -10,6 +10,8 @@ const WORKSPACE_ROOTS = new Set([
   "kyro-gateway",
   "kyro-store",
   "kyro-worker",
+  "kyro-app",
+  "kyro-factory",
 ]);
 const MAX_OUTPUT_BYTES = 64 * 1024 * 1024;
 

@@ -6,6 +6,8 @@ members = [
     "crates/kyro-gateway",
     "crates/kyro-api",
     "crates/kyro-worker",
+    "crates/kyro-app",
+    "crates/kyro-factory",
 ]
 
 [workspace.package]
@@ -18,8 +20,15 @@ rust-version = "1.96"
 axum = { version = "=0.8.9", default-features = false, features = ["http1", "json", "matched-path", "query", "tokio"] }
 base64 = "=0.22.1"
 chrono = { version = "=0.4.44", features = ["serde"] }
+chrono-tz = { version = "=0.10.4", features = ["serde"] }
+hmac = "=0.12.1"
+image = { version = "=0.25.9", default-features = false, features = ["png", "jpeg", "webp"] }
 futures-util = "0.3"
 getrandom = "=0.4.3"
+zeroize = "=1.9.0"
+argon2 = "=0.5.3"
+aes-gcm = "=0.10.3"
+totp-rs = { version = "=6.0.0", features = ["otpauth", "zeroize"] }
 jsonwebtoken = { version = "=11.1.0", default-features = false, features = ["aws_lc_rs"] }
 reqwest = { version = "=0.12.28", default-features = false, features = ["json", "rustls-tls", "stream"] }
 serde = { version = "=1.0.228", features = ["derive"] }
@@ -27,6 +36,7 @@ serde_json = "=1.0.149"
 sha2 = "=0.10.9"
 sqlx = { version = "=0.8.6", default-features = false, features = ["runtime-tokio-rustls", "postgres", "migrate", "uuid", "chrono", "json", "macros"] }
 thiserror = "=2.0.18"
+tar = { version = "=0.4.46", default-features = false }
 tokio = { version = "=1.51.4", features = ["macros", "rt-multi-thread", "signal", "time", "net", "io-util", "sync"] }
 tower-http = { version = "=0.6.11", default-features = false, features = ["cors"] }
 tracing = "=0.1.44"

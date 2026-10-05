@@ -99,6 +99,111 @@ fn gateway_without_key() -> Gateway {
     Gateway::new(config).expect("gateway builds")
 }
 
+fn embedding_gateway(address: SocketAddr) -> Gateway {
+    let mut registry: Value = serde_json::from_str(SYNTHETIC_REGISTRY).unwrap();
+    registry["destinations"][0]["base_url"] =
+        json!(format!("http://127.0.0.1:{}/v1/", address.port()));
+    registry["destinations"][0]["pinned_addresses"][0] = json!(address.to_string());
+    let model = &mut registry["destinations"][0]["models"][0];
+    model["protocol"] = json!("embeddings");
+    model["output_schema"]["schema"] = json!({"type":"object","properties":{"embedding":{"type":"array","items":{"type":"number","minimum":-1000000,"maximum":1000000},"minItems":3,"maxItems":3}},"required":["embedding"],"additionalProperties":false});
+    Gateway::new(
+        GatewayConfig::from_registry_json(
+            &serde_json::to_vec(&registry).unwrap(),
+            Environment::Development,
+            true,
+            Some(SECRET_CANARY),
+        )
+        .unwrap(),
+    )
+    .unwrap()
+}
+fn embedding_request(input_type: &str) -> ModelRequest {
+    let mut r = request();
+    r.input.purpose = ModelPurpose::Embedding;
+    r.input.content = json!({"text":"synthetic orchid","input_type":input_type});
+    r.max_output_tokens = 1;
+    r
+}
+fn embedding_policy() -> DataPolicy {
+    let mut p = policy();
+    p.allowed_purposes.insert(ModelPurpose::Embedding);
+    p
+}
+
+#[tokio::test]
+async fn embeddings_use_real_protocol_bind_mode_validate_dimension_and_keep_unknown_usage() {
+    for mode in ["passage", "query"] {
+        let body=serde_json::to_vec(&json!({"model":"synthetic-structured","data":[{"index":0,"embedding":[0.5,0.8,0.1]}],"usage":{"prompt_tokens":4,"total_tokens":4}})).unwrap();
+        let (address, requests, server) = mock_provider(http_response("200 OK", &body, "")).await;
+        let gateway = embedding_gateway(address);
+        let store = RecordingStore::with_policy(embedding_policy());
+        let outcome = gateway
+            .execute_model_effect(&store, context(), embedding_request(mode))
+            .await
+            .unwrap();
+        let captured = server.await.unwrap();
+        assert!(captured.starts_with("POST /v1/embeddings HTTP/1.1"));
+        assert!(captured.contains(&format!("\"input_type\":\"{mode}\"")));
+        assert!(captured.contains("\"modality\":\"text\""));
+        assert_eq!(requests.load(Ordering::SeqCst), 1);
+        assert_eq!(outcome.status, EffectStatus::Succeeded);
+        let response = outcome.response.unwrap();
+        assert_eq!(response.output.data["embedding"], json!([0.5, 0.8, 0.1]));
+        assert_eq!(response.usage.unwrap().output_tokens, None);
+        let registration = gateway
+            .validate_request(&embedding_request(mode), &embedding_policy())
+            .unwrap();
+        assert_eq!(
+            serde_json::to_value(&registration).unwrap()["protocol"],
+            "embeddings"
+        );
+    }
+    for body in [
+        json!({"model":"synthetic-structured","data":[{"index":0,"embedding":[0.0,0.0,0.0]}]}),
+        json!({"model":"synthetic-structured","data":[{"index":0,"embedding":[0.5,0.1]}]}),
+        json!({"model":"other","data":[{"index":0,"embedding":[0.5,0.1,0.2]}]}),
+        json!({"data":[{"index":1,"embedding":[0.5,0.1,0.2]}]}),
+        json!({"data":[{"index":0,"embedding":[0.5,0.1,0.2]}],"usage":{"prompt_tokens":5,"total_tokens":4}}),
+    ] {
+        let (address, requests, server) = mock_provider(http_response(
+            "200 OK",
+            &serde_json::to_vec(&body).unwrap(),
+            "",
+        ))
+        .await;
+        let gateway = embedding_gateway(address);
+        let store = RecordingStore::with_policy(embedding_policy());
+        let outcome = gateway
+            .execute_model_effect(&store, context(), embedding_request("query"))
+            .await
+            .unwrap();
+        server.await.unwrap();
+        assert_eq!(requests.load(Ordering::SeqCst), 1);
+        assert_eq!(outcome.status, EffectStatus::Unknown);
+    }
+    let gateway = embedding_gateway("127.0.0.1:9".parse().unwrap());
+    assert!(
+        gateway
+            .validate_request(&embedding_request("other"), &embedding_policy())
+            .is_err()
+    );
+    assert!(gateway.validate_request(&request(), &policy()).is_err());
+    let chat = gateway_without_key()
+        .validate_request(&request(), &policy())
+        .unwrap();
+    assert!(
+        serde_json::to_value(&chat)
+            .unwrap()
+            .get("protocol")
+            .is_none()
+    );
+    let old = serde_json::to_value(&chat).unwrap();
+    let restored: kyro_domain::model::ModelRegistrationSnapshot =
+        serde_json::from_value(old).unwrap();
+    assert_eq!(restored, chat);
+}
+
 fn persisted_response() -> ModelResponse {
     ModelResponse {
         destination_id: "synthetic-local".into(),

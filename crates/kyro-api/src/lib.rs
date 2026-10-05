@@ -31,6 +31,7 @@ pub mod budgets;
 mod chat;
 pub mod error;
 pub mod events;
+pub mod factory;
 pub mod identity;
 pub mod jobs;
 pub mod projects;
@@ -67,6 +68,7 @@ pub struct AppState {
     pub auth: Arc<AuthConfig>,
     pub gateway: Arc<Gateway>,
     pub http: Arc<HttpControls>,
+    pub factory: Option<Arc<factory::FactoryApi>>,
 }
 
 impl AppState {
@@ -82,7 +84,12 @@ impl AppState {
             auth,
             gateway,
             http: Arc::new(HttpControls::default()),
+            factory: None,
         }
+    }
+    pub fn with_factory(mut self, factory: Option<Arc<factory::FactoryApi>>) -> Self {
+        self.factory = factory;
+        self
     }
 }
 
@@ -200,6 +207,7 @@ pub fn router(state: AppState) -> Router {
         .merge(identity::routes())
         .merge(projects::routes())
         .merge(jobs::routes())
+        .merge(factory::routes())
         .merge(budgets::routes())
         .route_layer(middleware::from_fn_with_state(
             state.http.clone(),

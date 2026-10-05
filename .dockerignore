@@ -10,4 +10,14 @@ apps/desktop
 *.sql.gz
 docs
 scripts
+# Factory embeds these three build/verification drivers at compile time.
+!scripts/
+scripts/*
+!scripts/p2/
+scripts/p2/*
+!scripts/p2/sandbox/
+scripts/p2/sandbox/*
+!scripts/p2/sandbox/build.sh
+!scripts/p2/sandbox/resource-probe.mjs
+!scripts/p2/sandbox/verify-records.mjs
 tests

@@ -505,6 +505,7 @@ async fn exercise_model_queue(destination: &str, reconcile: bool) {
     .unwrap();
     let registration = ModelRegistrationSnapshot {
         output_mode: Default::default(),
+        protocol: kyro_domain::model::ModelProtocol::Chat,
         destination_id: model_request.destination_id.clone(),
         provider: "synthetic".into(),
         provider_kind: kyro_domain::model::ModelProviderKind::Synthetic,
@@ -1070,6 +1071,7 @@ async fn postgres_chat_fragments_are_private_bounded_and_lease_fenced() {
         deadline: lease.deadline,
     };
     let registration=ModelRegistrationSnapshot{
+        protocol: Default::default(),
         output_mode:kyro_domain::model::ModelOutputMode::TextChat,destination_id:request.destination_id.clone(),provider:"synthetic".into(),provider_kind:kyro_domain::model::ModelProviderKind::Synthetic,model:request.model.clone(),model_version:None,output_schema_id:"chat-reply".into(),output_schema_version:"1".into(),output_schema_hash:[0;32],retention_seconds:Some(0),
         pricing:serde_json::from_value(json!({"version":"chat-test-v1","effective_date":"2026-10-04","currency":"SYN","unit":"synthetic_budget_unit","unit_scale":1,"input_units_per_million_tokens":1000000,"output_units_per_million_tokens":1000000})).unwrap(),
     };

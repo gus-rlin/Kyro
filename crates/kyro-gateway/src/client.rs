@@ -71,6 +71,21 @@ impl Gateway {
         self.config.registry()
     }
 
+    /// Validate an explicitly approved correction against the unchanged server schema.
+    pub fn validate_output(
+        &self,
+        registration: &ModelRegistrationSnapshot,
+        data: &Value,
+    ) -> Result<()> {
+        let (_, model) = self
+            .registered_model(&registration.destination_id, &registration.model)
+            .ok_or(Error::Unavailable)?;
+        if &model.registration != registration {
+            return Err(Error::Conflict("model registration changed".into()));
+        }
+        validate_schema_instance(&model.output_schema, data)
+    }
+
     /// Prévalidation pure à appeler avant d'enregistrer le payload d'un job.
     pub fn validate_request(
         &self,
@@ -310,9 +325,15 @@ impl Gateway {
         encoded_body: &[u8],
         project_max_response_bytes: u32,
     ) -> std::result::Result<ModelResponse, SendFailure> {
+        let embeddings =
+            model.registration.protocol == kyro_domain::model::ModelProtocol::Embeddings;
         let endpoint = destination
             .base_url
-            .join("chat/completions")
+            .join(if embeddings {
+                "embeddings"
+            } else {
+                "chat/completions"
+            })
             .map_err(|_| SendFailure::DefinitelyNotSent)?;
         let mut http_request = self.client.post(endpoint);
         if let Some(secret) = &destination.secret {
@@ -390,19 +411,25 @@ impl Gateway {
             }
             bytes.extend_from_slice(&chunk);
         }
-        let provider_response: OpenAiResponse =
-            serde_json::from_slice(&bytes).map_err(|_| SendFailure::InvalidResponse)?;
         if destination.secret.as_ref().is_some_and(|secret| {
             std::str::from_utf8(&bytes).is_ok_and(|body| body.contains(secret.expose()))
         }) {
             return Err(SendFailure::InvalidResponse);
         }
-        let parsed = parse_response(
-            provider_response,
-            destination,
-            model,
-            request.max_output_tokens,
-        )?;
+        let parsed = if embeddings {
+            let provider_response: EmbeddingsResponse =
+                serde_json::from_slice(&bytes).map_err(|_| SendFailure::InvalidResponse)?;
+            parse_embeddings(provider_response, destination, model)?
+        } else {
+            let provider_response: OpenAiResponse =
+                serde_json::from_slice(&bytes).map_err(|_| SendFailure::InvalidResponse)?;
+            parse_response(
+                provider_response,
+                destination,
+                model,
+                request.max_output_tokens,
+            )?
+        };
         // Inspect decoded strings, including the opaque receipt. Raw-byte checks
         // alone miss JSON Unicode escapes and the JSON embedded in message.content.
         if let Some(secret) = &destination.secret {
@@ -462,6 +489,18 @@ fn prepare_provider_request(
     destination: &Destination,
     model: &RegisteredModel,
 ) -> Result<PreparedProviderRequest> {
+    if model.registration.protocol == kyro_domain::model::ModelProtocol::Embeddings {
+        if model.registration.output_mode != ModelOutputMode::StructuredJson {
+            return Err(Error::Invalid(
+                "embeddings require structured output".into(),
+            ));
+        }
+        let _ = embedding_input(request)?;
+    } else if request.input.purpose == kyro_domain::model::ModelPurpose::Embedding {
+        return Err(Error::Invalid(
+            "embedding requires the embeddings protocol".into(),
+        ));
+    }
     let input_bytes = serde_json::to_vec(&request.input)
         .map_err(|_| Error::Invalid("entrée de modèle invalide".into()))?
         .len();
@@ -474,15 +513,21 @@ fn prepare_provider_request(
     let input_bytes = u32::try_from(input_bytes).map_err(|_| Error::ResourceLimit)?;
     let input_json = serde_json::to_string(&request.input)
         .map_err(|_| Error::Invalid("entrée de modèle invalide".into()))?;
-    let mut body = json!({
-        "model": model.registration.model,
-        "messages": [{"role":"user", "content": input_json}],
-        "max_tokens": request.max_output_tokens,
-        "n": 1, "stream": false, "store": false,
-        "response_format": {"type":"json_schema", "json_schema": {
-            "name": model.registration.output_schema_id, "strict":true, "schema":response_schema(model)
-        }}
-    });
+    let embeddings = model.registration.protocol == kyro_domain::model::ModelProtocol::Embeddings;
+    let mut body = if embeddings {
+        let input = embedding_input(request)?;
+        json!({"model":model.registration.model,"input":[input.text],"input_type":input.input_type,"encoding_format":"float","modality":"text","truncate":"NONE"})
+    } else {
+        json!({
+            "model": model.registration.model,
+            "messages": [{"role":"user", "content": input_json}],
+            "max_tokens": request.max_output_tokens,
+            "n": 1, "stream": false, "store": false,
+            "response_format": {"type":"json_schema", "json_schema": {
+                "name": model.registration.output_schema_id, "strict":true, "schema":response_schema(model)
+            }}
+        })
+    };
     let mut chat_context = None;
     if model.registration.output_mode == ModelOutputMode::TextChat {
         if request.input.purpose != ModelPurpose::Conversation
@@ -534,7 +579,7 @@ fn prepare_provider_request(
             "conversation requires a text_chat registration".into(),
         ));
     }
-    if destination.provider == "nebius" {
+    if destination.provider == "nebius" && !embeddings {
         body["max_completion_tokens"] = json!(request.max_output_tokens);
         if model.registration.output_mode == ModelOutputMode::StructuredJson {
             body["messages"].as_array_mut().ok_or(Error::Internal)?.insert(0, json!({
@@ -571,6 +616,110 @@ fn prepare_provider_request(
         bytes,
         input_bytes,
         input_tokens,
+    })
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct EmbeddingInput {
+    text: String,
+    input_type: String,
+}
+fn embedding_input(request: &ModelRequest) -> Result<EmbeddingInput> {
+    if request.input.purpose != kyro_domain::model::ModelPurpose::Embedding
+        || request.max_output_tokens != 1
+    {
+        return Err(Error::Invalid(
+            "invalid embedding purpose or token limit".into(),
+        ));
+    }
+    let input: EmbeddingInput = serde_json::from_value(request.input.content.clone())
+        .map_err(|_| Error::Invalid("invalid embedding input".into()))?;
+    if input.text.trim().is_empty()
+        || input.text.len() > 65536
+        || !matches!(input.input_type.as_str(), "passage" | "query")
+    {
+        return Err(Error::ResourceLimit);
+    }
+    Ok(input)
+}
+#[derive(Deserialize)]
+struct EmbeddingsResponse {
+    model: Option<String>,
+    data: Vec<EmbeddingRow>,
+    usage: Option<EmbeddingUsage>,
+}
+#[derive(Deserialize)]
+struct EmbeddingRow {
+    index: usize,
+    embedding: Vec<f64>,
+}
+#[derive(Deserialize)]
+struct EmbeddingUsage {
+    prompt_tokens: Option<i64>,
+    total_tokens: Option<i64>,
+}
+fn parse_embeddings(
+    response: EmbeddingsResponse,
+    destination: &Destination,
+    model: &RegisteredModel,
+) -> std::result::Result<ModelResponse, SendFailure> {
+    if response.data.len() != 1
+        || response
+            .model
+            .as_deref()
+            .is_some_and(|actual| actual != model.registration.model)
+    {
+        return Err(SendFailure::InvalidResponse);
+    }
+    let row = response
+        .data
+        .into_iter()
+        .next()
+        .ok_or(SendFailure::InvalidResponse)?;
+    if row.index != 0
+        || !(2..=4096).contains(&row.embedding.len())
+        || row
+            .embedding
+            .iter()
+            .any(|n| !n.is_finite() || n.abs() > 1e6)
+        || row.embedding.iter().map(|n| n * n).sum::<f64>() <= 1e-24
+    {
+        return Err(SendFailure::InvalidResponse);
+    }
+    let data = json!({"embedding":row.embedding});
+    validate_schema_instance(&model.output_schema, &data)
+        .map_err(|_| SendFailure::InvalidResponse)?;
+    let usage = response
+        .usage
+        .map(|u| {
+            if u.total_tokens.is_some_and(|n| n < 0)
+                || matches!((u.prompt_tokens,u.total_tokens),(Some(p),Some(t)) if p!=t)
+            {
+                return Err(SendFailure::InvalidUsage);
+            }
+            let usage = ModelUsage {
+                input_tokens: u.prompt_tokens,
+                output_tokens: None,
+                cached_input_tokens: None,
+            };
+            usage.validate().map_err(|_| SendFailure::InvalidUsage)?;
+            Ok(usage)
+        })
+        .transpose()?;
+    Ok(ModelResponse {
+        destination_id: destination.id.clone(),
+        provider: destination.provider.clone(),
+        model: model.registration.model.clone(),
+        model_version: model.registration.model_version.clone(),
+        provider_request_id: None,
+        output: StructuredModelOutput {
+            schema_id: model.registration.output_schema_id.clone(),
+            schema_version: model.registration.output_schema_version.clone(),
+            data,
+        },
+        usage,
+        pricing: model.registration.pricing.clone(),
     })
 }
 

@@ -1,0 +1,9 @@
+# Pinned public tool image only. No checkout, application configuration or key.
+ARG MEDIA_IMAGE=sha256:1041325424523de591e16b820dc9778db7644a2dc5517341b683132fde1193bc
+FROM ${MEDIA_IMAGE}
+USER root
+RUN apt-get update && apt-get install --no-install-recommends -y poppler-utils tesseract-ocr tesseract-ocr-eng tesseract-ocr-fra fonts-dejavu-core && rm -rf /var/lib/apt/lists/*
+RUN mkdir -p /processor /media-input /media-output && chmod 755 /processor /media-input /media-output
+USER 1000:1000
+WORKDIR /sandbox
+ENTRYPOINT ["/bin/sh"]
