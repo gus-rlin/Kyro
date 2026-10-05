@@ -147,6 +147,8 @@ struct NebiusQualification {
 struct ModelFile {
     #[serde(default)]
     output_mode: ModelOutputMode,
+    #[serde(default)]
+    protocol: kyro_domain::model::ModelProtocol,
     id: String,
     version: Option<String>,
     output_schema: OutputSchemaFile,
@@ -577,6 +579,7 @@ fn parse_model(
     Ok(RegisteredModel {
         registration: ModelRegistrationSnapshot {
             output_mode: model.output_mode,
+            protocol: model.protocol,
             destination_id: destination_id.to_owned(),
             provider: provider.to_owned(),
             provider_kind,

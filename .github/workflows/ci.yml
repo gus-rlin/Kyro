@@ -1,4 +1,4 @@
-name: P1 checks
+name: Backend checks
 
 on:
   push:
@@ -103,15 +103,44 @@ jobs:
           KYRO_DATABASE_ADMIN_URL: postgres://kyro_admin@127.0.0.1:5432/kyro_p1_test_ci
         run: cargo run --locked -p kyro-store --bin kyro-migrate
 
+      - name: Create isolated application integration database
+        run: psql "$KYRO_DATABASE_ADMIN_URL" --set=ON_ERROR_STOP=1 --command='CREATE DATABASE kyro_p2_test_ci OWNER kyro_admin'
+
+      - name: Migrate application integration database
+        env:
+          KYRO_APP_DATABASE_ADMIN_URL: postgres://kyro_admin@127.0.0.1:5432/kyro_p2_test_ci
+        run: cargo run --locked -p kyro-app --bin kyro-app-migrate
+
       - name: Run unit and PostgreSQL integration tests
         env:
           KYRO_TEST_DATABASE_URL: postgres://kyro_api@127.0.0.1:5432/kyro_p1_test_ci
           KYRO_TEST_WORKER_DATABASE_URL: postgres://kyro_worker@127.0.0.1:5432/kyro_p1_test_ci
           KYRO_TEST_DATABASE_ADMIN_URL: postgres://kyro_admin@127.0.0.1:5432/kyro_p1_test_ci
-        run: cargo test --locked --workspace -- --include-ignored
+          KYRO_P2_TEST_ADMIN_URL: postgres://kyro_admin@127.0.0.1:5432/kyro_p2_test_ci
+          KYRO_P2_TEST_RUNTIME_URL: postgres://kyro_app_runtime@127.0.0.1:5432/kyro_p2_test_ci
+          KYRO_P2_TEST_AUTH_URL: postgres://kyro_app_auth_runtime@127.0.0.1:5432/kyro_p2_test_ci
+          KYRO_TEST_ADMIN_DATABASE_URL: postgres://kyro_admin@127.0.0.1:5432/kyro_p1_test_ci
+        run: |
+          cargo test --locked --workspace
+          cargo test --locked -p kyro-store -p kyro-api -- --include-ignored
+
+      - name: Run factory contracts with failure injection support
+        run: cargo test --locked -p kyro-factory --features test-support --lib --test contracts --test artifacts --test registry
 
       - name: Build runtime executables
         run: cargo build --locked --bins --workspace
+
+      - name: Start isolated synthetic TLS PostgreSQL source
+        run: bash scripts/p2/fixtures/start-external-postgres.sh kyro-p2-external-ci kyro-p2-external-ci-net
+
+      - name: Run complete application integration recipes
+        env:
+          KYRO_P2_TEST_ADMIN_URL: postgres://kyro_admin@127.0.0.1:5432/kyro_p2_test_ci
+          KYRO_P2_TEST_RUNTIME_URL: postgres://kyro_app_runtime@127.0.0.1:5432/kyro_p2_test_ci
+          KYRO_P2_TEST_AUTH_URL: postgres://kyro_app_auth_runtime@127.0.0.1:5432/kyro_p2_test_ci
+        # Privileged fixture setup deliberately advances the global receipt epoch.
+        # Each scenario still exercises its own concurrent transactions.
+        run: cargo test --locked -p kyro-app --features test-support --tests -- --include-ignored --test-threads=1
 
       - uses: actions/setup-node@v4
         with:

@@ -21,7 +21,8 @@ async fn main() -> Result<(), Error> {
     );
     let gateway = Arc::new(Gateway::new(gateway_config(config.environment)?)?);
     let bind: SocketAddr = config.bind;
-    let state = AppState::new(store, config, auth, gateway);
+    let factory = kyro_api::factory::FactoryApi::from_env()?;
+    let state = AppState::new(store, config, auth, gateway).with_factory(factory);
 
     let listener = tokio::net::TcpListener::bind(bind)
         .await

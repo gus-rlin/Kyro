@@ -3,7 +3,7 @@
   "info": {
     "title": "Kyro Control API",
     "version": "1.0.0",
-    "description": "Versioned P1 control-plane API. Runtime calls are actor-scoped; provider credentials never appear in request or response schemas."
+    "description": "Versioned P1 control-plane API with P2 signed composition, offline factory and private bounded artifact delivery. Runtime calls are actor-scoped; provider credentials never appear in request or response schemas."
   },
   "servers": [
     {
@@ -1126,6 +1126,407 @@
             "$ref": "#/components/responses/Error"
           },
           "429": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/factory/composition": {
+      "post": {
+        "operationId": "factoryResolveComposition",
+        "summary": "Resolve and sign the current admitted composition. Operator sources, tools and criteria are fixed.",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          },
+          {
+            "$ref": "#/components/parameters/RevisionIfMatch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resolve and sign the current admitted composition. Operator sources, tools and criteria are fixed.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FactorySignedCompositionLock"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "412": {
+            "$ref": "#/components/responses/Error"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/factory/builds": {
+      "post": {
+        "operationId": "factoryAdmitBuild",
+        "summary": "Admit an offline build, or replay the identical original job after revision advancement.",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          },
+          {
+            "$ref": "#/components/parameters/RevisionIfMatch"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Admit an offline build, or replay the identical original job after revision advancement.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobView"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "412": {
+            "$ref": "#/components/responses/Error"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FactoryBuildRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/factory/artifacts/{artifact_id}": {
+      "get": {
+        "operationId": "factoryReadArtifact",
+        "summary": "Read private verified release references and provenance.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          },
+          {
+            "name": "artifact_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Read private verified release references and provenance.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FactoryArtifactView"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "412": {
+            "$ref": "#/components/responses/Error"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/factory/artifacts/{artifact_id}/exports/{format}": {
+      "get": {
+        "operationId": "factoryReadExportIndex",
+        "summary": "Read hashes and sizes for verified private source, OCI or Git exports.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          },
+          {
+            "name": "artifact_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "format",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "sources",
+                "oci",
+                "git"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Read hashes and sizes for verified private source, OCI or Git exports.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FactoryExportIndex"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "412": {
+            "$ref": "#/components/responses/Error"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/factory/artifacts/{artifact_id}/exports/{format}/chunk": {
+      "get": {
+        "operationId": "factoryReadExportChunk",
+        "summary": "Resume a private download by exact relative path and byte offset. Each chunk rechecks integrity, session and grants.",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          },
+          {
+            "name": "artifact_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "format",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "sources",
+                "oci",
+                "git"
+              ]
+            }
+          },
+          {
+            "name": "path",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 240
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 536870912
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resume a private download by exact relative path and byte offset. Each chunk rechecks integrity, session and grants.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FactoryExportChunk"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "412": {
+            "$ref": "#/components/responses/Error"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
             "$ref": "#/components/responses/Error"
           }
         }
@@ -3296,6 +3697,9 @@
           },
           {
             "$ref": "#/components/schemas/ReconcileEffectSummary"
+          },
+          {
+            "$ref": "#/components/schemas/FactoryBuildSummary"
           }
         ]
       },
@@ -3423,6 +3827,9 @@
                 "$ref": "#/components/schemas/EffectStatus"
               }
             }
+          },
+          {
+            "$ref": "#/components/schemas/FactoryBuildResult"
           }
         ]
       },
@@ -3578,6 +3985,9 @@
               },
               {
                 "$ref": "#/components/schemas/ModelCallPayload"
+              },
+              {
+                "$ref": "#/components/schemas/FactoryBuildPayload"
               }
             ]
           },
@@ -3672,6 +4082,851 @@
             }
           }
         }
+      },
+      "FactoryNodeConfiguration": {
+        "type": "object",
+        "properties": {
+          "allowed_actions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 128
+            },
+            "maxItems": 64,
+            "uniqueItems": true
+          },
+          "defaults": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "maxLength": 128
+            },
+            "maxProperties": 32
+          },
+          "reference": {
+            "type": "string",
+            "maxLength": 128
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "FactoryLockedNode": {
+        "type": "object",
+        "properties": {
+          "component_id": {
+            "type": "string",
+            "pattern": "^B[0-9]{3}$"
+          },
+          "configuration": {
+            "$ref": "#/components/schemas/FactoryNodeConfiguration"
+          },
+          "depends_on": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "maxItems": 512,
+            "uniqueItems": true
+          },
+          "bindings": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "maxProperties": 16
+          }
+        },
+        "required": [
+          "component_id",
+          "configuration",
+          "depends_on",
+          "bindings"
+        ],
+        "additionalProperties": false
+      },
+      "FactoryLockedComponent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^B[0-9]{3}$"
+          },
+          "version": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "manifest_digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "source_digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "migration_digests": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "maxProperties": 128
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "manifest_digest",
+          "source_digest",
+          "migration_digests"
+        ],
+        "additionalProperties": false
+      },
+      "FactoryCompositionLock": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": 1
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "application_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "source_revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "environment": {
+            "type": "string",
+            "enum": [
+              "development",
+              "production"
+            ]
+          },
+          "preferences": {
+            "type": "object",
+            "properties": {
+              "locale": {
+                "enum": [
+                  "fr-FR",
+                  "en-US"
+                ]
+              },
+              "time_zone": {
+                "enum": [
+                  "Europe/Paris",
+                  "UTC"
+                ]
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          },
+          "spec_digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "catalogue_revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "catalogue_digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "components": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/FactoryLockedComponent"
+            },
+            "maxProperties": 147
+          },
+          "nodes": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/FactoryLockedNode"
+            },
+            "maxProperties": 512
+          },
+          "order": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "maxItems": 512,
+            "uniqueItems": true
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "maxItems": 147,
+            "uniqueItems": true
+          },
+          "toolchain": {
+            "const": "rust-1.96.1-linux-x86_64"
+          }
+        },
+        "required": [
+          "schema_version",
+          "project_id",
+          "application_id",
+          "source_revision",
+          "environment",
+          "spec_digest",
+          "catalogue_revision",
+          "catalogue_digest",
+          "components",
+          "nodes",
+          "order",
+          "capabilities",
+          "toolchain"
+        ],
+        "additionalProperties": false
+      },
+      "FactorySignedCompositionLock": {
+        "type": "object",
+        "properties": {
+          "lock": {
+            "$ref": "#/components/schemas/FactoryCompositionLock"
+          },
+          "signature": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          }
+        },
+        "required": [
+          "lock",
+          "signature"
+        ],
+        "additionalProperties": false
+      },
+      "FactoryBuildRequest": {
+        "type": "object",
+        "properties": {
+          "max_attempts": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 3
+          },
+          "ttl_seconds": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 10,
+            "maximum": 1800
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "FactoryBuildPayload": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "const": "build_application"
+          },
+          "lock": {
+            "$ref": "#/components/schemas/FactorySignedCompositionLock"
+          }
+        },
+        "required": [
+          "kind",
+          "lock"
+        ],
+        "additionalProperties": false
+      },
+      "FactoryBuildSummary": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "const": "build_application"
+          },
+          "application_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "catalogue_revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "component_count": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 147
+          }
+        },
+        "required": [
+          "kind",
+          "application_id",
+          "catalogue_revision",
+          "component_count"
+        ],
+        "additionalProperties": false
+      },
+      "FactoryBuildResult": {
+        "type": "object",
+        "properties": {
+          "artifact_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "image_digest": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$"
+          },
+          "release_digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "required": [
+          "artifact_id",
+          "image_digest",
+          "release_digest"
+        ],
+        "additionalProperties": false
+      },
+      "FactoryBinding": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": 1
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "application_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "environment": {
+            "type": "string",
+            "enum": [
+              "development",
+              "production"
+            ]
+          },
+          "lock_digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "source_digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "migration_digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "configuration_digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "runtime_base_digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "tools_image_digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "sandbox_profile_digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "required": [
+          "schema_version",
+          "project_id",
+          "application_id",
+          "revision",
+          "environment",
+          "lock_digest",
+          "source_digest",
+          "migration_digest",
+          "configuration_digest",
+          "runtime_base_digest",
+          "tools_image_digest",
+          "sandbox_profile_digest"
+        ],
+        "additionalProperties": false
+      },
+      "FactoryEvidence": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": 1
+          },
+          "image_digest": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$"
+          },
+          "binding": {
+            "$ref": "#/components/schemas/FactoryBinding"
+          },
+          "criteria_digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "verifier_version": {
+            "const": "kyro-verifier-1"
+          },
+          "sandbox_run_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "required_checks": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 128
+            },
+            "maxItems": 128,
+            "uniqueItems": true
+          },
+          "passed_checks": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 128
+            },
+            "maxItems": 128,
+            "uniqueItems": true
+          },
+          "observed_report_digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "finished_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "schema_version",
+          "image_digest",
+          "binding",
+          "criteria_digest",
+          "verifier_version",
+          "sandbox_run_id",
+          "required_checks",
+          "passed_checks",
+          "observed_report_digest",
+          "started_at",
+          "finished_at"
+        ],
+        "additionalProperties": false
+      },
+      "FactorySignedEvidence": {
+        "type": "object",
+        "properties": {
+          "evidence": {
+            "$ref": "#/components/schemas/FactoryEvidence"
+          },
+          "signature": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          }
+        },
+        "required": [
+          "evidence",
+          "signature"
+        ],
+        "additionalProperties": false
+      },
+      "FactoryRelease": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": 1
+          },
+          "artifact_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "image_digest": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$"
+          },
+          "evidence_digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "binding": {
+            "$ref": "#/components/schemas/FactoryBinding"
+          },
+          "verification": {
+            "const": "verified_synthetic"
+          }
+        },
+        "required": [
+          "schema_version",
+          "artifact_id",
+          "image_digest",
+          "evidence_digest",
+          "binding",
+          "verification"
+        ],
+        "additionalProperties": false
+      },
+      "FactorySignedRelease": {
+        "type": "object",
+        "properties": {
+          "release": {
+            "$ref": "#/components/schemas/FactoryRelease"
+          },
+          "signature": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          }
+        },
+        "required": [
+          "release",
+          "signature"
+        ],
+        "additionalProperties": false
+      },
+      "FactoryFileProvenance": {
+        "type": "object",
+        "properties": {
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2097152
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^B[0-9]{3}$"
+            },
+            "maxItems": 147,
+            "uniqueItems": true
+          },
+          "template": {
+            "type": "string",
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "sha256",
+          "size_bytes",
+          "components",
+          "template"
+        ],
+        "additionalProperties": false
+      },
+      "FactorySourceManifest": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": 1
+          },
+          "lock_digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "catalogue_digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "toolchain": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "files": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/FactoryFileProvenance"
+            },
+            "maxProperties": 1100
+          },
+          "migrations": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "maxProperties": 128
+          }
+        },
+        "required": [
+          "schema_version",
+          "lock_digest",
+          "catalogue_digest",
+          "toolchain",
+          "files",
+          "migrations"
+        ],
+        "additionalProperties": false
+      },
+      "FactoryArtifact": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "application_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "image_digest": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$"
+          },
+          "lock_digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "source_digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "evidence_digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "release_digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "signed_release": {
+            "$ref": "#/components/schemas/FactorySignedRelease"
+          },
+          "signed_evidence": {
+            "$ref": "#/components/schemas/FactorySignedEvidence"
+          },
+          "source_manifest": {
+            "$ref": "#/components/schemas/FactorySourceManifest"
+          }
+        },
+        "required": [
+          "id",
+          "application_id",
+          "image_digest",
+          "lock_digest",
+          "source_digest",
+          "evidence_digest",
+          "release_digest",
+          "signed_release",
+          "signed_evidence",
+          "source_manifest"
+        ],
+        "additionalProperties": false
+      },
+      "FactoryArtifactView": {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "job_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "source_revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "environment": {
+            "type": "string",
+            "enum": [
+              "development",
+              "production"
+            ]
+          },
+          "artifact": {
+            "$ref": "#/components/schemas/FactoryArtifact"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "project_id",
+          "job_id",
+          "source_revision",
+          "environment",
+          "artifact",
+          "created_at"
+        ],
+        "additionalProperties": false
+      },
+      "FactoryExportFile": {
+        "type": "object",
+        "properties": {
+          "size_bytes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 536870912
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "required": [
+          "size_bytes",
+          "sha256"
+        ],
+        "additionalProperties": false
+      },
+      "FactoryGitExport": {
+        "type": "object",
+        "properties": {
+          "source_manifest_digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "commit": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{40}$"
+          },
+          "reference": {
+            "const": "refs/heads/kyro/application"
+          }
+        },
+        "required": [
+          "source_manifest_digest",
+          "commit",
+          "reference"
+        ],
+        "additionalProperties": false
+      },
+      "FactoryExportIndex": {
+        "type": "object",
+        "properties": {
+          "artifact_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "source_digest": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "image_digest": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$"
+          },
+          "format": {
+            "enum": [
+              "sources",
+              "oci",
+              "git"
+            ]
+          },
+          "chunk_bytes": {
+            "const": 65536
+          },
+          "files": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/FactoryExportFile"
+            },
+            "maxProperties": 1101
+          },
+          "git": {
+            "$ref": "#/components/schemas/FactoryGitExport"
+          }
+        },
+        "required": [
+          "artifact_id",
+          "source_digest",
+          "image_digest",
+          "format",
+          "chunk_bytes",
+          "files"
+        ],
+        "additionalProperties": false
+      },
+      "FactoryExportChunk": {
+        "type": "object",
+        "properties": {
+          "artifact_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "path": {
+            "type": "string",
+            "maxLength": 240
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 536870912
+          },
+          "next_offset": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 536870912
+          },
+          "complete": {
+            "type": "boolean"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 536870912
+          },
+          "file_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "chunk_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "content_base64": {
+            "type": "string",
+            "contentEncoding": "base64",
+            "maxLength": 87384
+          }
+        },
+        "required": [
+          "artifact_id",
+          "path",
+          "offset",
+          "next_offset",
+          "complete",
+          "size_bytes",
+          "file_sha256",
+          "chunk_sha256",
+          "content_base64"
+        ],
+        "additionalProperties": false
       }
     }
   }

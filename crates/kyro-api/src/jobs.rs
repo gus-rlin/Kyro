@@ -61,19 +61,24 @@ async fn create_job(
 ) -> Result<(StatusCode, Json<Job>), ApiError> {
     identity::authorize_project(&state, &actor, project_id, "execute").await?;
     let source_revision = ApiError::parse_revision_if_match(&headers)?;
-    let mut idempotency_values = headers.get_all("idempotency-key").iter();
-    let idempotency_key = idempotency_values
-        .next()
-        .and_then(|value| value.to_str().ok())
-        .filter(|value| {
-            !value.is_empty()
-                && value.len() <= 200
-                && value.bytes().all(|byte| {
-                    byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.' | b':')
-                })
-        })
-        .filter(|_| idempotency_values.next().is_none())
-        .ok_or_else(ApiError::bad_request)?;
+    if let JobPayload::BuildApplication { lock } = &request.payload {
+        let factory = state
+            .factory
+            .as_ref()
+            .ok_or_else(|| ApiError::from(kyro_domain::Error::Unavailable))?;
+        factory
+            .control
+            .admit(
+                &state.store,
+                actor.actor_id,
+                project_id,
+                source_revision,
+                lock,
+            )
+            .await
+            .map_err(ApiError::from)?;
+    }
+    let idempotency_key = idempotency_key(&headers)?;
 
     if let JobPayload::ModelCall { request } = &request.payload {
         identity::authorize_project(&state, &actor, project_id, "model").await?;
@@ -105,6 +110,23 @@ async fn create_job(
         .await
         .map_err(ApiError::from)?;
     Ok((StatusCode::ACCEPTED, Json(job)))
+}
+
+pub(crate) fn idempotency_key(headers: &HeaderMap) -> Result<&str, ApiError> {
+    let mut idempotency_values = headers.get_all("idempotency-key").iter();
+    let idempotency_key = idempotency_values
+        .next()
+        .and_then(|value| value.to_str().ok())
+        .filter(|value| {
+            !value.is_empty()
+                && value.len() <= 200
+                && value.bytes().all(|byte| {
+                    byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.' | b':')
+                })
+        })
+        .filter(|_| idempotency_values.next().is_none())
+        .ok_or_else(ApiError::bad_request)?;
+    Ok(idempotency_key)
 }
 
 async fn list_jobs(

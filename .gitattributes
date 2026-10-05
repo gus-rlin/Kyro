@@ -1,4 +1,6 @@
 * text=auto eol=lf
+# SQLx checksums must retain the bytes already exercised by the local P2 schema.
+crates/kyro-app/migrations/*.sql -text whitespace=cr-at-eol
 *.png binary
 *.jpg binary
 *.jpeg binary

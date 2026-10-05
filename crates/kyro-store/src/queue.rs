@@ -120,6 +120,61 @@ struct EffectReconciliationFingerprint<'a> {
 }
 
 impl Store {
+    /// Replay the original factory admission before resolving a current spec.
+    /// The old signed lock is part of the immutable fingerprint; advancing a
+    /// project or catalogue does not silently replace it on an identical retry.
+    pub async fn replay_factory_build(
+        &self,
+        actor_id: Uuid,
+        project_id: Uuid,
+        source_revision: i64,
+        idempotency_key: &str,
+        max_attempts: Option<u8>,
+        ttl_seconds: Option<u32>,
+    ) -> Result<Option<Job>> {
+        validate_idempotency_key(idempotency_key)?;
+        if source_revision < 0 {
+            return Err(Error::Invalid("révision source invalide".into()));
+        }
+        let mut tx = self.begin_actor(actor_id).await?;
+        sqlx::query("SELECT current_revision FROM public.kyro_lock_project_for_actor($1, ARRAY['execute']::TEXT[])")
+            .bind(project_id).fetch_optional(&mut *tx).await.map_err(map_database_error)?.ok_or(Error::NotFound)?;
+        let existing = sqlx::query_as::<_, ExistingCommandRow>(
+            "SELECT fingerprint, result FROM change_commands WHERE project_id=$1 AND idempotency_key=$2")
+            .bind(project_id).bind(idempotency_key).fetch_optional(&mut *tx).await.map_err(map_database_error)?;
+        let Some(existing) = existing else {
+            tx.commit().await.map_err(map_database_error)?;
+            return Ok(None);
+        };
+        let job_id = existing
+            .result
+            .get("job_id")
+            .and_then(Value::as_str)
+            .and_then(|raw| Uuid::parse_str(raw).ok())
+            .ok_or(Error::IdempotencyConflict)?;
+        let row = fetch_job_row(&mut *tx, project_id, job_id, self.environment).await?;
+        let payload = decode_supported_payload(row.payload.clone()).map_err(|_| Error::Internal)?;
+        if !matches!(payload, JobPayload::BuildApplication { .. }) {
+            return Err(Error::IdempotencyConflict);
+        }
+        let fingerprint = admission_fingerprint(
+            self.environment,
+            actor_id,
+            project_id,
+            source_revision,
+            &payload,
+            max_attempts,
+            ttl_seconds,
+        )?;
+        if fingerprint.as_slice() != existing.fingerprint.as_slice() {
+            return Err(Error::IdempotencyConflict);
+        }
+        let demand = grant_demand_for_row(&row, &payload)?;
+        authorize_job_grants(&mut *tx, actor_id, project_id, &payload, &demand).await?;
+        tx.commit().await.map_err(map_database_error)?;
+        Ok(Some(row.into_job()?))
+    }
+
     /// Admit a job under the actor's `execute` grant and project resource limits.
     /// The project lock serializes both idempotency and active/queued quotas.
     pub async fn enqueue_job(
@@ -151,6 +206,14 @@ impl Store {
             return Err(Error::ResourceLimit);
         }
         payload.validate_for_queue()?;
+        if let JobPayload::BuildApplication { lock } = &payload {
+            if lock.lock.project_id != project_id
+                || lock.lock.source_revision != source_revision
+                || lock.lock.environment != self.environment
+            {
+                return Err(Error::Invalid("composition lock outside job scope".into()));
+            }
+        }
 
         let mut tx = self.begin_actor(actor_id).await?;
         let project = sqlx::query_as::<_, ProjectAdmissionRow>(
@@ -222,6 +285,21 @@ impl Store {
                 expected: source_revision,
                 current: project.current_revision,
             });
+        }
+
+        if let JobPayload::BuildApplication { lock } = &payload {
+            lock_factory_catalogue(&mut *tx, project_id, &lock.lock).await?;
+            let spec: Value = sqlx::query_scalar(
+                "SELECT spec FROM app_revisions WHERE project_id=$1 AND revision=$2",
+            )
+            .bind(project_id)
+            .bind(source_revision)
+            .fetch_one(&mut *tx)
+            .await
+            .map_err(map_database_error)?;
+            let spec: kyro_domain::spec::AppSpec =
+                serde_json::from_value(spec).map_err(|_| Error::Internal)?;
+            ensure_factory_spec(&spec, &lock.lock)?;
         }
 
         let counts = sqlx::query_as::<_, QueueCounts>(
@@ -1124,6 +1202,138 @@ impl Store {
         updated.into_job()
     }
 
+    /// Revalidate the lease and all grants between factory phases and during
+    /// heartbeats. No long compilation runs inside this short transaction.
+    pub async fn factory_snapshot(
+        &self,
+        lease: &JobLease,
+    ) -> Result<crate::factory::FactorySnapshot> {
+        let mut tx = self.begin_actor(lease.actor_id).await?;
+        let current_revision =
+            lock_project(&mut tx, lease.project_id, &["execute", "read"]).await?;
+        let row = lock_job(&mut tx, lease.project_id, lease.job_id).await?;
+        let lock = validate_factory_row(&mut tx, lease, &row, current_revision).await?;
+        lock_factory_catalogue(&mut tx, lease.project_id, lock).await?;
+        let spec: Value = sqlx::query_scalar(
+            "SELECT spec FROM app_revisions WHERE project_id=$1 AND revision=$2",
+        )
+        .bind(lease.project_id)
+        .bind(lease.source_revision)
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(map_database_error)?;
+        let spec = serde_json::from_value(spec).map_err(|_| Error::Internal)?;
+        ensure_factory_spec(&spec, lock)?;
+        let signed_catalogue = sqlx::query_scalar(
+            "SELECT signed_catalogue FROM factory_catalogue_state WHERE singleton",
+        )
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(map_database_error)?;
+        let snapshot = crate::factory::FactorySnapshot {
+            spec,
+            signed_catalogue,
+            catalogue_revision: lock.catalogue_revision,
+            catalogue_digest: lock.catalogue_digest.clone(),
+            deadline: row.deadline,
+        };
+        tx.commit().await.map_err(map_database_error)?;
+        Ok(snapshot)
+    }
+
+    /// An attestor receives only a fenced reference over its private socket;
+    /// source, lock, actor demand and deadline are reloaded from PostgreSQL.
+    pub async fn running_factory_lease(
+        &self,
+        actor_id: Uuid,
+        project_id: Uuid,
+        job_id: Uuid,
+        generation: i64,
+        lease_owner: Uuid,
+    ) -> Result<JobLease> {
+        let mut tx = self.begin_actor(actor_id).await?;
+        let revision = lock_project(&mut tx, project_id, &["execute", "read"]).await?;
+        let row = lock_job(&mut tx, project_id, job_id).await?;
+        let lease = JobLease {
+            job_id: row.id,
+            project_id: row.project_id,
+            actor_id: row.actor_id,
+            environment: self.environment,
+            source_revision: row.source_revision,
+            payload: decode_supported_payload(row.payload.clone()).map_err(|_| Error::Internal)?,
+            attempts: u8::try_from(row.attempts).map_err(|_| Error::Internal)?,
+            max_attempts: u8::try_from(row.max_attempts).map_err(|_| Error::Internal)?,
+            generation: row.generation,
+            lease_owner: row
+                .lease_owner
+                .as_deref()
+                .and_then(|s| Uuid::parse_str(s).ok())
+                .ok_or(Error::Conflict("lease absent".into()))?,
+            lease_until: row
+                .lease_until
+                .ok_or(Error::Conflict("lease absent".into()))?,
+            deadline: row.deadline,
+            cancel_requested: row.cancel_requested,
+        };
+        if lease.actor_id != actor_id
+            || lease.generation != generation
+            || lease.lease_owner != lease_owner
+        {
+            return Err(Error::Conflict("lease reference changed".into()));
+        }
+        validate_factory_row(&mut tx, &lease, &row, revision).await?;
+        tx.commit().await.map_err(map_database_error)?;
+        Ok(lease)
+    }
+
+    /// Signature validation is performed by the factory callback while the
+    /// catalogue, project, grants and current generation remain fenced. Artifact,
+    /// terminal job and outbox event commit together, or none of them do.
+    pub async fn finish_build_application<F>(
+        &self,
+        lease: &JobLease,
+        artifact: &crate::factory::FactoryArtifactInput,
+        validate: F,
+    ) -> Result<Job>
+    where
+        F: FnOnce(&crate::factory::FactoryArtifactInput) -> Result<()>,
+    {
+        artifact.validate()?;
+        let mut tx = self.begin_actor(lease.actor_id).await?;
+        let current_revision =
+            lock_project(&mut tx, lease.project_id, &["execute", "read"]).await?;
+        let row = lock_job(&mut tx, lease.project_id, lease.job_id).await?;
+        let lock = validate_factory_row(&mut tx, lease, &row, current_revision).await?;
+        lock_factory_catalogue(&mut tx, lease.project_id, lock).await?;
+        if artifact.application_id != lock.application_id {
+            return Err(Error::Invalid("artifact application mismatch".into()));
+        }
+        validate(artifact)?;
+        sqlx::query("INSERT INTO factory_artifacts(id,project_id,job_id,job_generation,lease_owner,application_id,environment,source_revision,image_digest,lock_digest,source_digest,evidence_digest,release_digest,signed_release,signed_evidence,source_manifest) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)")
+            .bind(artifact.id).bind(lease.project_id).bind(lease.job_id).bind(lease.generation).bind(lease.lease_owner)
+            .bind(artifact.application_id).bind(lease.environment.as_str()).bind(lease.source_revision).bind(&artifact.image_digest)
+            .bind(&artifact.lock_digest).bind(&artifact.source_digest).bind(&artifact.evidence_digest).bind(&artifact.release_digest)
+            .bind(&artifact.signed_release).bind(&artifact.signed_evidence).bind(&artifact.source_manifest)
+            .execute(&mut *tx).await.map_err(map_database_error)?;
+        let result = JobResult::BuildApplication {
+            artifact_id: artifact.id,
+            image_digest: artifact.image_digest.clone(),
+            release_digest: artifact.release_digest.clone(),
+        };
+        let updated =
+            set_actor_job_status(&mut tx, &row, JobStatus::Succeeded, None, Some(result)).await?;
+        append_job_status_event(
+            &mut tx,
+            lease.project_id,
+            lease.job_id,
+            lease.generation,
+            JobStatus::Succeeded,
+        )
+        .await?;
+        tx.commit().await.map_err(map_database_error)?;
+        updated.into_job()
+    }
+
     /// Persist a model effect reference only after grants and the source revision
     /// still match. The model response itself is stored on the separately gated effect.
     pub async fn finish_model_job(
@@ -2012,6 +2222,79 @@ fn ensure_current_lease(row: &JobRow, lease: &JobLease) -> Result<()> {
     Ok(())
 }
 
+async fn lock_factory_catalogue(
+    conn: &mut PgConnection,
+    project_id: Uuid,
+    lock: &kyro_domain::factory::CompositionLock,
+) -> Result<()> {
+    let revision = i64::try_from(lock.catalogue_revision)
+        .map_err(|_| Error::Invalid("catalogue revision invalid".into()))?;
+    let accepted: bool = sqlx::query_scalar("SELECT public.kyro_lock_factory_catalogue($1,$2,$3)")
+        .bind(project_id)
+        .bind(revision)
+        .bind(&lock.catalogue_digest)
+        .fetch_one(conn)
+        .await
+        .map_err(map_database_error)?;
+    if !accepted {
+        return Err(Error::Invalid("factory catalogue changed".into()));
+    }
+    Ok(())
+}
+
+fn ensure_factory_spec(
+    spec: &kyro_domain::spec::AppSpec,
+    lock: &kyro_domain::factory::CompositionLock,
+) -> Result<()> {
+    let bytes = serde_json::to_vec(spec).map_err(|_| Error::Internal)?;
+    let hash: String = Sha256::digest(bytes)
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect();
+    if hash != lock.spec_digest {
+        return Err(Error::Invalid("composition source mismatch".into()));
+    }
+    Ok(())
+}
+
+async fn validate_factory_row<'a>(
+    conn: &mut PgConnection,
+    lease: &'a JobLease,
+    row: &JobRow,
+    current_revision: i64,
+) -> Result<&'a kyro_domain::factory::CompositionLock> {
+    ensure_current_lease(row, lease)?;
+    let now = utc_now(conn).await?;
+    if row.lease_until.is_none_or(|until| until <= now)
+        || row.deadline <= now
+        || row.cancel_requested
+    {
+        return Err(Error::Conflict("factory lease expired or cancelled".into()));
+    }
+    let persisted = decode_supported_payload(row.payload.clone()).map_err(|_| Error::Internal)?;
+    if persisted != lease.payload {
+        return Err(Error::Conflict("factory job changed".into()));
+    }
+    let JobPayload::BuildApplication { lock } = &lease.payload else {
+        return Err(Error::Invalid("factory job required".into()));
+    };
+    let demand = grant_demand_for_row(row, &persisted)?;
+    authorize_job_grants(conn, lease.actor_id, lease.project_id, &persisted, &demand).await?;
+    if current_revision != lease.source_revision {
+        return Err(Error::StaleRevision {
+            expected: lease.source_revision,
+            current: current_revision,
+        });
+    }
+    if lock.lock.project_id != lease.project_id
+        || lock.lock.environment != lease.environment
+        || lock.lock.source_revision != lease.source_revision
+    {
+        return Err(Error::Invalid("factory scope changed".into()));
+    }
+    Ok(&lock.lock)
+}
+
 fn decode_supported_payload(value: Value) -> std::result::Result<JobPayload, ()> {
     let payload: JobPayload = serde_json::from_value(value).map_err(|_| ())?;
     payload.validate_for_queue().map_err(|_| ())?;
@@ -2322,6 +2605,7 @@ async fn authorize_job_grants(
     let actions: &[&str] = match payload {
         JobPayload::ApplyChanges { .. } => &["execute", "write"],
         JobPayload::ModelCall { .. } => &["execute", "model"],
+        JobPayload::BuildApplication { .. } => &["execute", "read"],
         JobPayload::ReconcileEffect { .. } => {
             return Err(Error::Invalid(
                 "les rapprochements ont une autorisation séparée".into(),
@@ -2341,6 +2625,7 @@ fn grant_demand_for_job(payload: &JobPayload, attempts: u8, ttl_secs: u32) -> Re
             None,
             Some(u32::try_from(changes.operations.len()).map_err(|_| Error::ResourceLimit)?),
         ),
+        JobPayload::BuildApplication { .. } => (None, None, None),
         JobPayload::ModelCall { request } => (
             Some(
                 u32::try_from(

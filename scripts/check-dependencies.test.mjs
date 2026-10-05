@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { classifyDependencyAudit } from "./check-dependencies.mjs";
 
-const rootNames = ["kyro-api", "kyro-domain", "kyro-gateway", "kyro-store", "kyro-worker"];
+const rootNames = ["kyro-api", "kyro-domain", "kyro-gateway", "kyro-store", "kyro-worker", "kyro-app", "kyro-factory"];
 const rsaId = "registry+https://github.com/rust-lang/crates.io-index#rsa@0.9.10";
 const registry = "registry+https://github.com/rust-lang/crates.io-index";
 

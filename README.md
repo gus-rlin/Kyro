@@ -28,6 +28,12 @@ Les futures interfaces des applications générées restent prévues en Leptos ;
 
 ## Développement local du backend
 
+Part 2 adds the Rust application runtime and deterministic factory in `crates/kyro-app`
+and `crates/kyro-factory`. See the [delivery and receipt confidentiality report](docs/backend/partie-2/VALIDATION.md)
+and [operations guide](docs/backend/partie-2/OPERATIONS.md). Catalogue 0.1.2 requires
+fresh operator qualification and admission before use; previous signatures do not
+qualify this source tree.
+
 Le dépôt utilise le toolchain Rust indiqué par [`rust-toolchain.toml`](rust-toolchain.toml). Une base PostgreSQL réelle est nécessaire pour les parcours d’intégration. Les scripts d’infrastructure et le schéma des rôles sont décrits dans [`docs/backend/partie-1/OPERATIONS.md`](docs/backend/partie-1/OPERATIONS.md); exécuter les migrations avec le rôle admin avant de lancer l’API ou le worker.
 
 Copier [`.env.example`](.env.example) vers `.env`, ajuster le port PostgreSQL retenu par l’infrastructure locale, puis charger les variables dans le terminal. Exemple PowerShell :

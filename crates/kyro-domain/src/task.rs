@@ -30,6 +30,11 @@ pub enum JobPayload {
         effect_id: Uuid,
         request: ReconcileEffectRequest,
     },
+    /// Build the exact signed composition. Its cryptographic/current-catalogue
+    /// validation belongs to the factory at admission and execution boundaries.
+    BuildApplication {
+        lock: crate::factory::SignedCompositionLock,
+    },
 }
 
 impl JobPayload {
@@ -47,6 +52,7 @@ impl JobPayload {
                 }
             }
             Self::ReconcileEffect { request, .. } => request.validate()?,
+            Self::BuildApplication { lock } => lock.validate_shape()?,
         }
         Ok(())
     }
@@ -66,6 +72,11 @@ impl JobPayload {
             },
             Self::ReconcileEffect { effect_id, .. } => JobPayloadSummary::ReconcileEffect {
                 effect_id: *effect_id,
+            },
+            Self::BuildApplication { lock } => JobPayloadSummary::BuildApplication {
+                application_id: lock.lock.application_id,
+                catalogue_revision: lock.lock.catalogue_revision,
+                component_count: lock.lock.components.len(),
             },
         }
     }
@@ -90,6 +101,11 @@ pub enum JobPayloadSummary {
     ReconcileEffect {
         effect_id: Uuid,
     },
+    BuildApplication {
+        application_id: Uuid,
+        catalogue_revision: u64,
+        component_count: usize,
+    },
 }
 
 /// A deliberately small, non-sensitive reference to a completed job result.
@@ -104,6 +120,11 @@ pub enum JobResult {
     ModelCall {
         effect_id: Uuid,
         status: EffectStatus,
+    },
+    BuildApplication {
+        artifact_id: Uuid,
+        image_digest: String,
+        release_digest: String,
     },
 }
 
@@ -140,6 +161,30 @@ impl<'de> Deserialize<'de> for JobResult {
             return Ok(Self::ModelCall { effect_id, status });
         }
 
+        if object.len() == 3
+            && object.contains_key("artifact_id")
+            && object.contains_key("image_digest")
+            && object.contains_key("release_digest")
+        {
+            let artifact_id: Uuid = serde_json::from_value(object["artifact_id"].clone())
+                .map_err(serde::de::Error::custom)?;
+            let image_digest = object["image_digest"].as_str().filter(|s| {
+                s.strip_prefix("sha256:")
+                    .is_some_and(crate::factory::valid_digest)
+            });
+            let release_digest = object["release_digest"]
+                .as_str()
+                .filter(|s| crate::factory::valid_digest(s));
+            if let (false, Some(image_digest), Some(release_digest)) =
+                (artifact_id.is_nil(), image_digest, release_digest)
+            {
+                return Ok(Self::BuildApplication {
+                    artifact_id,
+                    image_digest: image_digest.into(),
+                    release_digest: release_digest.into(),
+                });
+            }
+        }
         Err(serde::de::Error::custom("unsupported job result reference"))
     }
 }
@@ -360,6 +405,29 @@ mod tests {
         }));
 
         assert!(parsed.is_err());
+    }
+
+    #[test]
+    fn factory_result_is_a_closed_reference_with_valid_digests() {
+        let id = Uuid::new_v4();
+        let reference = json!({"artifact_id":id,"image_digest":format!("sha256:{}","a".repeat(64)),"release_digest":"b".repeat(64)});
+        let result: JobResult = serde_json::from_value(reference.clone()).unwrap();
+        assert!(matches!(result,JobResult::BuildApplication {artifact_id,..} if artifact_id==id));
+        let mut invalid = reference.clone();
+        invalid["release_digest"] = json!("bad");
+        assert!(serde_json::from_value::<JobResult>(invalid).is_err());
+        let mut invalid = reference.clone();
+        invalid["artifact_id"] = json!(Uuid::nil());
+        assert!(serde_json::from_value::<JobResult>(invalid).is_err());
+        let mut invalid = reference;
+        invalid["path"] = json!("/private/operator/path");
+        assert!(serde_json::from_value::<JobResult>(invalid).is_err());
+        assert!(
+            serde_json::from_value::<JobPayload>(
+                json!({"kind":"build_application","command":"cargo build"})
+            )
+            .is_err()
+        );
     }
 
     #[test]

@@ -4,6 +4,7 @@ mod store;
 
 pub mod budget;
 pub mod chat;
+pub mod factory;
 pub mod identity;
 pub mod migrate;
 pub mod projects;

@@ -22,18 +22,21 @@ pub async fn run_from_env() -> Result<()> {
         .with_environment(config.environment);
     store.check_ready().await?;
     let gateway = Gateway::new(GatewayConfig::from_env(config.environment)?)?;
+    let factory = kyro_factory::service::FactoryControl::from_env()
+        .map_err(kyro_factory::service::domain_error)?;
     let (shutdown_tx, shutdown_rx) = watch::channel(false);
     let signal_listener = tokio::spawn(async move {
         wait_for_shutdown_signal().await;
         let _ = shutdown_tx.send(true);
     });
 
-    let result = run(
+    let result = run_with_factory(
         &store,
         &gateway,
         config.worker_poll_ms,
         config.lease_seconds,
         shutdown_rx,
+        factory.as_deref(),
     )
     .await;
     signal_listener.abort();
@@ -48,7 +51,18 @@ pub async fn run(
     gateway: &Gateway,
     poll_ms: u64,
     lease_seconds: u64,
+    shutdown: watch::Receiver<bool>,
+) -> Result<()> {
+    run_with_factory(store, gateway, poll_ms, lease_seconds, shutdown, None).await
+}
+
+pub async fn run_with_factory(
+    store: &Store,
+    gateway: &Gateway,
+    poll_ms: u64,
+    lease_seconds: u64,
     mut shutdown: watch::Receiver<bool>,
+    factory: Option<&kyro_factory::service::FactoryControl>,
 ) -> Result<()> {
     if !(10..=10_000).contains(&poll_ms) || !(2..=120).contains(&lease_seconds) {
         return Err(Error::Invalid(
@@ -76,7 +90,7 @@ pub async fn run(
         if let Some(lease) = lease {
             // Shutdown only stops new claims. The active job is allowed to
             // settle or reach its bounded gateway/database timeout.
-            run_lease_with_heartbeat(store, gateway, &lease, lease_seconds).await?;
+            run_lease_with_heartbeat(store, gateway, &lease, lease_seconds, factory).await?;
             continue;
         }
 
@@ -96,17 +110,25 @@ async fn run_lease_with_heartbeat(
     gateway: &Gateway,
     lease: &JobLease,
     lease_seconds: u64,
+    factory: Option<&kyro_factory::service::FactoryControl>,
 ) -> Result<()> {
     let interval_ms = (lease_seconds.saturating_mul(1_000) / 3).clamp(250, 20_000);
     let cadence = Duration::from_millis(interval_ms);
     let mut heartbeats = time::interval_at(time::Instant::now() + cadence, cadence);
-    let processing = process_lease(store, gateway, lease);
+    let processing = process_lease(store, gateway, lease, factory);
     tokio::pin!(processing);
 
     loop {
         tokio::select! {
             result = &mut processing => return result,
             _ = heartbeats.tick() => {
+                if matches!(&lease.payload,JobPayload::BuildApplication {..}) {
+                    // Dropping processing aborts and reaps a compiler/verifier.
+                    // P1's model unknown-effect accounting keeps its own path.
+                    if let Err(error)=store.factory_snapshot(lease).await {
+                        return record_failure(store,lease,error).await;
+                    }
+                }
                 match store.heartbeat_job(lease, lease_seconds).await {
                     Ok(heartbeat) if heartbeat.cancel_requested => {
                         debug!(job_id = %lease.job_id, generation = lease.generation, "job cancellation requested");
@@ -114,12 +136,15 @@ async fn run_lease_with_heartbeat(
                     Ok(_) => {}
                     Err(Error::Conflict(_)) => {
                         debug!(job_id = %lease.job_id, generation = lease.generation, "job lease is no longer current");
+                        if matches!(&lease.payload,JobPayload::BuildApplication {..}) {return Ok(());}
                     }
                     Err(Error::Unavailable) => {
                         warn!(job_id = %lease.job_id, generation = lease.generation, "job heartbeat unavailable");
+                        if matches!(&lease.payload,JobPayload::BuildApplication {..}) {return record_failure(store,lease,Error::Unavailable).await;}
                     }
                     Err(_) => {
                         warn!(job_id = %lease.job_id, generation = lease.generation, "job heartbeat failed");
+                        if matches!(&lease.payload,JobPayload::BuildApplication {..}) {return record_failure(store,lease,Error::Unavailable).await;}
                     }
                 }
             }
@@ -127,9 +152,18 @@ async fn run_lease_with_heartbeat(
     }
 }
 
-async fn process_lease(store: &Store, gateway: &Gateway, lease: &JobLease) -> Result<()> {
+async fn process_lease(
+    store: &Store,
+    gateway: &Gateway,
+    lease: &JobLease,
+    factory: Option<&kyro_factory::service::FactoryControl>,
+) -> Result<()> {
     let result = match &lease.payload {
         JobPayload::ApplyChanges { changes } => store.finish_apply_changes(lease, changes).await,
+        JobPayload::BuildApplication { .. } => match factory {
+            Some(factory) => factory.execute(store, lease).await,
+            None => Err(Error::Unavailable),
+        },
         JobPayload::ModelCall { request } => {
             let context = ModelEffectContext {
                 project_id: lease.project_id,
@@ -167,20 +201,35 @@ async fn process_lease(store: &Store, gateway: &Gateway, lease: &JobLease) -> Re
             info!(job_id = %job.id, generation = lease.generation, status = job.status.as_str(), "job processed");
             Ok(())
         }
-        Err(error) => {
-            let (code, retryable) = failure_policy(&error, &lease.payload);
-            match store.fail_job(lease, code, retryable).await {
-                Ok(job) => {
-                    info!(job_id = %job.id, generation = lease.generation, status = job.status.as_str(), error_code = ?job.error_code, "job failure recorded");
-                    Ok(())
-                }
-                Err(Error::Conflict(_)) => {
-                    debug!(job_id = %lease.job_id, generation = lease.generation, "late worker result discarded by lease fence");
-                    Ok(())
-                }
-                Err(other) => Err(other),
-            }
+        Err(error) => record_failure(store, lease, error).await,
+    }
+}
+
+async fn record_failure(store: &Store, lease: &JobLease, error: Error) -> Result<()> {
+    if matches!(&lease.payload, JobPayload::BuildApplication { .. }) {
+        let classification = match &error {
+            Error::Invalid(message) if message.starts_with("factory: ") => message.as_str(),
+            Error::Internal => "internal",
+            Error::Unavailable => "unavailable",
+            Error::Forbidden => "forbidden",
+            Error::NotFound => "not_found",
+            Error::Conflict(_) => "lease_conflict",
+            Error::StaleRevision { .. } => "source_stale",
+            _ => "refused",
+        };
+        warn!(job_id=%lease.job_id,generation=lease.generation,failure=classification,"factory phase refused");
+    }
+    let (code, retryable) = failure_policy(&error, &lease.payload);
+    match store.fail_job(lease, code, retryable).await {
+        Ok(job) => {
+            info!(job_id = %job.id, generation = lease.generation, status = job.status.as_str(), error_code = ?job.error_code, "job failure recorded");
+            Ok(())
         }
+        Err(Error::Conflict(_)) => {
+            debug!(job_id = %lease.job_id, generation = lease.generation, "late worker result discarded by lease fence");
+            Ok(())
+        }
+        Err(other) => Err(other),
     }
 }
 

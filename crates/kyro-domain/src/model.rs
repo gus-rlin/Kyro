@@ -47,6 +47,7 @@ pub enum ModelPurpose {
     Summarization,
     StructuredExtraction,
     Translation,
+    Embedding,
 }
 
 /// Données structurées déclarées par l'appelant; elles ne contiennent ni destination URL ni clé.
@@ -476,6 +477,8 @@ pub enum ChatRole {
 pub struct ModelRegistrationSnapshot {
     #[serde(default, skip_serializing_if = "is_structured_mode")]
     pub output_mode: ModelOutputMode,
+    #[serde(default, skip_serializing_if = "ModelProtocol::is_chat")]
+    pub protocol: ModelProtocol,
     pub destination_id: String,
     pub provider: String,
     pub provider_kind: ModelProviderKind,
@@ -495,6 +498,21 @@ fn is_structured_mode(mode: &ModelOutputMode) -> bool {
 
 fn is_false(value: &bool) -> bool {
     !*value
+}
+
+/// The protocol belongs to the trusted registration and its effect fingerprint.
+/// Omitted chat preserves existing P1 snapshots byte for byte.
+#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ModelProtocol {
+    #[default]
+    Chat,
+    Embeddings,
+}
+impl ModelProtocol {
+    pub fn is_chat(&self) -> bool {
+        *self == Self::Chat
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]

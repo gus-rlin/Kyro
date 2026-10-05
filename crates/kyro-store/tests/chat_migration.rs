@@ -73,7 +73,8 @@ async fn postgres_chat_migration_installs_and_upgrades_without_resetting_runtime
             .fetch_one(&pool)
             .await
             .unwrap();
-        assert_eq!(count, 18);
+        // Installing later additive migrations must keep the chat upgrade valid.
+        assert_eq!(count, MIGRATOR.iter().count() as i64);
         if upgrade {
             assert_eq!(previous,sqlx::query_as::<_,(i64,Vec<u8>)>("SELECT version,checksum FROM _sqlx_migrations WHERE version<18 ORDER BY version").fetch_all(&pool).await.unwrap());
             let enabled: bool =

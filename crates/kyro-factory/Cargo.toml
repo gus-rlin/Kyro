@@ -1,0 +1,29 @@
+[package]
+name = "kyro-factory"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+kyro-domain = { path = "../kyro-domain" }
+kyro-app = { path = "../kyro-app" }
+kyro-store = { path = "../kyro-store" }
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+jsonwebtoken = { workspace = true, features = ["use_pem"] }
+chrono.workspace = true
+uuid.workspace = true
+zeroize.workspace = true
+tokio = { workspace = true, features = ["process", "fs"] }
+thiserror.workspace = true
+tar.workspace = true
+
+[features]
+test-support = ["kyro-app/test-support"]
+
+[dev-dependencies]
+base64.workspace = true
+image.workspace = true
+sqlx.workspace = true
