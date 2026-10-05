@@ -576,6 +576,11 @@ async fn product_update(tx: &mut AppTx, operation: &OperationRequest) -> AppResu
         .await,
     )?
     .ok_or(AppError::conflict("stale_or_published_product"))?;
+    if input.inventory_tracked {
+        // Re-enabling tracking preserves any stock accumulated before disabling it.
+        sqlx::query("INSERT INTO public.app_commerce_inventory (tenant_id,product_id,on_hand,reserved,version) VALUES($1,$2,0,0,1) ON CONFLICT(tenant_id,application_id,product_id) DO NOTHING")
+            .bind(tx.actor().tenant_id()).bind(input.id).execute(tx.conn()).await?;
+    }
     let output = product_json(&row, true)?;
     tx.audit(
         "B121",
@@ -825,7 +830,7 @@ async fn quote_create(tx: &mut AppTx, operation: &OperationRequest) -> AppResult
                  FROM public.app_commerce_products p \
                  JOIN public.app_commerce_prices pr ON pr.tenant_id = p.tenant_id AND pr.product_id = p.id \
                  WHERE p.tenant_id = $1 AND p.id = $2 AND p.status = 'published' \
-                   AND pr.currency = $3 AND pr.effective_at <= clock_timestamp() \
+                   AND pr.currency = $3 AND pr.interval_unit = 'one_time' AND pr.effective_at <= clock_timestamp() \
                    AND (pr.expires_at IS NULL OR pr.expires_at > clock_timestamp()) \
                  ORDER BY pr.version DESC LIMIT 1",
             )
@@ -1131,7 +1136,7 @@ async fn revalidate_quote_lines(tx: &mut AppTx, lines: &[PricedLine]) -> AppResu
                  FROM public.app_commerce_products p \
                  JOIN public.app_commerce_prices pr ON pr.tenant_id = p.tenant_id AND pr.product_id = p.id \
                  WHERE p.tenant_id = $1 AND p.id = $2 AND pr.currency = $3 \
-                   AND pr.effective_at <= clock_timestamp() \
+                   AND pr.interval_unit = 'one_time' AND pr.effective_at <= clock_timestamp() \
                    AND (pr.expires_at IS NULL OR pr.expires_at > clock_timestamp()) \
                  ORDER BY pr.version DESC LIMIT 1",
             )

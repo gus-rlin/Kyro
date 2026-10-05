@@ -24,7 +24,18 @@ async fn upgrade_invalidates_pre_fix_projections_without_reexecuting_commands() 
     admin_url.set_path(&format!("/{database}"));
     runtime_url.set_path(&format!("/{database}"));
     let admin = PgPool::connect(admin_url.as_str()).await.unwrap();
-    let all = sqlx::migrate!("./migrations");
+    // Keep this historical reproduction scoped to the receipt upgrade itself.
+    let migrations = sqlx::migrate!("./migrations");
+    let all = Migrator {
+        migrations: Cow::Owned(
+            migrations
+                .iter()
+                .filter(|m| m.version <= 37)
+                .cloned()
+                .collect(),
+        ),
+        ..Migrator::DEFAULT
+    };
     let previous = Migrator {
         migrations: Cow::Owned(all.iter().filter(|m| m.version <= 36).cloned().collect()),
         ..Migrator::DEFAULT

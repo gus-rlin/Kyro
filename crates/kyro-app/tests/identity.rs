@@ -46,6 +46,67 @@ fn dispatcher(service: &Arc<IdentityService>) -> OperationDispatcher {
     )
     .unwrap()
 }
+
+async fn wait_global_writer_without_shared_upgrade(f: &Fixture) {
+    tokio::time::timeout(std::time::Duration::from_secs(1), async {
+        loop {
+            let waiting: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM pg_locks w WHERE w.locktype='advisory' AND w.database=(SELECT oid FROM pg_database WHERE datname=current_database()) AND w.classid=((hashtextextended('app-authority-global:v1',0)>>32)&4294967295)::oid AND w.objid=(hashtextextended('app-authority-global:v1',0)&4294967295)::oid AND w.mode='ExclusiveLock' AND NOT w.granted AND NOT EXISTS(SELECT 1 FROM pg_locks h WHERE h.pid=w.pid AND h.locktype=w.locktype AND h.database=w.database AND h.classid=w.classid AND h.objid=w.objid AND h.granted AND h.mode='ShareLock'))")
+                .fetch_one(&f.admin).await.unwrap();
+            if waiting { break; }
+            tokio::task::yield_now().await;
+        }
+    }).await.expect("principal creation must wait for exclusive global authority without holding a shared global lock");
+}
+
+#[tokio::test]
+#[ignore = "requires disposable PostgreSQL"]
+async fn service_creations_in_two_applications_take_global_authority_first() {
+    let first = Fixture::new().await;
+    let second = Fixture::new().await;
+    let gate = Fixture::new().await;
+    let s1 = identity(&first, config(&first, false)).await;
+    let s2 = identity(&second, config(&second, false)).await;
+    for f in [&first, &second] {
+        sqlx::query("INSERT INTO app_role_permissions(tenant_id,application_id,role,permission) VALUES($1,$2,'service_reader','B005.execute')").bind(f.actor.tenant_id()).bind(f.actor.application_id()).execute(&f.admin).await.unwrap();
+    }
+    let held = gate.core.begin_read(gate.actor.clone()).await.unwrap();
+    let d1 = dispatcher(&s1);
+    let d2 = dispatcher(&s2);
+    let create = |f: Fixture, d: OperationDispatcher| {
+        tokio::spawn(async move {
+            let result = op(
+                &f,
+                &d,
+                &f.actor,
+                "B007",
+                "service.create",
+                json!({"display_name":"Synthetic concurrent service","role":"service_reader"}),
+                None,
+            )
+            .await
+            .unwrap();
+            let account: String = sqlx::query_scalar(
+                "SELECT account_type FROM app_principals WHERE tenant_id=$1 AND id=$2",
+            )
+            .bind(f.actor.tenant_id())
+            .bind(id(&result))
+            .fetch_one(&f.admin)
+            .await
+            .unwrap();
+            assert_eq!(account, "service");
+        })
+    };
+    let one = create(first, d1);
+    wait_global_writer_without_shared_upgrade(&gate).await;
+    let two = create(second, d2);
+    held.rollback().await.unwrap();
+    tokio::time::timeout(std::time::Duration::from_secs(3), async {
+        one.await.unwrap();
+        two.await.unwrap();
+    })
+    .await
+    .expect("both principal creations must complete without a lock upgrade deadlock");
+}
 async fn op(
     f: &Fixture,
     d: &OperationDispatcher,
@@ -1215,6 +1276,21 @@ async fn exchange(
     let mut claims = json!({"iss":p.issuer,"sub":"synthetic-oidc-subject","aud":"synthetic-client","iat":now,"exp":now+300,"nonce":nonce,"email":"same-address@example.test","email_verified":true,"auth_time":now,"amr":["pwd"],"roles":["admin"]});
     match parts[0] {
         "bad_aud" => claims["aud"] = json!(["synthetic-client", "another-client"]),
+        "good_multi" | "bad_multi_azp" | "bad_multi_client" => {
+            claims["aud"] = if parts[0] == "bad_multi_client" {
+                json!(["another-client", "third-client"])
+            } else {
+                json!(["another-client", "synthetic-client"])
+            };
+            claims["azp"] = json!(if parts[0] == "bad_multi_azp" {
+                "another-client"
+            } else {
+                "synthetic-client"
+            });
+        }
+        "good_single_array" => claims["aud"] = json!(["synthetic-client"]),
+        "bad_single_azp" => claims["azp"] = json!("another-client"),
+        "bad_empty_aud" => claims["aud"] = json!([]),
         "bad_issuer" => claims["iss"] = json!("http://foreign.example.test"),
         "expired" => {
             claims["iat"] = json!(now - 400);
@@ -1295,9 +1371,15 @@ async fn oidc_state_browser_pkce_nonce_subject_binding_and_replay() {
     for outcome in [
         "bad_nonce",
         "bad_aud",
+        "bad_multi_azp",
+        "bad_multi_client",
+        "bad_single_azp",
+        "bad_empty_aud",
         "bad_issuer",
         "expired",
+        "good_multi",
         "stale_mfa",
+        "good_single_array",
         "good",
         "good_mfa",
     ] {
@@ -1323,14 +1405,25 @@ async fn oidc_state_browser_pkce_nonce_subject_binding_and_replay() {
             .await
             .unwrap();
         assert_eq!(wrong.status(), 401);
-        let success = matches!(outcome, "good" | "good_mfa" | "stale_mfa");
-        let reply = client
+        let success = matches!(
+            outcome,
+            "good" | "good_mfa" | "stale_mfa" | "good_multi" | "good_single_array"
+        );
+        let held = if outcome == "good_multi" {
+            Some(f.core.begin_read(f.actor.clone()).await.unwrap())
+        } else {
+            None
+        };
+        let pending = client
             .get(&callback)
             .query(&[("state", params["state"].as_str()), ("code", code.as_str())])
-            .header("cookie", &binding)
-            .send()
-            .await
-            .unwrap();
+            .header("cookie", &binding);
+        let reply = tokio::spawn(async move { pending.send().await.unwrap() });
+        if let Some(held) = held {
+            wait_global_writer_without_shared_upgrade(&f).await;
+            held.rollback().await.unwrap();
+        }
+        let reply = reply.await.unwrap();
         assert_eq!(
             reply.status(),
             if success { 200 } else { 401 },

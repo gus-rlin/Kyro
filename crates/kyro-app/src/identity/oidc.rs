@@ -163,6 +163,15 @@ impl IdentityService {
         let t = self.config.tenant_id;
         let a = self.config.application_id;
         let mut tx = self.begin().await?;
+        // Signup can write a tenant-wide principal. Take the global fence before
+        // the shared/application fences rather than upgrading a held shared lock.
+        if self.config.oidc_signup {
+            sqlx::query(
+                "SELECT pg_advisory_xact_lock(hashtextextended('app-authority-global:v1',0))",
+            )
+            .execute(&mut *tx)
+            .await?;
+        }
         self.lock_authority(&mut tx).await?;
         sqlx::query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))")
             .bind(format!(
@@ -304,7 +313,10 @@ impl IdentityService {
         let now = Utc::now().timestamp();
         let audience = match &claims.aud {
             Audience::One(a) => a == &p.client_id,
-            Audience::Many(a) => a.len() == 1 && a[0] == p.client_id,
+            Audience::Many(a) => {
+                a.contains(&p.client_id)
+                    && (a.len() == 1 || claims.azp.as_ref() == Some(&p.client_id))
+            }
         };
         let nonce = URL_SAFE_NO_PAD
             .decode(&claims.nonce)

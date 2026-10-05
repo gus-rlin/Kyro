@@ -605,7 +605,9 @@ pub async fn execute(tx: &mut AppTx, r: &OperationRequest) -> AppResult<Value> {
             if i.principal_id == tx.actor().principal_id() {
                 return Err(AppError::invalid("channel_owner_removal"));
             }
-            active_member(tx, i.principal_id).await?;
+            if i.active {
+                active_member(tx, i.principal_id).await?;
+            }
             let version = expected(r)?;
             if c.version != version {
                 return Err(AppError::conflict("channel_version_conflict"));

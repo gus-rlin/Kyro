@@ -203,7 +203,7 @@ pub(super) async fn payment_provider_event(
 pub(super) async fn subscription_create(tx: &mut AppTx, op: &OperationRequest) -> AppResult<Value> {
     let i: SubscriptionInput = decode(op)?;
     let secret = connector_secret_ref(tx, i.connector_id).await?;
-    let price=sqlx::query("SELECT amount_minor,currency,interval_unit,interval_count FROM public.app_commerce_prices WHERE tenant_id=$1 AND id=$2 AND effective_at<=clock_timestamp() AND (expires_at IS NULL OR expires_at>clock_timestamp())")
+    let price=sqlx::query("SELECT pr.amount_minor,pr.currency,pr.interval_unit,pr.interval_count FROM public.app_commerce_prices pr JOIN public.app_commerce_products p ON p.tenant_id=pr.tenant_id AND p.application_id=pr.application_id AND p.id=pr.product_id WHERE pr.tenant_id=$1 AND pr.id=$2 AND p.status='published' AND pr.effective_at<=clock_timestamp() AND (pr.expires_at IS NULL OR pr.expires_at>clock_timestamp())")
         .bind(tx.actor().tenant_id()).bind(i.price_id).fetch_optional(tx.conn()).await?.ok_or(AppError::NotFound)?;
     let interval: String = price.try_get("interval_unit")?;
     if !matches!(interval.as_str(), "month" | "year") {
