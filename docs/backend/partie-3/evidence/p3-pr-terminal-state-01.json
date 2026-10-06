@@ -1,0 +1,196 @@
+{
+  "checked_at": "2026-10-06T03:51:48.7072610+02:00",
+  "source_inventory": "p3-pr-source-01.json",
+  "source_inventory_sha256": "63552cb5bfe220bcea60b08d83d498d50d02f2f0a440955fe8f332d8978334be",
+  "source_file_count": 61,
+  "source_changes_since_freeze": [],
+  "available_units": 426998700,
+  "all_phase_sends_disabled": true,
+  "phase_count": 13,
+  "phases": [
+    {
+      "phase": "roles-01",
+      "database": "kyro_p1_test_p3_live_roles_01",
+      "state": {
+        "external_sends_enabled": false,
+        "spent_units": 0,
+        "reserved_units": 0,
+        "limit_units": 0,
+        "configuration_version": 2,
+        "active_jobs": 0,
+        "active_effects": 0
+      },
+      "matches_persisted_seal": true
+    },
+    {
+      "phase": "roles-02",
+      "database": "kyro_p1_test_p3_live_roles_02",
+      "state": {
+        "external_sends_enabled": false,
+        "spent_units": 2456700,
+        "reserved_units": 17694720,
+        "limit_units": 20151420,
+        "configuration_version": 2,
+        "active_jobs": 0,
+        "active_effects": 0
+      },
+      "matches_persisted_seal": true
+    },
+    {
+      "phase": "roles-03",
+      "database": "kyro_p1_test_p3_live_roles_03",
+      "state": {
+        "external_sends_enabled": false,
+        "spent_units": 0,
+        "reserved_units": 86016000,
+        "limit_units": 86016000,
+        "configuration_version": 2,
+        "active_jobs": 0,
+        "active_effects": 0
+      },
+      "matches_persisted_seal": true
+    },
+    {
+      "phase": "roles-04",
+      "database": "kyro_p1_test_p3_live_roles_04",
+      "state": {
+        "external_sends_enabled": false,
+        "spent_units": 2029500,
+        "reserved_units": 0,
+        "limit_units": 2029500,
+        "configuration_version": 2,
+        "active_jobs": 0,
+        "active_effects": 0
+      },
+      "matches_persisted_seal": true
+    },
+    {
+      "phase": "roles-05",
+      "database": "kyro_p1_test_p3_live_roles_05",
+      "state": {
+        "external_sends_enabled": false,
+        "spent_units": 3574980,
+        "reserved_units": 17694720,
+        "limit_units": 21269700,
+        "configuration_version": 2,
+        "active_jobs": 0,
+        "active_effects": 0
+      },
+      "matches_persisted_seal": true
+    },
+    {
+      "phase": "roles-06",
+      "database": "kyro_p1_test_p3_live_roles_06",
+      "state": {
+        "external_sends_enabled": false,
+        "spent_units": 4847640,
+        "reserved_units": 0,
+        "limit_units": 4847640,
+        "configuration_version": 2,
+        "active_jobs": 0,
+        "active_effects": 0
+      },
+      "matches_persisted_seal": true
+    },
+    {
+      "phase": "roles-07",
+      "database": "kyro_p1_test_p3_live_roles_07",
+      "state": {
+        "external_sends_enabled": false,
+        "spent_units": 2574120,
+        "reserved_units": 53084160,
+        "limit_units": 55658280,
+        "configuration_version": 2,
+        "active_jobs": 0,
+        "active_effects": 0
+      },
+      "matches_persisted_seal": true
+    },
+    {
+      "phase": "roles-08",
+      "database": "kyro_p1_test_p3_live_roles_08",
+      "state": {
+        "external_sends_enabled": false,
+        "spent_units": 2950860,
+        "reserved_units": 0,
+        "limit_units": 2950860,
+        "configuration_version": 2,
+        "active_jobs": 0,
+        "active_effects": 0
+      },
+      "matches_persisted_seal": true
+    },
+    {
+      "phase": "roles-09",
+      "database": "kyro_p1_test_p3_live_roles_09",
+      "state": {
+        "external_sends_enabled": false,
+        "spent_units": 3746700,
+        "reserved_units": 0,
+        "limit_units": 3746700,
+        "configuration_version": 2,
+        "active_jobs": 0,
+        "active_effects": 0
+      },
+      "matches_persisted_seal": true
+    },
+    {
+      "phase": "factory-01",
+      "database": "kyro_p1_test_p3_live_factory_01",
+      "state": {
+        "external_sends_enabled": false,
+        "spent_units": 2277000,
+        "reserved_units": 17694720,
+        "limit_units": 19971720,
+        "configuration_version": 2,
+        "active_jobs": 0,
+        "active_effects": 0
+      },
+      "matches_persisted_seal": true
+    },
+    {
+      "phase": "factory-02",
+      "database": "kyro_p1_test_p3_live_factory_02",
+      "state": {
+        "external_sends_enabled": false,
+        "spent_units": 2387400,
+        "reserved_units": 0,
+        "limit_units": 2387400,
+        "configuration_version": 2,
+        "active_jobs": 0,
+        "active_effects": 0
+      },
+      "matches_persisted_seal": true
+    },
+    {
+      "phase": "factory-03",
+      "database": "kyro_p1_test_p3_live_factory_03",
+      "state": {
+        "external_sends_enabled": false,
+        "spent_units": 2419860,
+        "reserved_units": 0,
+        "limit_units": 2419860,
+        "configuration_version": 2,
+        "active_jobs": 0,
+        "active_effects": 0
+      },
+      "matches_persisted_seal": true
+    },
+    {
+      "phase": "factory-04",
+      "database": "kyro_p1_test_p3_live_factory_04",
+      "state": {
+        "external_sends_enabled": false,
+        "spent_units": 4072680,
+        "reserved_units": 0,
+        "limit_units": 4072680,
+        "configuration_version": 2,
+        "active_jobs": 0,
+        "active_effects": 0
+      },
+      "matches_persisted_seal": true
+    }
+  ],
+  "temporary_provider_key_absent": true,
+  "new_provider_calls_during_closure": 0
+}

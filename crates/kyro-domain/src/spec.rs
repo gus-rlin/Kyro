@@ -217,12 +217,12 @@ impl ChangeSet {
                     key,
                     value,
                 } => {
-                    validate_text(node_id, MAX_ID_BYTES, "node id")?;
+                    validate_node_id(node_id)?;
                     validate_text(key, MAX_KEY_BYTES, "property key")?;
                     validate_value(value, 1)?;
                 }
                 ChangeOperation::RemoveNode { node_id } => {
-                    validate_text(node_id, MAX_ID_BYTES, "node id")?;
+                    validate_node_id(node_id)?;
                 }
                 ChangeOperation::SetPreference { key, value } => {
                     validate_text(key, MAX_KEY_BYTES, "preference key")?;
@@ -257,7 +257,7 @@ pub fn apply_changes(spec: &AppSpec, changes: &ChangeSet) -> Result<AppSpec, Spe
                 key,
                 value,
             } => {
-                validate_text(node_id, MAX_ID_BYTES, "node id")?;
+                validate_node_id(node_id)?;
                 validate_text(key, MAX_KEY_BYTES, "property key")?;
                 validate_value(value, 1)?;
                 let node = next
@@ -268,7 +268,7 @@ pub fn apply_changes(spec: &AppSpec, changes: &ChangeSet) -> Result<AppSpec, Spe
                 node.properties.insert(key.clone(), value.clone());
             }
             ChangeOperation::RemoveNode { node_id } => {
-                validate_text(node_id, MAX_ID_BYTES, "node id")?;
+                validate_node_id(node_id)?;
                 let index = next
                     .nodes
                     .iter()
@@ -292,7 +292,7 @@ pub fn apply_changes(spec: &AppSpec, changes: &ChangeSet) -> Result<AppSpec, Spe
 }
 
 fn validate_node(node: &AppNode) -> Result<(), SpecError> {
-    validate_text(&node.id, MAX_ID_BYTES, "node id")?;
+    validate_node_id(&node.id)?;
     validate_text(&node.kind, MAX_KIND_BYTES, "node kind")?;
     if node.properties.len() > MAX_OBJECT_ENTRIES {
         return Err(SpecError::TooManyObjectEntries);
@@ -302,6 +302,10 @@ fn validate_node(node: &AppNode) -> Result<(), SpecError> {
         validate_value(value, 1)?;
     }
     Ok(())
+}
+
+pub(crate) fn validate_node_id(value: &str) -> Result<(), SpecError> {
+    validate_text(value, MAX_ID_BYTES, "node id")
 }
 
 fn validate_text(value: &str, max_bytes: usize, field: &'static str) -> Result<(), SpecError> {

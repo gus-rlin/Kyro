@@ -1,0 +1,1 @@
+docs/backend/partie-1/openapi.v1.json: OK

@@ -1,0 +1,12 @@
+{
+  "database": "kyro_p1_test_p3_live_roles_02",
+  "project_id": "751a88e0-f6b1-42f8-8dbd-2aa8c4680da5",
+  "configuration_version": 2,
+  "currency": "USD",
+  "unit_scale": 1000000000,
+  "spent_units": 2456700,
+  "reserved_units": 17694720,
+  "limit_units": 20151420,
+  "external_sends_disabled": true,
+  "sealed_at": "2026-10-06T02:44:17.938078+02:00"
+}

@@ -1,0 +1,24 @@
+{
+  "at": "2026-10-06T03:18:16.5948180+02:00",
+  "source_sha256": "3c1f2ab8db70d9d89595ba86452c2c3f6a9b623cedd2d3dcbf7a5d057059ecd4",
+  "checks": 8,
+  "cases": [
+    {
+      "database": "kyro_p1_test_p3_live_roles_09",
+      "legitimate_guard": "PASS",
+      "foreign_name": "REFUSED",
+      "foreign_destination": "REFUSED",
+      "transaction_rolled_back": true,
+      "unchanged_budget_control_and_policy": true
+    },
+    {
+      "database": "kyro_p1_test_p3_live_factory_02",
+      "legitimate_guard": "PASS",
+      "foreign_name": "REFUSED",
+      "foreign_destination": "REFUSED",
+      "transaction_rolled_back": true,
+      "unchanged_budget_control_and_policy": true
+    }
+  ],
+  "new_provider_calls": 0
+}

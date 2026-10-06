@@ -6,6 +6,7 @@ mod error;
 pub mod identity;
 pub mod model;
 pub use identity::*;
+pub mod agents;
 pub mod factory;
 pub mod spec;
 pub mod task;

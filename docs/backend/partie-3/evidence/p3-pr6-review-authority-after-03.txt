@@ -1,0 +1,11 @@
+   Compiling kyro-agents v0.1.0 (/workspace/crates/kyro-agents)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.95s
+     Running tests/authority.rs (target/debug/deps/authority-a7f5e5b649d5f3d5)
+
+running 3 tests
+test coordinator_progresses_with_one_connection ... ok
+test metadata_planning_needs_no_write_but_integration_does ... ok
+test model_admission_refuses_less_than_minimum_run_ttl_without_effects ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.18s
+

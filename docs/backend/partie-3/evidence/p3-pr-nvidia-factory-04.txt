@@ -1,0 +1,12 @@
+   Compiling kyro-agents v0.1.0 (/workspace/crates/kyro-agents)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.98s
+     Running tests/nvidia.rs (target/debug/deps/nvidia-d84c071540246684)
+
+running 1 test
+[33m WARN[0m [2msqlx::postgres::notice[0m[2m:[0m there is already a transaction in progress
+test nvidia_builds_a_protected_verified_candidate has been running for over 60 seconds
+[33m WARN[0m [2mkyro_worker[0m[2m:[0m factory phase refused [3mjob_id[0m[2m=[0m71398636-94c4-47c9-8ec1-691a65066188 [3mgeneration[0m[2m=[0m1 [3mfailure[0m[2m=[0m"lease_conflict"
+test nvidia_builds_a_protected_verified_candidate ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 406.95s
+

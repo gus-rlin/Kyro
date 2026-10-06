@@ -1,0 +1,23 @@
+   Compiling kyro-agents v0.1.0 (/workspace/crates/kyro-agents)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.82s
+     Running tests/authority.rs (target/debug/deps/authority-a7f5e5b649d5f3d5)
+
+running 3 tests
+test coordinator_progresses_with_one_connection ... ok
+test metadata_planning_needs_no_write_but_integration_does ... ok
+
+thread 'model_admission_refuses_less_than_minimum_run_ttl_without_effects' (46925) panicked at crates/kyro-agents/tests/authority.rs:16:5:
+assertion `left == right` failed
+  left: 0
+ right: 1
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test model_admission_refuses_less_than_minimum_run_ttl_without_effects ... FAILED
+
+failures:
+
+failures:
+    model_admission_refuses_less_than_minimum_run_ttl_without_effects
+
+test result: FAILED. 2 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.67s
+
+error: test failed, to rerun pass `-p kyro-agents --test authority`

@@ -1204,6 +1204,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "kyro-agents"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "base64 0.22.1",
+ "chrono",
+ "kyro-api",
+ "kyro-domain",
+ "kyro-factory",
+ "kyro-gateway",
+ "kyro-store",
+ "kyro-worker",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "sqlx",
+ "tokio",
+ "tracing-subscriber",
+ "uuid",
+ "zeroize",
+]
+
+[[package]]
 name = "kyro-api"
 version = "0.1.0"
 dependencies = [
@@ -1213,6 +1237,7 @@ dependencies = [
  "futures-util",
  "getrandom 0.4.3",
  "jsonwebtoken",
+ "kyro-agents",
  "kyro-domain",
  "kyro-factory",
  "kyro-gateway",

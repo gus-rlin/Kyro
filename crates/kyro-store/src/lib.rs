@@ -2,6 +2,7 @@
 
 mod store;
 
+pub mod agents;
 pub mod budget;
 pub mod chat;
 pub mod factory;

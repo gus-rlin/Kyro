@@ -16,6 +16,7 @@ kyro-domain = { path = "../kyro-domain" }
 kyro-gateway = { path = "../kyro-gateway" }
 kyro-store = { path = "../kyro-store" }
 kyro-factory = { path = "../kyro-factory" }
+kyro-agents = { path = "../kyro-agents" }
 reqwest.workspace = true
 serde.workspace = true
 serde_json.workspace = true

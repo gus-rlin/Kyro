@@ -177,8 +177,39 @@ impl Store {
 
     /// Admit a job under the actor's `execute` grant and project resource limits.
     /// The project lock serializes both idempotency and active/queued quotas.
+    /// Admit a job atomically; P3 uses the same admission inside its plan transaction.
+    #[allow(clippy::too_many_arguments)]
     pub async fn enqueue_job(
         &self,
+        actor_id: Uuid,
+        project_id: Uuid,
+        source_revision: i64,
+        idempotency_key: &str,
+        payload: JobPayload,
+        max_attempts: Option<u8>,
+        ttl_seconds: Option<u32>,
+    ) -> Result<Job> {
+        let mut tx = self.begin_actor(actor_id).await?;
+        let job = self
+            .enqueue_job_in(
+                &mut tx,
+                actor_id,
+                project_id,
+                source_revision,
+                idempotency_key,
+                payload,
+                max_attempts,
+                ttl_seconds,
+            )
+            .await?;
+        tx.commit().await.map_err(map_database_error)?;
+        Ok(job)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub async fn enqueue_job_in(
+        &self,
+        conn: &mut PgConnection,
         actor_id: Uuid,
         project_id: Uuid,
         source_revision: i64,
@@ -215,7 +246,7 @@ impl Store {
             }
         }
 
-        let mut tx = self.begin_actor(actor_id).await?;
+        let tx = conn;
         let project = sqlx::query_as::<_, ProjectAdmissionRow>(
             "SELECT current_revision, limits FROM public.kyro_lock_project_for_actor($1, ARRAY['execute']::TEXT[])",
         )
@@ -260,7 +291,6 @@ impl Store {
                 decode_supported_payload(row.payload.clone()).map_err(|_| Error::Internal)?;
             let demand = grant_demand_for_row(&row, &persisted)?;
             authorize_job_grants(&mut *tx, actor_id, project_id, &persisted, &demand).await?;
-            tx.commit().await.map_err(map_database_error)?;
             return row.into_job();
         }
 
@@ -360,7 +390,6 @@ impl Store {
             json!({ "job_id": job_id, "status": "pending" }),
         )
         .await?;
-        tx.commit().await.map_err(map_database_error)?;
         row.into_job()
     }
 
@@ -529,11 +558,26 @@ impl Store {
 
     pub async fn get_job(&self, actor_id: Uuid, project_id: Uuid, job_id: Uuid) -> Result<Job> {
         let mut tx = self.begin_actor(actor_id).await?;
-        let row = fetch_job_row(&mut *tx, project_id, job_id, self.environment).await?;
+        let job = self
+            .get_job_in(&mut tx, actor_id, project_id, job_id)
+            .await?;
+        tx.commit().await.map_err(map_database_error)?;
+        Ok(job)
+    }
+
+    /// Read with the caller's actor-scoped transaction; never acquire another pool slot.
+    pub async fn get_job_in(
+        &self,
+        conn: &mut PgConnection,
+        actor_id: Uuid,
+        project_id: Uuid,
+        job_id: Uuid,
+    ) -> Result<Job> {
+        let row = fetch_job_row(&mut *conn, project_id, job_id, self.environment).await?;
         let payload = decode_supported_payload(row.payload.clone()).map_err(|_| Error::Internal)?;
         if row.actor_id == actor_id && matches!(payload, JobPayload::ReconcileEffect { .. }) {
             Store::authorize_demand_in(
-                &mut *tx,
+                &mut *conn,
                 actor_id,
                 project_id,
                 &["budget", "manage"],
@@ -541,9 +585,8 @@ impl Store {
             )
             .await?;
         } else {
-            Store::authorize_in(&mut *tx, actor_id, project_id, "read").await?;
+            Store::authorize_in(&mut *conn, actor_id, project_id, "read").await?;
         }
-        tx.commit().await.map_err(map_database_error)?;
         row.into_job()
     }
 

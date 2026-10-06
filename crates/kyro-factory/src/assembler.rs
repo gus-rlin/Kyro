@@ -46,6 +46,7 @@ pub fn runtime_source(path: &str) -> bool {
         "scripts/p2/sandbox/build.sh"
             | "scripts/p2/sandbox/verify-records.mjs"
             | "scripts/p2/sandbox/resource-probe.mjs"
+            | "crates/kyro-agents/src/contract-v2.schema.json"
     ) {
         return true;
     }
@@ -60,6 +61,7 @@ pub fn runtime_source(path: &str) -> bool {
             "kyro-api",
             "kyro-worker",
             "kyro-factory",
+            "kyro-agents",
         ]
         .contains(&p[1])
         && (p.len() == 3 && matches!(p[2], "Cargo.toml" | "build.rs")
@@ -540,6 +542,7 @@ pub fn collect_runtime_sources(root: &Path) -> Result<BTreeMap<String, String>> 
         "kyro-api",
         "kyro-worker",
         "kyro-factory",
+        "kyro-agents",
     ] {
         collect(&root, &root.join("crates").join(name), &mut files)?;
     }

@@ -321,6 +321,7 @@ async fn exercise_model_queue(destination: &str, reconcile: bool) {
                 name: format!("queue-{}", Uuid::new_v4()),
                 data_policy: Some(kyro_domain::model::DataPolicy {
                     allow_unknown_provider_retention: false,
+                    accepted_unknown_retention_purposes: Default::default(),
                     allowed_destinations: [destination.to_owned()].into_iter().collect(),
                     allowed_categories: [DataCategory::UserRequest].into_iter().collect(),
                     allowed_purposes: [ModelPurpose::Generation].into_iter().collect(),

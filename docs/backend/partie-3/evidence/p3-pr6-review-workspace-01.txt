@@ -1,0 +1,736 @@
+   Compiling kyro-gateway v0.1.0 (/workspace/crates/kyro-gateway)
+   Compiling kyro-store v0.1.0 (/workspace/crates/kyro-store)
+   Compiling kyro-app v0.1.0 (/workspace/crates/kyro-app)
+   Compiling kyro-factory v0.1.0 (/workspace/crates/kyro-factory)
+   Compiling kyro-worker v0.1.0 (/workspace/crates/kyro-worker)
+   Compiling kyro-api v0.1.0 (/workspace/crates/kyro-api)
+   Compiling kyro-agents v0.1.0 (/workspace/crates/kyro-agents)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.53s
+     Running unittests src/lib.rs (target/debug/deps/kyro_agents-809d15027b62496d)
+
+running 3 tests
+test engine::syntax_tests::model_job_ttl_never_extends_the_run_deadline ... ok
+test engine::syntax_tests::syntax_hints_distinguish_node_identity_and_property_scopes ... ok
+test protocol::tests::native_contracts_preserve_json_and_legacy_jobs_without_version_coercion ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/authority.rs (target/debug/deps/authority-a7f5e5b649d5f3d5)
+
+running 3 tests
+test coordinator_progresses_with_one_connection ... ignored, requires dedicated migrated PostgreSQL API/worker/admin roles
+test metadata_planning_needs_no_write_but_integration_does ... ignored, requires dedicated migrated PostgreSQL API/worker/admin roles
+test model_admission_refuses_less_than_minimum_run_ttl_without_effects ... ignored, requires dedicated migrated PostgreSQL API/worker/admin roles
+
+test result: ok. 0 passed; 0 failed; 3 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/config.rs (target/debug/deps/config-d50c208c1c2a917b)
+
+running 1 test
+test admission_without_a_provider_key_selects_most_expensive_and_cheapest_retained_models ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/coordinator.rs (target/debug/deps/coordinator-c95fc2c39ce55079)
+
+running 1 test
+test durable_four_role_planning_refusals_compaction_and_recovery ... ignored, requires isolated migrated PostgreSQL API/worker/admin roles
+
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/factory.rs (target/debug/deps/factory-bddc9edf061ded29)
+
+running 1 test
+test agents_build_an_independently_verified_candidate ... ignored, requires dedicated PostgreSQL roles, real prepared gVisor/Docker controller and compiled attestor
+
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/nvidia.rs (target/debug/deps/nvidia-d84c071540246684)
+
+running 2 tests
+test nvidia_builds_a_protected_verified_candidate ... ignored, requires explicitly claimed <=1 EUR NVIDIA phase plus real gVisor/attestor
+test nvidia_qualifies_seven_roles_on_native_contracts ... ignored, requires explicitly claimed <=1 EUR NVIDIA phase and isolated PostgreSQL
+
+test result: ok. 0 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/kyro_api-f4c2a6b747e53748)
+
+running 26 tests
+test chat::tests::cursor_is_job_and_generation_scoped ... ok
+test error::tests::budget_precondition_requires_one_strong_nonnegative_budget_tag ... ok
+test error::tests::typed_domain_errors_map_to_stable_statuses_without_using_their_text ... ok
+test error::tests::revision_precondition_requires_one_strong_nonnegative_revision_tag ... ok
+test events::tests::cursor_is_project_scoped_and_parses_nonnegative_sequence ... ok
+test error::tests::invalid_domain_details_never_appear_in_the_http_error_body ... ok
+test events::tests::header_and_query_cursors_must_match ... ok
+test events::tests::initial_cursor_uses_atomic_physical_bounds_and_global_sequence ... ok
+test events::tests::physical_bounds_detect_pruned_prefix_and_entire_history ... ok
+test events::tests::snapshot_and_hidden_only_sequences_are_valid_cursors ... ok
+test events::tests::visible_event_sequences_may_skip_events_from_other_environments ... ok
+test identity::tests::create_grant_request_defaults_limits_and_rejects_unknown_fields ... ok
+test identity::tests::opaque_cookies_require_exactly_32_bytes ... ok
+test identity::tests::origin_and_csrf_are_checked_on_mutations ... ok
+test identity::tests::production_rejects_http_and_synthetic_provider ... ok
+test jobs::tests::job_cursor_rejects_malformed_and_oversized_values_without_echoing_them ... ok
+test identity::tests::session_and_csrf_cookies_have_distinct_browser_access ... ok
+test projects::tests::revision_response_emits_a_strong_revision_tag ... ok
+test tests::liveness_survives_saturation_of_the_ordinary_request_pool ... ignored, requires a migrated PostgreSQL database in KYRO_TEST_DATABASE_URL
+test projects::tests::idempotency_key_requires_one_bounded_header_value ... ok
+test jobs::tests::job_cursor_round_trips_in_url_safe_form ... ok
+test tests::observability_normalizes_unrecognized_client_methods ... ok
+test tests::metrics_route_returns_prometheus_text ... ok
+test tests::prometheus_metrics_are_emitted_with_only_bounded_labels ... ok
+test tests::cors_allows_only_the_configured_ui_with_credentials_and_bounded_headers ... ok
+test identity::tests::id_token_validation_rejects_issuer_audience_nonce_and_signature ... ok
+
+test result: ok. 25 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running unittests src/main.rs (target/debug/deps/kyro_api-e177b71b26444d1c)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/oidc.rs (target/debug/deps/oidc-6dde98d1d073b856)
+
+running 5 tests
+test postgres_persists_flows_sessions_and_organization_membership ... ignored, requires a migrated PostgreSQL database and KYRO_TEST_DATABASE_URL
+test auth_error_codes_and_statuses_are_stable ... ok
+test global_session_admission_limit_is_bounded_and_configurable ... ok
+test provider_debug_output_redacts_the_client_secret ... ok
+test synthetic_provider_requires_explicit_development_and_loopback_configuration ... ok
+
+test result: ok. 4 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/kyro_app-0429b7f096896fb3)
+
+running 13 tests
+test commerce::stripe::tests::signature_checks_raw_bytes_time_duplicate_timestamp_and_rotation ... ok
+test composition::tests::compiled_config_rejects_code_unknown_fields_and_missing_binding_output ... ok
+test composition::tests::compiled_bindings_require_order_references_and_explicit_ambiguous_nodes ... ok
+test composition::tests::compiled_node_defaults_are_enforced_for_both_routes ... ok
+test connectors::postgres::tests::sql_identifier_language_is_closed ... ok
+test connectors::protocols::tests::mcp_mirror_encoding_is_unambiguous_and_refuses_unsafe_integers ... ok
+test crypto::tests::authenticated_credential_is_bound_to_context ... ok
+test exchange::tests::destination_requires_exact_https_allowlist_host ... ok
+test exchange::tests::rejects_private_reserved_and_mapped_addresses ... ok
+test exchange::tests::webhook_signature_binds_timestamp_and_body_and_expires_old_requests ... ok
+test connectors::protocols::tests::sigv4_matches_published_aws_vector_and_signs_conditional_headers ... ok
+test notifications::tests::typed_template_escapes_values_and_rejects_header_injection ... ok
+test search::tests::unicode_chunks_keep_overlap_and_complete_tail ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/kyro_app-aeb779e3b326efa4)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/kyro-app-migrate.rs (target/debug/deps/kyro_app_migrate-d6585daadbfa5114)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/kyro-app-worker.rs (target/debug/deps/kyro_app_worker-ef7a46d5ae0261e7)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/ai.rs (target/debug/deps/ai-dadd41f38b99076c)
+
+running 5 tests
+test authority_revoked_while_provider_is_sending_blocks_receipt_and_retry_does_not_resend ... ignored, requires disposable PostgreSQL
+test extraction_needs_persisted_human_decision_then_exact_schema_and_cas ... ignored, requires disposable PostgreSQL
+test provider_timeout_has_durable_unknown_and_never_resends_and_budget_blocks_before_socket ... ignored, requires disposable PostgreSQL
+test semantic_results_rag_summary_chat_and_classification_remain_source_bound ... ignored, requires disposable PostgreSQL
+test versioned_evaluation_resumes_checkpoints_without_double_billing_and_reports_actual_sample_count ... ignored, requires disposable PostgreSQL
+
+test result: ok. 0 passed; 0 failed; 5 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/analytics.rs (target/debug/deps/analytics-65713eeca1085fa0)
+
+running 6 tests
+test arithmetic_overflow_quality_type_mismatch_and_history_cursor ... ignored, requires disposable PostgreSQL
+test declared_facts_alert_dedup_quality_and_exhaustive_quota_ledger ... ignored, requires disposable PostgreSQL
+test export_checkpoint_immutable_private_chunks_and_quota_release ... ignored, requires disposable PostgreSQL
+test export_revocation_expiry_csv_formula_and_snapshot_tamper_are_enforced ... ignored, requires disposable PostgreSQL
+test projections_exact_units_versioned_history_and_dashboard_degrade ... ignored, requires disposable PostgreSQL
+test reports_revalidate_recipient_before_delivery_and_read ... ignored, requires disposable PostgreSQL
+
+test result: ok. 0 passed; 0 failed; 6 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/business.rs (target/debug/deps/business-3dd20170338ec519)
+
+running 7 tests
+test crm_private_fields_pipeline_edges_and_exact_opportunity_amounts ... ignored, requires disposable PostgreSQL
+test forms_pin_definition_mask_fields_and_refuse_unauthorized_edits ... ignored, requires disposable PostgreSQL
+test idempotent_crm_receipt_refuses_removed_private_visibility_without_mutating ... ignored, requires disposable PostgreSQL
+test idempotent_support_receipt_refuses_removed_team_without_mutating ... ignored, requires disposable PostgreSQL
+test local_month_lock_and_time_entry_separate_approver ... ignored, requires disposable PostgreSQL
+test purchases_separate_approver_partial_receipt_and_unique_asset_loan ... ignored, requires disposable PostgreSQL
+test task_dag_and_intervention_qualification ... ignored, requires disposable PostgreSQL
+
+test result: ok. 0 passed; 0 failed; 7 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/collaboration.rs (target/debug/deps/collaboration-2b6feb8dcf3dcc95)
+
+running 3 tests
+test groups_delegation_ownership_and_revocation_preserve_boundaries ... ignored, requires disposable PostgreSQL
+test private_comments_mentions_activity_and_preview_recheck_current_access ... ignored, requires disposable PostgreSQL
+test verified_context_invitations_and_single_delivery_tokens ... ignored, requires disposable PostgreSQL
+
+test result: ok. 0 passed; 0 failed; 3 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/composition_runtime.rs (target/debug/deps/composition_runtime-bc37f01c14fbe0fe)
+
+running 2 tests
+test application_preferences_are_effective_and_partial_profile_updates_preserve_values ... ignored, requires constrained PostgreSQL; signed application preferences are applied by AppCore
+test graph_routes_enforce_bound_payloads_actions_and_application_on_actual_http_and_sql ... ignored, requires disposable PostgreSQL app roles
+
+test result: ok. 0 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/compositions.rs (target/debug/deps/compositions-3165ec839a4bacb9)
+
+running 6 tests
+test booking_capacity_waitlist_and_establishment_acl ... ignored, requires disposable PostgreSQL
+test expense_exact_money_separate_approver_and_private_reads ... ignored, requires disposable PostgreSQL
+test opposite_multi_product_baskets_reserve_without_deadlock_and_refuse_duplicates ... ignored, requires disposable PostgreSQL
+test promotion_discount_and_concurrent_redemption_cancel_and_expiry_are_server_bound ... ignored, requires disposable PostgreSQL
+test stock_five_units_accept_exactly_five_of_eight_concurrent_orders ... ignored, requires disposable PostgreSQL
+test support_teams_filter_notes_reads_assignments_and_live_group_revocation ... ignored, requires disposable PostgreSQL
+
+test result: ok. 0 passed; 0 failed; 6 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/connectors.rs (target/debug/deps/connectors-1a844adfd0d6dc66)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/document_formats.rs (target/debug/deps/document_formats-31420238c2f7ceb1)
+
+running 3 tests
+test archives_keep_original_hash_and_restore_rolls_back_after_concurrent_metadata_cas ... ignored, requires disposable PostgreSQL; format admission is a SQL fixture
+test csv_quoted_cells_formula_defense_and_closed_json_round_trip ... ignored, requires disposable PostgreSQL
+test taxonomy_creation_listing_moves_cycles_and_depth_limit ... ignored, requires disposable PostgreSQL
+
+test result: ok. 0 passed; 0 failed; 3 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/documents.rs (target/debug/deps/documents-a2c721c74569fe64)
+
+running 2 tests
+test five_mebibyte_http_transfer_retries_chunks_keeps_content_version_and_revokes_cached_download ... ignored, requires disposable PostgreSQL; transfers obey real rate windows
+test upload_hash_offset_foreign_actor_quota_and_expired_revoked_owner_are_checked ... ignored, requires disposable PostgreSQL
+
+test result: ok. 0 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/external_postgres.rs (target/debug/deps/external_postgres-9de05ccba64e1f66)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/foundations.rs (target/debug/deps/foundations-3e94d5205d873d6b)
+
+running 5 tests
+test compensation_configuration_and_flags_fail_closed_and_apply_once ... ignored, requires disposable PostgreSQL
+test exact_values_dst_and_declarative_rules_obey_field_permissions ... ignored, requires disposable PostgreSQL
+test published_cas_draft_conflicts_history_masking_and_cache_epoch ... ignored, requires disposable PostgreSQL
+test state_workflow_and_approval_persist_cas_and_separate_people ... ignored, requires disposable PostgreSQL
+test typed_relations_and_batches_roll_back_all_observable_state ... ignored, requires disposable PostgreSQL
+
+test result: ok. 0 passed; 0 failed; 5 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/governance.rs (target/debug/deps/governance-847e43ccacabfe4b)
+
+running 4 tests
+test deny_by_default_capability_expiry_scope_and_single_secret ... ignored, requires disposable PostgreSQL
+test quota_concurrency_never_exceeds_limit_and_projection_export_ownership ... ignored, requires disposable PostgreSQL
+test rate_block_consumes_one_admission_and_last_unit_has_one_concurrent_winner ... ignored, requires disposable PostgreSQL
+test secret_references_are_scoped_and_closed_validation_has_no_write_effect ... ignored, requires disposable PostgreSQL
+
+test result: ok. 0 passed; 0 failed; 4 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/identity.rs (target/debug/deps/identity-27477055486cbd8c)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/inventory_upgrade.rs (target/debug/deps/inventory_upgrade-b4bb8160188c89b5)
+
+running 1 test
+test upgrade_repairs_missing_stock_and_preserves_existing_balances ... ignored, requires disposable PostgreSQL with database creation rights
+
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/jobs.rs (target/debug/deps/jobs-968e20579655092f)
+
+running 5 tests
+test automatic_schedule_concurrency_and_revoked_source_stop_durably ... ignored, requires disposable PostgreSQL
+test batches_checkpoint_rollback_on_quota_and_replay_without_duplicates ... ignored, requires disposable PostgreSQL
+test import_checkpoint_is_reused_by_worker_until_all_rows_commit ... ignored, requires disposable PostgreSQL
+test lease_concurrency_generation_and_source_revocation_are_enforced ... ignored, requires disposable PostgreSQL
+test outbox_unknown_requires_explicit_reconciliation_and_inbox_origin ... ignored, requires disposable PostgreSQL
+
+test result: ok. 0 passed; 0 failed; 5 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/notifications.rs (target/debug/deps/notifications-fdb9428ab12902c6)
+
+running 2 tests
+test channels_attachments_presence_and_membership_revocation ... ignored, requires disposable PostgreSQL
+test recipient_templates_preferences_revoke_redact_and_cursor_retention ... ignored, requires disposable PostgreSQL
+
+test result: ok. 0 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/persistence.rs (target/debug/deps/persistence-1d5659652f41928a)
+
+running 4 tests
+test command_idempotency_bound_to_input_and_atomic_rollback ... ignored, requires disposable PostgreSQL
+test inventory_quote_order_and_private_projection ... ignored, requires disposable PostgreSQL
+test revocation_waits_for_admitted_transaction_then_denies_cached_actor ... ignored, requires disposable PostgreSQL
+test tenant_application_isolation_cas_and_revocation ... ignored, requires disposable PostgreSQL
+
+test result: ok. 0 passed; 0 failed; 4 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/qualification_kernel.rs (target/debug/deps/qualification_kernel-b8ad03b8328ee04d)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/realtime.rs (target/debug/deps/realtime-e2913c9909a5f7e8)
+
+running 3 tests
+test sse_resumes_private_cursor_and_closes_revoked_session ... ignored, requires disposable PostgreSQL
+test websocket_cookie_upgrade_requires_bound_csrf_subprotocol ... ignored, requires disposable PostgreSQL
+test websocket_origin_limits_per_message_authority_and_revocation ... ignored, requires disposable PostgreSQL
+
+test result: ok. 0 passed; 0 failed; 3 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/receipt_authority.rs (target/debug/deps/receipt_authority-8bec0b565cc1c162)
+
+running 9 tests
+test archived_contact_refuses_previous_non_manager_receipt ... ignored, requires disposable PostgreSQL
+test consumed_capability_receipt_is_historical_and_never_grants_another_use ... ignored, requires disposable PostgreSQL
+test direct_and_batched_deletion_refuse_previous_record_receipts ... ignored, requires disposable PostgreSQL
+test ordinary_batch_updates_preserve_authorized_receipts ... ignored, requires disposable PostgreSQL
+test product_visibility_and_manager_projection_invalidate_previous_receipts ... ignored, requires disposable PostgreSQL
+test receipt_epochs_are_scoped_and_legacy_receipts_never_reexecute ... ignored, requires disposable PostgreSQL
+test receipt_keeps_initial_mfa_context_when_elevation_expires_during_execution ... ignored, requires disposable PostgreSQL; controlled expiry of an elevated transaction
+test schema_visibility_migration_refuses_previous_private_receipts ... ignored, requires disposable PostgreSQL
+test visibility_migration_waits_for_existing_authorized_transactions ... ignored, requires disposable PostgreSQL; controlled advisory lock contention
+
+test result: ok. 0 passed; 0 failed; 9 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/receipt_upgrade.rs (target/debug/deps/receipt_upgrade-e98f44d63f9ad630)
+
+running 1 test
+test upgrade_invalidates_pre_fix_projections_without_reexecuting_commands ... ignored, requires disposable PostgreSQL with database creation rights
+
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/retention.rs (target/debug/deps/retention-8ef4b6f5f37a02bb)
+
+running 2 tests
+test empty_page_still_erases_expired_copies_and_counter_error_rolls_back_entire_purge ... ignored, requires disposable PostgreSQL
+test purge_erases_private_copies_preserves_unknown_accounting_and_deduplication ... ignored, requires disposable PostgreSQL
+
+test result: ok. 0 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/review_regressions.rs (target/debug/deps/review_regressions-5a59b1c43b047aeb)
+
+running 3 tests
+test channel_owner_can_remove_revoked_members_and_reclaim_capacity ... ignored, requires disposable PostgreSQL
+test draft_tracking_activation_initializes_stock_without_resetting_it ... ignored, requires disposable PostgreSQL
+test recurring_prices_cannot_enter_one_time_quotes_or_legacy_orders ... ignored, requires disposable PostgreSQL
+
+test result: ok. 0 passed; 0 failed; 3 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/scheduling.rs (target/debug/deps/scheduling-9febfdf008466493)
+
+running 3 tests
+test attendance_proof_hash_expiry_cancellation_and_single_consumption ... ignored, requires disposable PostgreSQL
+test recurrence_dst_exceptions_limits_and_atomic_failure ... ignored, requires disposable PostgreSQL
+test resource_assignment_concurrency_private_list_and_foreign_owner ... ignored, requires disposable PostgreSQL
+
+test result: ok. 0 passed; 0 failed; 3 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/search.rs (target/debug/deps/search-ea3a423bd463d6db)
+
+running 2 tests
+test search_atomic_quota_replacement_and_editorial_publication ... ignored, requires disposable PostgreSQL
+test search_rechecks_projection_version_acl_retention_and_erases_deleted_sources ... ignored, requires disposable PostgreSQL
+
+test result: ok. 0 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/stripe_ingress.rs (target/debug/deps/stripe_ingress-2c1a4094ebd1c8fc)
+
+running 1 test
+test native_stripe_uses_bound_service_key_raw_signatures_and_atomic_payment_subscription_refund_updates ... ignored, requires disposable PostgreSQL app/auth roles; all Stripe events are synthetic
+
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/webhooks.rs (target/debug/deps/webhooks-91cdab2344f04a38)
+
+running 2 tests
+test generic_inbox_requires_verified_hmac_deduplicates_and_is_application_scoped ... ignored, requires disposable PostgreSQL
+test payment_requires_exact_signature_connector_and_deduplicates_business_effect ... ignored, requires disposable PostgreSQL
+
+test result: ok. 0 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/kyro_domain-715d01db34810faa)
+
+running 34 tests
+test config::tests::debug_redacts_database_urls ... ok
+test config::tests::numeric_configuration_bounds_reject_values_outside_the_limit ... ok
+test config::tests::database_urls_must_use_a_postgresql_scheme_and_endpoint ... ok
+test config::tests::production_requires_explicit_resource_limits ... ok
+test config::tests::production_api_configuration_does_not_retain_worker_credentials ... ok
+test config::tests::synthetic_providers_require_an_explicit_true_value ... ok
+test config::tests::unset_numeric_configuration_uses_the_development_default ... ok
+test config::tests::production_tcp_database_urls_require_verified_tls_for_each_runtime_role ... ok
+test identity::tests::absent_limits_are_omitted_and_unknown_fields_are_rejected ... ok
+test identity::tests::each_limit_accepts_its_bounds_and_rejects_overflow_or_out_of_range_values ... ok
+test identity::tests::one_grant_must_cover_every_demand_dimension ... ok
+test model::tests::agent_retention_opt_in_is_scoped_and_never_relabels_retention_as_zero ... ok
+test model::tests::data_policy_is_deny_all_by_default_and_checks_all_dimensions ... ok
+test model::tests::model_request_does_not_accept_client_controlled_urls_or_unknown_fields ... ok
+test model::tests::prices_round_up_and_missing_usage_stays_unknown ... ok
+test model::tests::prices_reject_overflow_instead_of_wrapping ... ok
+test model::tests::recognizable_secrets_are_refused_without_echoing_content ... ok
+test model::tests::reported_usage_cannot_be_negative_or_exceed_input ... ok
+test model::tests::secret_category_is_rejected_even_if_other_policy_dimensions_match ... ok
+test model::tests::unknown_retention_requires_explicit_conversation_consent ... ok
+test spec::tests::add_and_remove_are_id_checked ... ok
+test spec::tests::changes_preserve_stable_ids_and_untargeted_properties ... ok
+test spec::tests::project_limits_apply_bounded_defaults_and_reject_out_of_range_values ... ok
+test spec::tests::rejects_unknown_operations_and_fields_during_deserialization ... ok
+test task::tests::job_payload_rejects_unhandled_kinds ... ok
+test task::tests::factory_result_is_a_closed_reference_with_valid_digests ... ok
+test task::tests::job_result_serializes_as_a_non_sensitive_reference ... ok
+test task::tests::job_result_rejects_unapproved_fields ... ok
+test task::tests::model_jobs_reject_secret_category_before_persistence ... ok
+test task::tests::job_status_values_match_postgres_contract ... ok
+test task::tests::public_job_json_does_not_expose_lease_capabilities ... ok
+test task::tests::public_job_payload_summary_omits_model_input_content ... ok
+test task::tests::reconcile_job_summary_omits_evidence_and_model_output ... ok
+test spec::tests::rejects_duplicate_ids_deep_values_and_oversized_changesets ... ok
+
+test result: ok. 34 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/agents.rs (target/debug/deps/agents-f7d7cc1f168a5e36)
+
+running 8 tests
+test plan_call_bound_includes_planning_reviews_and_retries ... ok
+test graph_refuses_cycles_and_missing_contracts ... ok
+test existing_nodes_cannot_change_to_an_undeclared_version_or_component ... ok
+test property_snapshots_distinguish_absence_null_and_unrelated_edits ... ok
+test replacement_requires_the_removed_and_added_components ... ok
+test scope_and_component_versions_are_enforced_on_model_changes ... ok
+test shared_invariant_orders_different_nodes_and_read_write_conflicts ... ok
+test resource_node_ids_follow_appspec_rules_while_task_ids_stay_restricted ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/kyro_factory-d4ea72e1e4acdcaa)
+
+running 6 tests
+test cleanup::tests::cleanup_scope_never_includes_tools_foreign_names_or_unexpired_work ... ok
+test verifier::tests::candidate_has_no_driver_mount_and_diagnostics_redact_credentials ... ok
+test service::socket_tests::socket_restart_recovers_stale_path_and_preserves_live_instance_and_foreign_file ... ok
+test verifier::tests::protected_report_requires_every_bound_observation ... ok
+test builtins::tests::all_147_p2_ids_have_actual_closed_action_contracts ... ok
+test delivery::tests::resumed_ranges_verify_enclosing_blocks_and_reject_late_tampering_and_paths ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running unittests src/bin/kyro-attestor.rs (target/debug/deps/kyro_attestor-b83ed74ba9d93bc8)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/kyro-catalogue.rs (target/debug/deps/kyro_catalogue-67a47b48272ce6bb)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/kyro-media-worker.rs (target/debug/deps/kyro_media_worker-f9948f55611703d4)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/admitted_operator.rs (target/debug/deps/admitted_operator-81676e2c51213a27)
+
+running 1 test
+test actual_admitted_registry_resolves_and_assembles_three_reusing_compositions ... ignored, requires actual admitted catalogue, public trust and operator composition key outside the repository
+
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/artifacts.rs (target/debug/deps/artifacts-0908f43a5caee9e6)
+
+running 3 tests
+test image_bytes_bind_every_descriptor_and_runtime_file ... ok
+test oci_loading_binds_the_protected_reference_and_rejects_symlinks ... ok
+test evidence_and_release_refuse_builder_keys_edited_reports_and_changed_images ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.55s
+
+     Running tests/build_real.rs (target/debug/deps/build_real-59ab1532bfac5aed)
+
+running 1 test
+test real_offline_sources_compile_and_package_exact_oci ... ignored, requires prepared offline gVisor tools and Docker controller
+
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/cleanup_real.rs (target/debug/deps/cleanup_real-6b353e35261c8a8f)
+
+running 1 test
+test expired_owned_objects_are_reaped_but_live_foreign_and_mounted_volumes_survive ... ignored, requires operator Docker controller and pinned disposable tools image
+
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/contracts.rs (target/debug/deps/contracts-dc761478493c2bfb)
+
+running 9 tests
+test source_resume_refuses_extra_cargo_configuration_before_any_write ... ok
+test signed_lock_preserves_preferences_and_rejects_tampering ... ok
+test unavailable_capabilities_cycles_types_and_free_code_are_refused ... ok
+test signatures_roles_keys_revocations_and_locked_context ... ok
+test source_manifest_cannot_relabel_the_lock_or_omit_a_migration ... ok
+test admission_requires_independent_evidence_for_the_exact_manifest_and_criteria ... ok
+test source_resume_recovers_only_exact_partial_atomic_files ... ok
+test deterministic_sources_resume_and_tamper_refusal ... ok
+test portable_git_bundle_contains_only_verified_reference_and_clones_the_exact_sources ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.50s
+
+     Running tests/isolation_real.rs (target/debug/deps/isolation_real-438b9ee15ca48a38)
+
+running 2 tests
+test hostile_probes_reach_the_actual_builder_ceiling_and_cleanup ... ignored, requires prepared gVisor tools; deliberately reaches disposable cgroup ceilings
+test hostile_probes_reach_the_verifier_ceiling_and_cleanup ... ignored, requires prepared gVisor tools; reaches the smaller verifier ceilings
+
+test result: ok. 0 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/media_real.rs (target/debug/deps/media_real-3b61bfb5b6f4eb7e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/public_release_archives.rs (target/debug/deps/public_release_archives-8a12842d5c271efa)
+
+running 1 test
+test restored_public_releases_preserve_sources_oci_and_independent_signatures ... ignored, requires four restored public release archives from the real factory recipes
+
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/registry.rs (target/debug/deps/registry-c0b724a0b1028661)
+
+running 5 tests
+test complete_registry_is_signed_but_every_unqualified_component_remains_unavailable ... ok
+test qualification_batch_is_atomic_bounded_and_replayable ... ok
+test admission_requires_distinct_evidence_and_exact_immutable_subject ... ok
+test publication_cannot_erase_versions_replace_subjects_or_restore_revocation ... ok
+test resolver_refuses_invalid_fixed_values_and_bound_references_before_build ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.82s
+
+     Running tests/verify_real.rs (target/debug/deps/verify_real-3cdfc6af4e303a33)
+
+running 1 test
+test candidate_is_tested_in_a_fresh_protected_postgres_sentry ... ignored, requires the controller, prepared tools root and observed OCI candidate
+
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/kyro_gateway-1f9a8b8392667d07)
+
+running 16 tests
+test chat::tests::secret_prefix_and_unicode_tail_are_withheld ... ok
+test chat::tests::oversized_frame_and_multiple_done_are_rejected ... ok
+test chat::tests::sse_handles_split_utf8_crlf_comments_and_done ... ok
+test chat::tests::receipt_changes_and_content_after_finish_are_rejected ... ok
+test chat::tests::completion_requires_usage_and_wraps_truncation_without_reasoning ... ok
+test client::nebius_tests::json_object_mode_keeps_trusted_schema_and_complete_wire_reservation ... ok
+test chat::tests::secrets_split_across_fragments_are_rejected_before_publication ... ok
+test client::nebius_tests::nebius_requires_bounded_receipt_model_and_complete_usage ... ok
+test client::nebius_tests::refused_response_diagnostics_expose_only_fixed_booleans ... ok
+test config::numeric_tests::schema_bounds_preserve_large_signed_unsigned_and_float_written_integers ... ok
+test client::nebius_tests::nebius_wire_contract_and_context_reservation_are_bounded ... ok
+test client::nebius_tests::text_chat_uses_roles_fixed_system_and_never_requests_strict_json ... ok
+test config::numeric_tests::bounded_native_unions_validate_dynamic_json_without_opening_closed_objects ... ok
+test client::nebius_tests::native_wire_selects_only_the_requested_role_and_binds_identifiers ... ok
+test secret::tests::secret_file_rejects_permissions_symlinks_and_unbounded_content ... ok
+test config::numeric_tests::operator_tls_root_rejects_relative_redirected_private_and_oversized_inputs ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/admission.rs (target/debug/deps/admission-02b1803de7dc30f5)
+
+running 2 tests
+test reservation_bound_includes_schema_and_provider_envelope ... ok
+test admission_without_key_preflights_but_cannot_prepare_or_send ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/config.rs (target/debug/deps/config-70472e2f4732ed6c)
+
+running 11 tests
+test secret_source_probe ... ignored, subprocess fixture invoked by secret_sources_are_unambiguous_and_admission_never_reads_them
+test admission_registry_is_eligible_without_enabling_execution ... ok
+test cloud_registry_accepts_provider_model_ids ... ok
+test qualified_keyless_destination_is_admissible_and_enabled_without_a_secret ... ok
+test nebius_stays_disabled_without_verified_retention_and_capabilities ... ok
+test registry_rejects_non_loopback_pins_and_host_confusion ... ok
+test agent_recipe_standard_retention_requires_its_exact_development_profile ... ok
+test synthetic_registry_requires_development_opt_in_and_server_secret ... ok
+test cloud_registry_accepts_public_neighbors_but_rejects_special_purpose_pins ... ok
+test standard_retention_is_explicit_and_limited_to_nano_development_chat ... ok
+test secret_sources_are_unambiguous_and_admission_never_reads_them ... ok
+
+test result: ok. 10 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/mock_http.rs (target/debug/deps/mock_http-fa864b28b465b9c0)
+
+running 15 tests
+test historical_result_without_provider_receipt_still_deserializes ... ok
+test reconciliation_requires_the_registered_schema_and_unchanged_registration ... ok
+test secret_in_input_is_refused_before_effect_persistence_and_network ... ok
+test expired_job_deadline_never_opens_a_provider_socket ... ok
+test missing_key_reuses_a_known_result_without_sending_or_creating_an_intent ... ok
+test oversized_provider_body_is_bounded_and_marked_unknown ... ok
+test qualified_keyless_destination_sends_once_without_authorization ... ok
+test invalid_provider_results_stay_uncertain_without_content_leak_or_retry ... ok
+test embeddings_use_real_protocol_bind_mode_validate_dimension_and_keep_unknown_usage ... ok
+test stricter_project_response_limit_is_applied_to_provider_body ... ok
+test structured_success_is_one_pinned_loopback_request_with_secret_header ... ok
+test provider_failure_is_unknown_and_never_retried ... ok
+test remaining_job_deadline_prevents_settling_a_late_provider_response ... ok
+test redirects_are_not_followed ... ok
+test lost_response_times_out_to_unknown_without_a_retry ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.00s
+
+     Running unittests src/lib.rs (target/debug/deps/kyro_store-a9af646c9e9503f6)
+
+running 2 tests
+test store::tests::postgres_statement_and_lock_timeouts_are_transient_in_all_store_paths ... ignored, requires a dedicated PostgreSQL database in KYRO_TEST_DATABASE_URL
+test budget::tests::settlement_releases_only_its_hold_for_smaller_equal_and_larger_usage ... ok
+
+test result: ok. 1 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/kyro-migrate.rs (target/debug/deps/kyro_migrate-0b1cef924f2b800a)
+
+running 1 test
+test tests::migration_pool_preserves_operator_timeouts_and_allows_long_statements ... ignored, requires a dedicated PostgreSQL database in KYRO_TEST_DATABASE_ADMIN_URL
+
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/chat_migration.rs (target/debug/deps/chat_migration-d6749440ce18309c)
+
+running 1 test
+test postgres_chat_migration_installs_and_upgrades_without_resetting_runtime_state ... ignored, requires a disposable kyro_p1_test_* admin database
+
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/factory.rs (target/debug/deps/factory-7bb35ac5e5085f0d)
+
+running 2 tests
+test administrative_publication_is_serialized_validated_and_runtime_read_only ... ignored, requires dedicated migrated P1 PostgreSQL API, worker and admin roles
+test factory_artifacts_commit_atomically_and_refuse_stale_cancelled_revoked_and_foreign_attempts ... ignored, requires dedicated migrated P1 PostgreSQL API, worker and admin roles
+
+test result: ok. 0 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/projects.rs (target/debug/deps/projects-f4451f26cb0f8e7e)
+
+running 3 tests
+test postgres_event_feed_tracks_global_bounds_with_hidden_events_and_purge ... ignored, requires isolated migrated PostgreSQL API and admin URLs in KYRO_TEST_DATABASE_URL and KYRO_TEST_DATABASE_ADMIN_URL
+test postgres_project_pages_retrieve_more_than_one_thousand_without_crossing_actor_or_environment ... ignored, requires a dedicated migrated PostgreSQL database and admin fixture URL
+test postgres_projects_enforce_isolation_cas_and_idempotency ... ignored, requires a dedicated migrated PostgreSQL database in KYRO_TEST_DATABASE_URL
+
+test result: ok. 0 passed; 0 failed; 3 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/queue.rs (target/debug/deps/queue-9dfc36231c96626f)
+
+running 4 tests
+test postgres_chat_fragments_are_private_bounded_and_lease_fenced ... ignored, requires dedicated migrated PostgreSQL runtime roles
+test postgres_model_queue_admission_does_not_require_write_and_enforces_input_limit ... ignored, requires a dedicated migrated PostgreSQL database in KYRO_TEST_DATABASE_URL
+test postgres_named_synthetic_reconciliation_accepts_budget_only_and_rejects_cloud ... ignored, requires a dedicated migrated PostgreSQL database and admin fixture URL
+test postgres_queue_admission_requires_each_grant_to_cover_the_full_demand ... ignored, requires a dedicated migrated PostgreSQL database in KYRO_TEST_DATABASE_URL
+
+test result: ok. 0 passed; 0 failed; 4 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/kyro_worker-5aadfa2a15be1dbe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/kyro_worker-bdae10f584070eb1)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/factory_real.rs (target/debug/deps/factory_real-42cc616911d8ae37)
+
+running 1 test
+test durable_worker_builds_and_separate_attestor_commits_only_observed_release ... ignored, requires prepared Docker controller, gVisor tools and dedicated P1 PostgreSQL roles
+
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests kyro_agents
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests kyro_api
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests kyro_app
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests kyro_domain
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests kyro_factory
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests kyro_gateway
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests kyro_store
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests kyro_worker
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

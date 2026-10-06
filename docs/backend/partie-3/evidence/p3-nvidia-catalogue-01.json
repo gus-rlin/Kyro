@@ -1,0 +1,139 @@
+{
+  "recorded_at": "2026-10-06T01:56:05.3888520+02:00",
+  "source": "https://api.tokenfactory.nebius.com/v1/models?verbose=true",
+  "credential_source": "Project scripts/nebius-vault.ps1, DPAPI CurrentUser",
+  "vault_present": true,
+  "credential_loaded": true,
+  "catalog_status": 200,
+  "inference_calls": 0,
+  "models": [
+    {
+      "id": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+      "context_length": 262144,
+      "quantization": "fp8",
+      "regions": [
+        {
+          "country_code": "FI",
+          "name": "eu-north1"
+        }
+      ],
+      "supported_features": [
+        "tools",
+        "reasoning"
+      ],
+      "supported_sampling_parameters": [
+        "temperature",
+        "top_p",
+        "top_k",
+        "repetition_penalty",
+        "frequency_penalty",
+        "presence_penalty"
+      ],
+      "pricing": {
+        "prompt": "0.00000006",
+        "completion": "0.00000024",
+        "image": "0",
+        "price_per_video_second": "0",
+        "request": "0",
+        "price_per_minute": "0",
+        "input_cache_read": null
+      }
+    },
+    {
+      "id": "nvidia/Nemotron-3_5-Lightning",
+      "context_length": 1048576,
+      "quantization": "bf16",
+      "regions": [
+        {
+          "country_code": "FI",
+          "name": "eu-north1"
+        }
+      ],
+      "supported_features": [
+        "tools",
+        "reasoning"
+      ],
+      "supported_sampling_parameters": [
+        "temperature",
+        "top_p",
+        "top_k",
+        "repetition_penalty",
+        "frequency_penalty",
+        "presence_penalty"
+      ],
+      "pricing": {
+        "prompt": "0.00000006",
+        "completion": "0.00000024",
+        "image": "0",
+        "price_per_video_second": "0",
+        "request": "0",
+        "price_per_minute": "0",
+        "input_cache_read": null
+      }
+    },
+    {
+      "id": "nvidia/Nemotron-3-Ultra-550b-a55b",
+      "context_length": 1048576,
+      "quantization": "fp4",
+      "regions": [
+        {
+          "country_code": "US",
+          "name": "us-central1"
+        }
+      ],
+      "supported_features": [
+        "tools",
+        "reasoning"
+      ],
+      "supported_sampling_parameters": [
+        "temperature",
+        "top_p",
+        "top_k",
+        "repetition_penalty",
+        "frequency_penalty",
+        "presence_penalty"
+      ],
+      "pricing": {
+        "prompt": "0.000001",
+        "completion": "0.000003",
+        "image": "0",
+        "price_per_video_second": "0",
+        "request": "0",
+        "price_per_minute": "0",
+        "input_cache_read": null
+      }
+    },
+    {
+      "id": "nvidia/nemotron-3-super-120b-a12b",
+      "context_length": 262144,
+      "quantization": "fp4",
+      "regions": [
+        {
+          "country_code": "US",
+          "name": "us-central1"
+        }
+      ],
+      "supported_features": [
+        "tools",
+        "reasoning"
+      ],
+      "supported_sampling_parameters": [
+        "temperature",
+        "top_p",
+        "top_k",
+        "repetition_penalty",
+        "frequency_penalty",
+        "presence_penalty"
+      ],
+      "pricing": {
+        "prompt": "0.0000003",
+        "completion": "0.0000009",
+        "image": "0",
+        "price_per_video_second": "0",
+        "request": "0",
+        "price_per_minute": "0",
+        "input_cache_read": null
+      }
+    }
+  ]
+}

@@ -1,0 +1,101 @@
+[
+  {
+    "phase": "roles-01",
+    "database": "kyro_p1_test_p3_live_roles_01",
+    "effects": 1,
+    "known_responses": 0,
+    "unknown_effects": 0,
+    "definitely_not_sent": 1,
+    "external_sends_disabled": true
+  },
+  {
+    "phase": "roles-02",
+    "database": "kyro_p1_test_p3_live_roles_02",
+    "effects": 5,
+    "known_responses": 4,
+    "unknown_effects": 1,
+    "definitely_not_sent": 0,
+    "external_sends_disabled": true
+  },
+  {
+    "phase": "roles-03",
+    "database": "kyro_p1_test_p3_live_roles_03",
+    "effects": 1,
+    "known_responses": 0,
+    "unknown_effects": 1,
+    "definitely_not_sent": 0,
+    "external_sends_disabled": true
+  },
+  {
+    "phase": "roles-04",
+    "database": "kyro_p1_test_p3_live_roles_04",
+    "effects": 1,
+    "known_responses": 1,
+    "unknown_effects": 0,
+    "definitely_not_sent": 0,
+    "external_sends_disabled": true
+  },
+  {
+    "phase": "roles-05",
+    "database": "kyro_p1_test_p3_live_roles_05",
+    "effects": 5,
+    "known_responses": 4,
+    "unknown_effects": 1,
+    "definitely_not_sent": 0,
+    "external_sends_disabled": true
+  },
+  {
+    "phase": "roles-06",
+    "database": "kyro_p1_test_p3_live_roles_06",
+    "effects": 7,
+    "known_responses": 7,
+    "unknown_effects": 0,
+    "definitely_not_sent": 0,
+    "external_sends_disabled": true
+  },
+  {
+    "phase": "roles-07",
+    "database": "kyro_p1_test_p3_live_roles_07",
+    "effects": 5,
+    "known_responses": 2,
+    "unknown_effects": 3,
+    "definitely_not_sent": 0,
+    "external_sends_disabled": true
+  },
+  {
+    "phase": "roles-08",
+    "database": "kyro_p1_test_p3_live_roles_08",
+    "effects": 5,
+    "known_responses": 5,
+    "unknown_effects": 0,
+    "definitely_not_sent": 0,
+    "external_sends_disabled": true
+  },
+  {
+    "phase": "roles-09",
+    "database": "kyro_p1_test_p3_live_roles_09",
+    "effects": 7,
+    "known_responses": 7,
+    "unknown_effects": 0,
+    "definitely_not_sent": 0,
+    "external_sends_disabled": true
+  },
+  {
+    "phase": "factory-01",
+    "database": "kyro_p1_test_p3_live_factory_01",
+    "effects": 2,
+    "known_responses": 1,
+    "unknown_effects": 1,
+    "definitely_not_sent": 0,
+    "external_sends_disabled": true
+  },
+  {
+    "phase": "factory-02",
+    "database": "kyro_p1_test_p3_live_factory_02",
+    "effects": 4,
+    "known_responses": 4,
+    "unknown_effects": 0,
+    "definitely_not_sent": 0,
+    "external_sends_disabled": true
+  }
+]

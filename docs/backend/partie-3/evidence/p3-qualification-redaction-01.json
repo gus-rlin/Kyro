@@ -1,0 +1,150 @@
+{
+  "at": "2026-10-06T03:16:05.7162918+02:00",
+  "files": [
+    {
+      "scope": "private_campaign",
+      "file": "qualify-native-v2-nvidia-nemotron-3-super-120b-a12b.json",
+      "before_sha256": "227171f6b4ae7b7495ee0b958c7edd7419efde73bafe6463215ae52564d02bb9",
+      "after_sha256": "007f5e250285bdb071d9a21798937e4e65dbbfc25cfabbf6c832e677175e1842",
+      "historical_reasoning_was_present": true,
+      "response_fields": [
+        "http_status",
+        "id",
+        "model_matches_expected",
+        "model",
+        "usage",
+        "finish_reason_is_stop",
+        "contract_verified",
+        "contract"
+      ],
+      "usage_unchanged": true
+    },
+    {
+      "scope": "private_campaign",
+      "file": "qualify-native-v2-nvidia-NVIDIA-Nemotron-3-Nano-30B-A3B.json",
+      "before_sha256": "d30fb5aa2d5dfba97a36645784f8ba997669e20602835025c2308a238ca601ca",
+      "after_sha256": "c8e134004cd349c2ff160bce0dbca13e8cafc0001e9680737a760ce93fad73e3",
+      "historical_reasoning_was_present": false,
+      "response_fields": [
+        "http_status",
+        "id",
+        "model_matches_expected",
+        "model",
+        "usage",
+        "finish_reason_is_stop",
+        "contract_verified",
+        "contract"
+      ],
+      "usage_unchanged": true
+    },
+    {
+      "scope": "private_campaign",
+      "file": "qualify-object-v2-nvidia-nemotron-3-super-120b-a12b.json",
+      "before_sha256": "e15b5d0d459d917f7243f59f54c81ea483f11da88ddffe25cf1b13060378fc80",
+      "after_sha256": "2cf5f73ec2c5213b433bb16fed028a4bddd9e98cfa405b6b4b2eccb89c0ae877",
+      "historical_reasoning_was_present": true,
+      "response_fields": [
+        "http_status",
+        "id",
+        "model_matches_expected",
+        "model",
+        "usage",
+        "finish_reason_is_stop",
+        "contract_verified",
+        "contract"
+      ],
+      "usage_unchanged": true
+    },
+    {
+      "scope": "private_campaign",
+      "file": "qualify-object-v2-nvidia-NVIDIA-Nemotron-3-Nano-30B-A3B.json",
+      "before_sha256": "1cd6908d2380792c8aa34d987c82624648e3991b739cd67bc135046cf0542f57",
+      "after_sha256": "c9bfbd867b766f69d35425dcfbdda0dbf0f20c9a9f96a32f754f03222bd6a4e6",
+      "historical_reasoning_was_present": false,
+      "response_fields": [
+        "http_status",
+        "id",
+        "model_matches_expected",
+        "model",
+        "usage",
+        "finish_reason_is_stop",
+        "contract_verified",
+        "contract"
+      ],
+      "usage_unchanged": true
+    },
+    {
+      "scope": "private_campaign",
+      "file": "qualify-v2-nvidia-NVIDIA-Nemotron-3-Nano-30B-A3B.json",
+      "before_sha256": "9d2070a83d11c923322784165a26be9ff9ec5015a05266fb480f15cd17d01c16",
+      "after_sha256": "8b1a63a982590adc165f543ba1e4bc4c1e663f1c36593b4563c75bb5a6be6eaa",
+      "historical_reasoning_was_present": false,
+      "response_fields": [
+        "http_status",
+        "id",
+        "model_matches_expected",
+        "model",
+        "usage",
+        "finish_reason_is_stop",
+        "contract_verified"
+      ],
+      "usage_unchanged": true
+    },
+    {
+      "scope": "public",
+      "file": "p3-qualify-v2-nvidia-NVIDIA-Nemotron-3-Nano-30B-A3B.json",
+      "before_sha256": "0be16a1af4d844772ee246fe6eba20f644240b65ff053175e5193bd311a47b7e",
+      "after_sha256": "07973c76740289a73ddfde56c843b3bd33272e89312a80adadacd06e02f4039b",
+      "historical_reasoning_was_present": false,
+      "response_fields": [
+        "http_status",
+        "id",
+        "model_matches_expected",
+        "model",
+        "usage",
+        "finish_reason_is_stop",
+        "contract_verified"
+      ],
+      "usage_unchanged": true
+    },
+    {
+      "scope": "public",
+      "file": "p3-qualify-native-v2-nvidia-NVIDIA-Nemotron-3-Nano-30B-A3B.json",
+      "before_sha256": "f84a2710edf86fc9f4a30a89d3625a6912d5e38a9f7a5cb789808ba2a348000a",
+      "after_sha256": "9165e571baf99e2c735feccb048a3af9ee8bf8b96e93d424dc53f83cf7b8042b",
+      "historical_reasoning_was_present": false,
+      "response_fields": [
+        "http_status",
+        "id",
+        "model_matches_expected",
+        "model",
+        "usage",
+        "finish_reason_is_stop",
+        "contract_verified",
+        "contract"
+      ],
+      "usage_unchanged": true
+    },
+    {
+      "scope": "public",
+      "file": "p3-qualify-native-v2-nvidia-nemotron-3-super-120b-a12b.json",
+      "before_sha256": "4ac15d7e5ac8ee2efe4f9ecd9ac6db3ade4c3fa020b5547c692d39f939ddc69b",
+      "after_sha256": "becaee95b7e5721b7d8aebfeaf1435e35445039d61dbddaa5d392fb5399ead5a",
+      "historical_reasoning_was_present": true,
+      "response_fields": [
+        "http_status",
+        "id",
+        "model_matches_expected",
+        "model",
+        "usage",
+        "finish_reason_is_stop",
+        "contract_verified",
+        "contract"
+      ],
+      "usage_unchanged": true
+    }
+  ],
+  "new_provider_calls": 0,
+  "raw_data_retained": false,
+  "invoice_unknown": true
+}

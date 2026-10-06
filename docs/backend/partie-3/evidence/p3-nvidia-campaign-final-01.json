@@ -1,0 +1,306 @@
+{
+  "limit_units": 672240000,
+  "available_units": 433491240,
+  "currency": "USD",
+  "unit_scale": 1000000000,
+  "uncertain": false,
+  "entries": [
+    {
+      "id": "qualify-nvidia-NVIDIA-Nemotron-3-Nano-30B-A3B",
+      "kind": "qualification",
+      "reserved_units": 17694720,
+      "estimated_units": null,
+      "max_calls": 1,
+      "status": "parser_refused_known_response_missing_archive",
+      "started_at": "2026-10-06T02:05:46.3742174+02:00"
+    },
+    {
+      "id": "qualify-v2-nvidia-NVIDIA-Nemotron-3-Nano-30B-A3B",
+      "kind": "qualification",
+      "reserved_units": 17694720,
+      "estimated_units": 105000,
+      "max_calls": 1,
+      "status": "contract_refused_known_usage",
+      "started_at": "2026-10-06T02:06:57.950433+02:00"
+    },
+    {
+      "id": "qualify-native-v2-nvidia-NVIDIA-Nemotron-3-Nano-30B-A3B",
+      "kind": "qualification",
+      "reserved_units": 17694720,
+      "estimated_units": 36360,
+      "max_calls": 1,
+      "status": "qualified",
+      "started_at": "2026-10-06T02:14:26.8699111+02:00"
+    },
+    {
+      "id": "qualify-native-v2-nvidia-nemotron-3-super-120b-a12b",
+      "kind": "qualification",
+      "reserved_units": 86016000,
+      "estimated_units": 247800,
+      "max_calls": 1,
+      "status": "qualified",
+      "started_at": "2026-10-06T02:14:30.4422718+02:00"
+    },
+    {
+      "id": "roles-01",
+      "kind": "runtime-phase",
+      "reserved_units": 100000000,
+      "estimated_units": null,
+      "max_calls": 7,
+      "status": "finished_exit_101",
+      "started_at": "2026-10-06T02:19:01.9738185+02:00",
+      "sealed_units": 0,
+      "seal": {
+        "database": "kyro_p1_test_p3_live_roles_01",
+        "project_id": "10b254ce-b8f9-40bd-bbf5-3e8f037741dc",
+        "configuration_version": 2,
+        "currency": "USD",
+        "unit_scale": 1000000000,
+        "spent_units": 0,
+        "reserved_units": 0,
+        "limit_units": 0,
+        "external_sends_disabled": true,
+        "sealed_at": "2026-10-06T02:44:09.167908+02:00"
+      }
+    },
+    {
+      "id": "roles-02",
+      "kind": "runtime-phase",
+      "reserved_units": 100000000,
+      "estimated_units": null,
+      "max_calls": 7,
+      "status": "finished_exit_101",
+      "started_at": "2026-10-06T02:21:57.9854512+02:00",
+      "sealed_units": 20151420,
+      "seal": {
+        "database": "kyro_p1_test_p3_live_roles_02",
+        "project_id": "751a88e0-f6b1-42f8-8dbd-2aa8c4680da5",
+        "configuration_version": 2,
+        "currency": "USD",
+        "unit_scale": 1000000000,
+        "spent_units": 2456700,
+        "reserved_units": 17694720,
+        "limit_units": 20151420,
+        "external_sends_disabled": true,
+        "sealed_at": "2026-10-06T02:44:17.938078+02:00"
+      }
+    },
+    {
+      "id": "qualify-object-v2-nvidia-NVIDIA-Nemotron-3-Nano-30B-A3B",
+      "kind": "qualification",
+      "reserved_units": 17694720,
+      "estimated_units": 290460,
+      "max_calls": 1,
+      "status": "qualified",
+      "started_at": "2026-10-06T02:26:31.9011159+02:00"
+    },
+    {
+      "id": "qualify-object-v2-nvidia-nemotron-3-super-120b-a12b",
+      "kind": "qualification",
+      "reserved_units": 86016000,
+      "estimated_units": 1345200,
+      "max_calls": 1,
+      "status": "qualified",
+      "started_at": "2026-10-06T02:26:34.6146175+02:00"
+    },
+    {
+      "id": "roles-03",
+      "kind": "runtime-phase",
+      "reserved_units": 100000000,
+      "estimated_units": null,
+      "max_calls": 7,
+      "status": "finished_exit_101",
+      "started_at": "2026-10-06T02:26:59.8187882+02:00",
+      "sealed_units": 86016000,
+      "seal": {
+        "database": "kyro_p1_test_p3_live_roles_03",
+        "project_id": "a1a2052d-27f2-4560-994e-d9714f9742a1",
+        "configuration_version": 2,
+        "currency": "USD",
+        "unit_scale": 1000000000,
+        "spent_units": 0,
+        "reserved_units": 86016000,
+        "limit_units": 86016000,
+        "external_sends_disabled": true,
+        "sealed_at": "2026-10-06T02:44:18.16904+02:00"
+      }
+    },
+    {
+      "id": "roles-04",
+      "kind": "runtime-phase",
+      "reserved_units": 100000000,
+      "estimated_units": null,
+      "max_calls": 7,
+      "status": "finished_exit_101",
+      "started_at": "2026-10-06T02:32:59.0361372+02:00",
+      "sealed_units": 2029500,
+      "seal": {
+        "database": "kyro_p1_test_p3_live_roles_04",
+        "project_id": "423a64ce-345f-4b52-9558-7e0887eab55c",
+        "configuration_version": 2,
+        "currency": "USD",
+        "unit_scale": 1000000000,
+        "spent_units": 2029500,
+        "reserved_units": 0,
+        "limit_units": 2029500,
+        "external_sends_disabled": true,
+        "sealed_at": "2026-10-06T02:44:18.37291+02:00"
+      }
+    },
+    {
+      "id": "roles-05",
+      "kind": "runtime-phase",
+      "reserved_units": 90000000,
+      "estimated_units": null,
+      "max_calls": 7,
+      "status": "finished_exit_101",
+      "started_at": "2026-10-06T02:37:17.7580866+02:00",
+      "sealed_units": 21269700,
+      "seal": {
+        "database": "kyro_p1_test_p3_live_roles_05",
+        "project_id": "4203d515-6411-4cdf-a8e1-711182659793",
+        "configuration_version": 2,
+        "currency": "USD",
+        "unit_scale": 1000000000,
+        "spent_units": 3574980,
+        "reserved_units": 17694720,
+        "limit_units": 21269700,
+        "external_sends_disabled": true,
+        "sealed_at": "2026-10-06T02:44:18.579117+02:00"
+      }
+    },
+    {
+      "id": "roles-06",
+      "kind": "runtime-phase",
+      "reserved_units": 100000000,
+      "estimated_units": null,
+      "max_calls": 7,
+      "status": "finished_exit_101",
+      "started_at": "2026-10-06T02:44:45.2720696+02:00",
+      "sealed_units": 4847640,
+      "seal": {
+        "database": "kyro_p1_test_p3_live_roles_06",
+        "project_id": "9fcfdc31-aff2-4b01-92f9-cb4037fc7d3e",
+        "configuration_version": 2,
+        "currency": "USD",
+        "unit_scale": 1000000000,
+        "spent_units": 4847640,
+        "reserved_units": 0,
+        "limit_units": 4847640,
+        "external_sends_disabled": true,
+        "sealed_at": "2026-10-06T02:45:28.447021+02:00"
+      }
+    },
+    {
+      "id": "roles-07",
+      "kind": "runtime-phase",
+      "reserved_units": 100000000,
+      "estimated_units": null,
+      "max_calls": 7,
+      "status": "finished_exit_101",
+      "started_at": "2026-10-06T02:46:08.8135831+02:00",
+      "sealed_units": 55658280,
+      "seal": {
+        "database": "kyro_p1_test_p3_live_roles_07",
+        "project_id": "55d2f901-13da-41bd-a069-23d0e437e893",
+        "configuration_version": 2,
+        "currency": "USD",
+        "unit_scale": 1000000000,
+        "spent_units": 2574120,
+        "reserved_units": 53084160,
+        "limit_units": 55658280,
+        "external_sends_disabled": true,
+        "sealed_at": "2026-10-06T02:47:12.794963+02:00"
+      }
+    },
+    {
+      "id": "roles-08",
+      "kind": "runtime-phase",
+      "reserved_units": 100000000,
+      "estimated_units": null,
+      "max_calls": 7,
+      "status": "finished_exit_101",
+      "started_at": "2026-10-06T02:48:43.7446884+02:00",
+      "sealed_units": 2950860,
+      "seal": {
+        "database": "kyro_p1_test_p3_live_roles_08",
+        "project_id": "85877648-923f-441a-b90f-8e168c30cb53",
+        "configuration_version": 2,
+        "currency": "USD",
+        "unit_scale": 1000000000,
+        "spent_units": 2950860,
+        "reserved_units": 0,
+        "limit_units": 2950860,
+        "external_sends_disabled": true,
+        "sealed_at": "2026-10-06T02:49:25.102063+02:00"
+      }
+    },
+    {
+      "id": "roles-09",
+      "kind": "runtime-phase",
+      "reserved_units": 100000000,
+      "estimated_units": null,
+      "max_calls": 7,
+      "status": "finished_exit_0",
+      "started_at": "2026-10-06T02:50:38.5834305+02:00",
+      "sealed_units": 3746700,
+      "seal": {
+        "database": "kyro_p1_test_p3_live_roles_09",
+        "project_id": "87167412-25db-4123-8624-e74a60490ca5",
+        "configuration_version": 2,
+        "currency": "USD",
+        "unit_scale": 1000000000,
+        "spent_units": 3746700,
+        "reserved_units": 0,
+        "limit_units": 3746700,
+        "external_sends_disabled": true,
+        "sealed_at": "2026-10-06T02:52:11.79405+02:00"
+      }
+    },
+    {
+      "id": "factory-01",
+      "kind": "runtime-phase",
+      "reserved_units": 100000000,
+      "estimated_units": null,
+      "max_calls": 4,
+      "status": "finished_exit_101",
+      "started_at": "2026-10-06T02:52:17.3053492+02:00",
+      "sealed_units": 19971720,
+      "seal": {
+        "database": "kyro_p1_test_p3_live_factory_01",
+        "project_id": "7eedeba7-8b16-47a3-bb57-40a2ec0a0f43",
+        "configuration_version": 2,
+        "currency": "USD",
+        "unit_scale": 1000000000,
+        "spent_units": 2277000,
+        "reserved_units": 17694720,
+        "limit_units": 19971720,
+        "external_sends_disabled": true,
+        "sealed_at": "2026-10-06T02:55:24.943883+02:00"
+      }
+    },
+    {
+      "id": "factory-02",
+      "kind": "runtime-phase",
+      "reserved_units": 100000000,
+      "estimated_units": null,
+      "max_calls": 4,
+      "status": "finished_exit_0",
+      "started_at": "2026-10-06T02:57:01.5949888+02:00",
+      "sealed_units": 2387400,
+      "seal": {
+        "database": "kyro_p1_test_p3_live_factory_02",
+        "project_id": "0ef30868-b7fe-401f-8454-422ae38c14ad",
+        "configuration_version": 2,
+        "currency": "USD",
+        "unit_scale": 1000000000,
+        "spent_units": 2387400,
+        "reserved_units": 0,
+        "limit_units": 2387400,
+        "external_sends_disabled": true,
+        "sealed_at": "2026-10-06T03:04:05.852488+02:00"
+      }
+    }
+  ],
+  "retention_seconds": null
+}

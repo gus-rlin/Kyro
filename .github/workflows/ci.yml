@@ -130,6 +130,37 @@ jobs:
       - name: Build runtime executables
         run: cargo build --locked --bins --workspace
 
+      - name: Create isolated P3 coordinator integration database
+        run: psql "$KYRO_DATABASE_ADMIN_URL" --set=ON_ERROR_STOP=1 --command='CREATE DATABASE kyro_p1_test_p3_ci OWNER kyro_admin'
+
+      - name: Migrate isolated P3 coordinator integration database
+        env:
+          KYRO_DATABASE_ADMIN_URL: postgres://kyro_admin@127.0.0.1:5432/kyro_p1_test_p3_ci
+        run: cargo run --locked -p kyro-store --bin kyro-migrate
+
+      - name: Verify durable P3 orchestration and forced worker recovery
+        env:
+          KYRO_TEST_DATABASE_URL: postgres://kyro_api@127.0.0.1:5432/kyro_p1_test_p3_ci
+          KYRO_TEST_WORKER_DATABASE_URL: postgres://kyro_worker@127.0.0.1:5432/kyro_p1_test_p3_ci
+          KYRO_TEST_DATABASE_ADMIN_URL: postgres://kyro_admin@127.0.0.1:5432/kyro_p1_test_p3_ci
+          KYRO_P3_WORKER_BIN: ${{ github.workspace }}/target/debug/kyro-worker
+        run: cargo test --locked -p kyro-agents --test coordinator -- --ignored --nocapture
+
+      - name: Create isolated P3 authority regression database
+        run: psql "$KYRO_DATABASE_ADMIN_URL" --set=ON_ERROR_STOP=1 --command='CREATE DATABASE kyro_p1_test_p3_authority_ci OWNER kyro_admin'
+
+      - name: Migrate isolated P3 authority regression database
+        env:
+          KYRO_DATABASE_ADMIN_URL: postgres://kyro_admin@127.0.0.1:5432/kyro_p1_test_p3_authority_ci
+        run: cargo run --locked -p kyro-store --bin kyro-migrate
+
+      - name: Verify P3 read-only authority and single-connection progress
+        env:
+          KYRO_TEST_DATABASE_URL: postgres://kyro_api@127.0.0.1:5432/kyro_p1_test_p3_authority_ci
+          KYRO_TEST_WORKER_DATABASE_URL: postgres://kyro_worker@127.0.0.1:5432/kyro_p1_test_p3_authority_ci
+          KYRO_TEST_DATABASE_ADMIN_URL: postgres://kyro_admin@127.0.0.1:5432/kyro_p1_test_p3_authority_ci
+        run: cargo test --locked -p kyro-agents --test authority -- --ignored --nocapture --test-threads=1
+
       - name: Start isolated synthetic TLS PostgreSQL source
         run: bash scripts/p2/fixtures/start-external-postgres.sh kyro-p2-external-ci kyro-p2-external-ci-net
 

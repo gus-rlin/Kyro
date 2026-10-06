@@ -13,7 +13,7 @@ use std::{
 };
 include!("component_names.rs");
 
-pub const VERSION: &str = "0.1.3";
+pub const VERSION: &str = "0.2.0";
 pub fn actions(id: &str) -> Result<BTreeSet<String>> {
     let factory = match id {
         "B161" => Some(&["validate_spec"][..]),

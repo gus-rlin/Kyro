@@ -1,0 +1,10 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.50s
+     Running tests/coordinator.rs (target/debug/deps/coordinator-c95fc2c39ce55079)
+
+running 1 test
+P3-HTTP: session/CSRF, CAS, idempotency, strict input, private reads, history, usage and cancel observed over HTTP
+P3 verified: read-only plan, four independent HTTP effects, protected scope, retry stop, conflict, directive cancellation, restart, compaction, RLS, CAS and immutable history; no real model or factory build claimed
+test durable_four_role_planning_refusals_compaction_and_recovery ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 15.91s
+

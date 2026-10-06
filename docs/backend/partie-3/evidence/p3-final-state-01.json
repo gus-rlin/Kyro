@@ -1,0 +1,168 @@
+{
+  "checked_at": "2026-10-06T03:22:57.7835176+02:00",
+  "source_inventory": "p3-final-live-source-06.json",
+  "source_inventory_sha256": "a4acc505d8c4ce96ba562ae2be74dcf401da93d6c3ff2f279b9313556a801173",
+  "source_file_count": 49,
+  "source_changes_since_freeze": [],
+  "available_units": 433491240,
+  "all_phase_sends_disabled": true,
+  "phase_count": 11,
+  "phases": [
+    {
+      "phase": "roles-01",
+      "database": "kyro_p1_test_p3_live_roles_01",
+      "state": {
+        "external_sends_enabled": false,
+        "spent_units": 0,
+        "reserved_units": 0,
+        "limit_units": 0,
+        "configuration_version": 2,
+        "active_jobs": 0,
+        "active_effects": 0
+      },
+      "matches_persisted_seal": true
+    },
+    {
+      "phase": "roles-02",
+      "database": "kyro_p1_test_p3_live_roles_02",
+      "state": {
+        "external_sends_enabled": false,
+        "spent_units": 2456700,
+        "reserved_units": 17694720,
+        "limit_units": 20151420,
+        "configuration_version": 2,
+        "active_jobs": 0,
+        "active_effects": 0
+      },
+      "matches_persisted_seal": true
+    },
+    {
+      "phase": "roles-03",
+      "database": "kyro_p1_test_p3_live_roles_03",
+      "state": {
+        "external_sends_enabled": false,
+        "spent_units": 0,
+        "reserved_units": 86016000,
+        "limit_units": 86016000,
+        "configuration_version": 2,
+        "active_jobs": 0,
+        "active_effects": 0
+      },
+      "matches_persisted_seal": true
+    },
+    {
+      "phase": "roles-04",
+      "database": "kyro_p1_test_p3_live_roles_04",
+      "state": {
+        "external_sends_enabled": false,
+        "spent_units": 2029500,
+        "reserved_units": 0,
+        "limit_units": 2029500,
+        "configuration_version": 2,
+        "active_jobs": 0,
+        "active_effects": 0
+      },
+      "matches_persisted_seal": true
+    },
+    {
+      "phase": "roles-05",
+      "database": "kyro_p1_test_p3_live_roles_05",
+      "state": {
+        "external_sends_enabled": false,
+        "spent_units": 3574980,
+        "reserved_units": 17694720,
+        "limit_units": 21269700,
+        "configuration_version": 2,
+        "active_jobs": 0,
+        "active_effects": 0
+      },
+      "matches_persisted_seal": true
+    },
+    {
+      "phase": "roles-06",
+      "database": "kyro_p1_test_p3_live_roles_06",
+      "state": {
+        "external_sends_enabled": false,
+        "spent_units": 4847640,
+        "reserved_units": 0,
+        "limit_units": 4847640,
+        "configuration_version": 2,
+        "active_jobs": 0,
+        "active_effects": 0
+      },
+      "matches_persisted_seal": true
+    },
+    {
+      "phase": "roles-07",
+      "database": "kyro_p1_test_p3_live_roles_07",
+      "state": {
+        "external_sends_enabled": false,
+        "spent_units": 2574120,
+        "reserved_units": 53084160,
+        "limit_units": 55658280,
+        "configuration_version": 2,
+        "active_jobs": 0,
+        "active_effects": 0
+      },
+      "matches_persisted_seal": true
+    },
+    {
+      "phase": "roles-08",
+      "database": "kyro_p1_test_p3_live_roles_08",
+      "state": {
+        "external_sends_enabled": false,
+        "spent_units": 2950860,
+        "reserved_units": 0,
+        "limit_units": 2950860,
+        "configuration_version": 2,
+        "active_jobs": 0,
+        "active_effects": 0
+      },
+      "matches_persisted_seal": true
+    },
+    {
+      "phase": "roles-09",
+      "database": "kyro_p1_test_p3_live_roles_09",
+      "state": {
+        "external_sends_enabled": false,
+        "spent_units": 3746700,
+        "reserved_units": 0,
+        "limit_units": 3746700,
+        "configuration_version": 2,
+        "active_jobs": 0,
+        "active_effects": 0
+      },
+      "matches_persisted_seal": true
+    },
+    {
+      "phase": "factory-01",
+      "database": "kyro_p1_test_p3_live_factory_01",
+      "state": {
+        "external_sends_enabled": false,
+        "spent_units": 2277000,
+        "reserved_units": 17694720,
+        "limit_units": 19971720,
+        "configuration_version": 2,
+        "active_jobs": 0,
+        "active_effects": 0
+      },
+      "matches_persisted_seal": true
+    },
+    {
+      "phase": "factory-02",
+      "database": "kyro_p1_test_p3_live_factory_02",
+      "state": {
+        "external_sends_enabled": false,
+        "spent_units": 2387400,
+        "reserved_units": 0,
+        "limit_units": 2387400,
+        "configuration_version": 2,
+        "active_jobs": 0,
+        "active_effects": 0
+      },
+      "matches_persisted_seal": true
+    }
+  ],
+  "temporary_provider_key_absent": true,
+  "new_provider_calls": 0
+}

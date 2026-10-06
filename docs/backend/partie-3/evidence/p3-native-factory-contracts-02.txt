@@ -1,0 +1,52 @@
+   Compiling kyro-gateway v0.1.0 (/workspace/crates/kyro-gateway)
+   Compiling kyro-app v0.1.0 (/workspace/crates/kyro-app)
+   Compiling kyro-factory v0.1.0 (/workspace/crates/kyro-factory)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 16.12s
+     Running unittests src/lib.rs (target/debug/deps/kyro_factory-a9ffe7506705db28)
+
+running 6 tests
+test cleanup::tests::cleanup_scope_never_includes_tools_foreign_names_or_unexpired_work ... ok
+test verifier::tests::candidate_has_no_driver_mount_and_diagnostics_redact_credentials ... ok
+test service::socket_tests::socket_restart_recovers_stale_path_and_preserves_live_instance_and_foreign_file ... ok
+test verifier::tests::protected_report_requires_every_bound_observation ... ok
+test builtins::tests::all_147_p2_ids_have_actual_closed_action_contracts ... ok
+test delivery::tests::resumed_ranges_verify_enclosing_blocks_and_reject_late_tampering_and_paths ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/artifacts.rs (target/debug/deps/artifacts-4b1354fdbadf5f3a)
+
+running 3 tests
+test image_bytes_bind_every_descriptor_and_runtime_file ... ok
+test oci_loading_binds_the_protected_reference_and_rejects_symlinks ... ok
+test evidence_and_release_refuse_builder_keys_edited_reports_and_changed_images ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.49s
+
+     Running tests/contracts.rs (target/debug/deps/contracts-e8a838f1a740c878)
+
+running 10 tests
+test source_resume_refuses_extra_cargo_configuration_before_any_write ... ok
+test signed_lock_preserves_preferences_and_rejects_tampering ... ok
+test unavailable_capabilities_cycles_types_and_free_code_are_refused ... ok
+test signatures_roles_keys_revocations_and_locked_context ... ok
+test source_manifest_cannot_relabel_the_lock_or_omit_a_migration ... ok
+test admission_requires_independent_evidence_for_the_exact_manifest_and_criteria ... ok
+test source_resume_recovers_only_exact_partial_atomic_files ... ok
+test deterministic_sources_resume_and_tamper_refusal ... ok
+test portable_git_bundle_contains_only_verified_reference_and_clones_the_exact_sources ... ok
+test git_export_resumes_after_commit_and_preserves_existing_references ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.88s
+
+     Running tests/registry.rs (target/debug/deps/registry-3f03adb0093ea470)
+
+running 5 tests
+test complete_registry_is_signed_but_every_unqualified_component_remains_unavailable ... ok
+test qualification_batch_is_atomic_bounded_and_replayable ... ok
+test admission_requires_distinct_evidence_and_exact_immutable_subject ... ok
+test publication_cannot_erase_versions_replace_subjects_or_restore_revocation ... ok
+test resolver_refuses_invalid_fixed_values_and_bound_references_before_build ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.96s
+

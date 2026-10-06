@@ -4,7 +4,7 @@ use crate::{Store, store::map_database_error};
 use kyro_domain::{Environment, Error, Result, factory::valid_digest};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use sqlx::FromRow;
+use sqlx::{FromRow, PgConnection};
 use uuid::Uuid;
 
 /// Loaded under project/job locks and fresh grants, never from a request body.
@@ -152,8 +152,22 @@ impl Store {
         artifact_id: Uuid,
     ) -> Result<FactoryArtifact> {
         let mut tx = self.begin_actor(actor_id).await?;
+        let artifact = self
+            .get_factory_artifact_in(&mut tx, actor_id, project_id, artifact_id)
+            .await?;
+        tx.commit().await.map_err(map_database_error)?;
+        Ok(artifact)
+    }
+    /// Read a protected artifact without nesting a transaction inside a locked transition.
+    pub async fn get_factory_artifact_in(
+        &self,
+        conn: &mut PgConnection,
+        actor_id: Uuid,
+        project_id: Uuid,
+        artifact_id: Uuid,
+    ) -> Result<FactoryArtifact> {
         Self::authorize_demand_in(
-            &mut tx,
+            &mut *conn,
             actor_id,
             project_id,
             &["read"],
@@ -167,7 +181,7 @@ impl Store {
         )
         .await?;
         let row=sqlx::query_as::<_,ArtifactRow>("SELECT id,project_id,job_id,job_generation,lease_owner,application_id,environment,source_revision,image_digest,lock_digest,source_digest,evidence_digest,release_digest,signed_release,signed_evidence,source_manifest,created_at FROM factory_artifacts WHERE project_id=$1 AND id=$2 AND environment=$3")
-            .bind(project_id).bind(artifact_id).bind(self.environment.as_str()).fetch_optional(&mut *tx).await.map_err(map_database_error)?.ok_or(Error::NotFound)?;
+            .bind(project_id).bind(artifact_id).bind(self.environment.as_str()).fetch_optional(&mut *conn).await.map_err(map_database_error)?.ok_or(Error::NotFound)?;
         let artifact = FactoryArtifactInput {
             id: row.id,
             application_id: row.application_id,
@@ -181,7 +195,6 @@ impl Store {
             source_manifest: row.source_manifest,
         };
         artifact.validate()?;
-        tx.commit().await.map_err(map_database_error)?;
         Ok(FactoryArtifact {
             project_id: row.project_id,
             job_id: row.job_id,

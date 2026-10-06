@@ -1,0 +1,72 @@
+   Compiling kyro-domain v0.1.0 (/workspace/crates/kyro-domain)
+   Compiling kyro-gateway v0.1.0 (/workspace/crates/kyro-gateway)
+   Compiling kyro-store v0.1.0 (/workspace/crates/kyro-store)
+   Compiling kyro-app v0.1.0 (/workspace/crates/kyro-app)
+   Compiling kyro-factory v0.1.0 (/workspace/crates/kyro-factory)
+   Compiling kyro-agents v0.1.0 (/workspace/crates/kyro-agents)
+   Compiling kyro-worker v0.1.0 (/workspace/crates/kyro-worker)
+   Compiling kyro-api v0.1.0 (/workspace/crates/kyro-api)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 11.43s
+     Running unittests src/lib.rs (target/debug/deps/kyro_agents-809d15027b62496d)
+
+running 3 tests
+test engine::syntax_tests::model_job_ttl_never_extends_the_run_deadline ... ok
+test engine::syntax_tests::syntax_hints_distinguish_node_identity_and_property_scopes ... ok
+test protocol::tests::native_contracts_preserve_json_and_legacy_jobs_without_version_coercion ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/kyro_domain-715d01db34810faa)
+
+running 34 tests
+test config::tests::debug_redacts_database_urls ... ok
+test config::tests::database_urls_must_use_a_postgresql_scheme_and_endpoint ... ok
+test config::tests::numeric_configuration_bounds_reject_values_outside_the_limit ... ok
+test config::tests::production_api_configuration_does_not_retain_worker_credentials ... ok
+test config::tests::production_requires_explicit_resource_limits ... ok
+test config::tests::synthetic_providers_require_an_explicit_true_value ... ok
+test config::tests::unset_numeric_configuration_uses_the_development_default ... ok
+test config::tests::production_tcp_database_urls_require_verified_tls_for_each_runtime_role ... ok
+test identity::tests::absent_limits_are_omitted_and_unknown_fields_are_rejected ... ok
+test identity::tests::one_grant_must_cover_every_demand_dimension ... ok
+test identity::tests::each_limit_accepts_its_bounds_and_rejects_overflow_or_out_of_range_values ... ok
+test model::tests::agent_retention_opt_in_is_scoped_and_never_relabels_retention_as_zero ... ok
+test model::tests::data_policy_is_deny_all_by_default_and_checks_all_dimensions ... ok
+test model::tests::model_request_does_not_accept_client_controlled_urls_or_unknown_fields ... ok
+test model::tests::prices_reject_overflow_instead_of_wrapping ... ok
+test model::tests::prices_round_up_and_missing_usage_stays_unknown ... ok
+test model::tests::recognizable_secrets_are_refused_without_echoing_content ... ok
+test model::tests::reported_usage_cannot_be_negative_or_exceed_input ... ok
+test model::tests::secret_category_is_rejected_even_if_other_policy_dimensions_match ... ok
+test model::tests::unknown_retention_requires_explicit_conversation_consent ... ok
+test spec::tests::add_and_remove_are_id_checked ... ok
+test spec::tests::changes_preserve_stable_ids_and_untargeted_properties ... ok
+test spec::tests::project_limits_apply_bounded_defaults_and_reject_out_of_range_values ... ok
+test spec::tests::rejects_unknown_operations_and_fields_during_deserialization ... ok
+test task::tests::factory_result_is_a_closed_reference_with_valid_digests ... ok
+test task::tests::job_result_serializes_as_a_non_sensitive_reference ... ok
+test task::tests::job_payload_rejects_unhandled_kinds ... ok
+test task::tests::job_result_rejects_unapproved_fields ... ok
+test task::tests::job_status_values_match_postgres_contract ... ok
+test task::tests::model_jobs_reject_secret_category_before_persistence ... ok
+test task::tests::public_job_json_does_not_expose_lease_capabilities ... ok
+test task::tests::public_job_payload_summary_omits_model_input_content ... ok
+test task::tests::reconcile_job_summary_omits_evidence_and_model_output ... ok
+test spec::tests::rejects_duplicate_ids_deep_values_and_oversized_changesets ... ok
+
+test result: ok. 34 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/agents.rs (target/debug/deps/agents-f7d7cc1f168a5e36)
+
+running 8 tests
+test plan_call_bound_includes_planning_reviews_and_retries ... ok
+test graph_refuses_cycles_and_missing_contracts ... ok
+test property_snapshots_distinguish_absence_null_and_unrelated_edits ... ok
+test existing_nodes_cannot_change_to_an_undeclared_version_or_component ... ok
+test replacement_requires_the_removed_and_added_components ... ok
+test shared_invariant_orders_different_nodes_and_read_write_conflicts ... ok
+test scope_and_component_versions_are_enforced_on_model_changes ... ok
+test resource_node_ids_follow_appspec_rules_while_task_ids_stay_restricted ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

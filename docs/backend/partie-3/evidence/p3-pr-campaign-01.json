@@ -1,0 +1,180 @@
+{
+  "currency": "USD",
+  "unit_scale": 1000000000,
+  "limit_units": 672240000,
+  "max_calls": 96,
+  "uncertain": false,
+  "entries": [
+    {
+      "id": "qualify-nvidia-NVIDIA-Nemotron-3-Nano-30B-A3B",
+      "kind": "qualification",
+      "reserved_units": 17694720,
+      "estimated_units": null,
+      "max_calls": 1,
+      "status": "parser_refused_known_response_missing_archive",
+      "sealed_units": null
+    },
+    {
+      "id": "qualify-v2-nvidia-NVIDIA-Nemotron-3-Nano-30B-A3B",
+      "kind": "qualification",
+      "reserved_units": 17694720,
+      "estimated_units": 105000,
+      "max_calls": 1,
+      "status": "contract_refused_known_usage",
+      "sealed_units": null
+    },
+    {
+      "id": "qualify-native-v2-nvidia-NVIDIA-Nemotron-3-Nano-30B-A3B",
+      "kind": "qualification",
+      "reserved_units": 17694720,
+      "estimated_units": 36360,
+      "max_calls": 1,
+      "status": "qualified",
+      "sealed_units": null
+    },
+    {
+      "id": "qualify-native-v2-nvidia-nemotron-3-super-120b-a12b",
+      "kind": "qualification",
+      "reserved_units": 86016000,
+      "estimated_units": 247800,
+      "max_calls": 1,
+      "status": "qualified",
+      "sealed_units": null
+    },
+    {
+      "id": "roles-01",
+      "kind": "runtime-phase",
+      "reserved_units": 100000000,
+      "estimated_units": null,
+      "max_calls": 7,
+      "status": "finished_exit_101",
+      "sealed_units": 0
+    },
+    {
+      "id": "roles-02",
+      "kind": "runtime-phase",
+      "reserved_units": 100000000,
+      "estimated_units": null,
+      "max_calls": 7,
+      "status": "finished_exit_101",
+      "sealed_units": 20151420
+    },
+    {
+      "id": "qualify-object-v2-nvidia-NVIDIA-Nemotron-3-Nano-30B-A3B",
+      "kind": "qualification",
+      "reserved_units": 17694720,
+      "estimated_units": 290460,
+      "max_calls": 1,
+      "status": "qualified",
+      "sealed_units": null
+    },
+    {
+      "id": "qualify-object-v2-nvidia-nemotron-3-super-120b-a12b",
+      "kind": "qualification",
+      "reserved_units": 86016000,
+      "estimated_units": 1345200,
+      "max_calls": 1,
+      "status": "qualified",
+      "sealed_units": null
+    },
+    {
+      "id": "roles-03",
+      "kind": "runtime-phase",
+      "reserved_units": 100000000,
+      "estimated_units": null,
+      "max_calls": 7,
+      "status": "finished_exit_101",
+      "sealed_units": 86016000
+    },
+    {
+      "id": "roles-04",
+      "kind": "runtime-phase",
+      "reserved_units": 100000000,
+      "estimated_units": null,
+      "max_calls": 7,
+      "status": "finished_exit_101",
+      "sealed_units": 2029500
+    },
+    {
+      "id": "roles-05",
+      "kind": "runtime-phase",
+      "reserved_units": 90000000,
+      "estimated_units": null,
+      "max_calls": 7,
+      "status": "finished_exit_101",
+      "sealed_units": 21269700
+    },
+    {
+      "id": "roles-06",
+      "kind": "runtime-phase",
+      "reserved_units": 100000000,
+      "estimated_units": null,
+      "max_calls": 7,
+      "status": "finished_exit_101",
+      "sealed_units": 4847640
+    },
+    {
+      "id": "roles-07",
+      "kind": "runtime-phase",
+      "reserved_units": 100000000,
+      "estimated_units": null,
+      "max_calls": 7,
+      "status": "finished_exit_101",
+      "sealed_units": 55658280
+    },
+    {
+      "id": "roles-08",
+      "kind": "runtime-phase",
+      "reserved_units": 100000000,
+      "estimated_units": null,
+      "max_calls": 7,
+      "status": "finished_exit_101",
+      "sealed_units": 2950860
+    },
+    {
+      "id": "roles-09",
+      "kind": "runtime-phase",
+      "reserved_units": 100000000,
+      "estimated_units": null,
+      "max_calls": 7,
+      "status": "finished_exit_0",
+      "sealed_units": 3746700
+    },
+    {
+      "id": "factory-01",
+      "kind": "runtime-phase",
+      "reserved_units": 100000000,
+      "estimated_units": null,
+      "max_calls": 4,
+      "status": "finished_exit_101",
+      "sealed_units": 19971720
+    },
+    {
+      "id": "factory-02",
+      "kind": "runtime-phase",
+      "reserved_units": 100000000,
+      "estimated_units": null,
+      "max_calls": 4,
+      "status": "finished_exit_0",
+      "sealed_units": 2387400
+    },
+    {
+      "id": "factory-03",
+      "kind": "runtime-phase",
+      "reserved_units": 100000000,
+      "estimated_units": null,
+      "max_calls": 4,
+      "status": "finished_exit_101",
+      "sealed_units": 2419860
+    },
+    {
+      "id": "factory-04",
+      "kind": "runtime-phase",
+      "reserved_units": 100000000,
+      "estimated_units": null,
+      "max_calls": 4,
+      "status": "finished_exit_0",
+      "sealed_units": 4072680
+    }
+  ]
+}

@@ -3,7 +3,7 @@
   "info": {
     "title": "Kyro Control API",
     "version": "1.0.0",
-    "description": "Versioned P1 control-plane API with P2 signed composition, offline factory and private bounded artifact delivery. Runtime calls are actor-scoped; provider credentials never appear in request or response schemas."
+    "description": "Versioned P1 control plane, P2 signed catalogue/factory, and P3 durable planning, controlled agents, memory and verified candidate orchestration. Actor-scoped authority; model credentials are worker-only. Publishing is separate."
   },
   "servers": [
     {
@@ -1531,6 +1531,829 @@
           }
         }
       }
+    },
+    "/v1/projects/{project_id}/plans": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        }
+      ],
+      "get": {
+        "operationId": "listAgentRuns",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Actor-scoped result; no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AgentRun"
+                  },
+                  "maxItems": 32
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "412": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createAgentRun",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RevisionIfMatch"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartAgentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Actor-scoped result; no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRun"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "412": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/plans/{run_id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        },
+        {
+          "$ref": "#/components/parameters/AgentRunId"
+        }
+      ],
+      "get": {
+        "operationId": "getAgentRun",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Actor-scoped result; no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRun"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "412": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "cancelAgentRun",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AgentVersion"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Actor-scoped result; no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRun"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "412": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/plans/{run_id}/advance": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        },
+        {
+          "$ref": "#/components/parameters/AgentRunId"
+        }
+      ],
+      "post": {
+        "operationId": "advanceAgentRun",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AgentVersion"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Actor-scoped result; no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRun"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "412": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/plans/{run_id}/execute": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        },
+        {
+          "$ref": "#/components/parameters/AgentRunId"
+        }
+      ],
+      "post": {
+        "operationId": "executeAgentPlan",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AgentVersion"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Actor-scoped result; no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRun"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "412": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/plans/{run_id}/instructions": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        },
+        {
+          "$ref": "#/components/parameters/AgentRunId"
+        }
+      ],
+      "post": {
+        "operationId": "reviseAgentInstructions",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AgentVersion"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentInstruction"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Actor-scoped result; no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRun"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "412": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/plans/{run_id}/compaction": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        },
+        {
+          "$ref": "#/components/parameters/AgentRunId"
+        }
+      ],
+      "post": {
+        "operationId": "compactAgentRole",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AgentVersion"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentCompaction"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Actor-scoped result; no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRun"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "412": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/plans/{run_id}/contract": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        },
+        {
+          "$ref": "#/components/parameters/AgentRunId"
+        }
+      ],
+      "put": {
+        "operationId": "replaceAgentContract",
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AgentVersion"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentPlan"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Actor-scoped result; no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRun"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "412": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/plans/{run_id}/memory": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        },
+        {
+          "$ref": "#/components/parameters/AgentRunId"
+        }
+      ],
+      "get": {
+        "operationId": "searchAgentMemory",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 256,
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Actor-scoped result; no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AgentMemory"
+                  },
+                  "maxItems": 16
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "412": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/plans/{run_id}/history": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        },
+        {
+          "$ref": "#/components/parameters/AgentRunId"
+        }
+      ],
+      "get": {
+        "operationId": "getAgentHistory",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "before",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Actor-scoped result; no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AgentRun"
+                  },
+                  "maxItems": 16
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "412": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/plans/{run_id}/usage": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        },
+        {
+          "$ref": "#/components/parameters/AgentRunId"
+        }
+      ],
+      "get": {
+        "operationId": "getAgentUsage",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Actor-scoped result; no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AgentMeasurement"
+                  },
+                  "maxItems": 128
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "412": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1690,6 +2513,25 @@
           "type": "string",
           "maxLength": 64
         }
+      },
+      "AgentRunId": {
+        "name": "run_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "AgentVersion": {
+        "name": "If-Match",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "pattern": "^\"rev-[1-9][0-9]*\"$"
+        },
+        "description": "Expected agent run version, independently of the AppSpec source revision."
       }
     },
     "requestBodies": {
@@ -2955,6 +3797,20 @@
             "type": "boolean",
             "default": false,
             "description": "Explicit acceptance of an unknown provider retention duration for conversation requests. Absent/false retains the historical refusal; known retention durations still obey max_retention_seconds."
+          },
+          "accepted_unknown_retention_purposes": {
+            "type": "array",
+            "uniqueItems": true,
+            "maxItems": 3,
+            "items": {
+              "type": "string",
+              "enum": [
+                "planning",
+                "generation",
+                "review"
+              ]
+            },
+            "description": "Explicit purpose-scoped acceptance of unknown provider retention. Absent/empty refuses unknown retention for agents; existing chat consent does not enable this field."
           }
         },
         "additionalProperties": false
@@ -4925,6 +5781,1038 @@
           "file_sha256",
           "chunk_sha256",
           "content_base64"
+        ],
+        "additionalProperties": false
+      },
+      "AgentRole": {
+        "type": "string",
+        "enum": [
+          "orchestrator",
+          "pixel",
+          "moka",
+          "kiwi",
+          "biscotte",
+          "review",
+          "security"
+        ]
+      },
+      "AgentStatus": {
+        "type": "string",
+        "enum": [
+          "planning",
+          "planned",
+          "executing",
+          "reviewing",
+          "integrating",
+          "building",
+          "verified",
+          "blocked",
+          "cancelled"
+        ]
+      },
+      "AgentLimits": {
+        "type": "object",
+        "properties": {
+          "max_calls": {
+            "type": "integer",
+            "minimum": 4,
+            "maximum": 128
+          },
+          "max_tokens": {
+            "type": "integer",
+            "minimum": 1024,
+            "maximum": 2000000
+          },
+          "max_output_tokens": {
+            "type": "integer",
+            "minimum": 128,
+            "maximum": 8192
+          },
+          "call_timeout_ms": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 120000
+          },
+          "ttl_seconds": {
+            "type": "integer",
+            "minimum": 30,
+            "maximum": 7200
+          },
+          "max_task_attempts": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "context_bytes": {
+            "type": "integer",
+            "minimum": 4096,
+            "maximum": 65536
+          }
+        },
+        "required": [
+          "max_calls",
+          "max_tokens",
+          "max_output_tokens",
+          "call_timeout_ms",
+          "ttl_seconds",
+          "max_task_attempts",
+          "context_bytes"
+        ],
+        "additionalProperties": false
+      },
+      "StartAgentRequest": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "string",
+            "maxLength": 8192,
+            "minLength": 1
+          },
+          "limits": {
+            "$ref": "#/components/schemas/AgentLimits"
+          },
+          "plan_only": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "request",
+          "limits",
+          "plan_only"
+        ],
+        "additionalProperties": false
+      },
+      "AgentResource": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "const": "node"
+              },
+              "id": {
+                "type": "string",
+                "maxLength": 64
+              }
+            },
+            "required": [
+              "kind",
+              "id"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "const": "property"
+              },
+              "id": {
+                "type": "string",
+                "maxLength": 64
+              },
+              "key": {
+                "type": "string",
+                "maxLength": 128
+              }
+            },
+            "required": [
+              "kind",
+              "id",
+              "key"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "const": "preference"
+              },
+              "key": {
+                "type": "string",
+                "maxLength": 128
+              }
+            },
+            "required": [
+              "kind",
+              "key"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "AgentComponent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "version": {
+            "type": "string",
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "id",
+          "version"
+        ],
+        "additionalProperties": false
+      },
+      "TaskContract": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "objective": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentComponent"
+            },
+            "maxItems": 16
+          },
+          "reads": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentResource"
+            },
+            "maxItems": 64,
+            "uniqueItems": true
+          },
+          "writes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentResource"
+            },
+            "maxItems": 32,
+            "uniqueItems": true
+          },
+          "dependencies": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "maxItems": 32,
+            "uniqueItems": true
+          },
+          "invariants": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 128
+            },
+            "maxItems": 64,
+            "uniqueItems": true
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 128
+            },
+            "maxItems": 256,
+            "uniqueItems": true
+          },
+          "protected_criteria": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "maxItems": 16,
+            "uniqueItems": true
+          },
+          "max_attempts": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "deterministic": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChangeSet"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "objective",
+          "components",
+          "reads",
+          "writes",
+          "dependencies",
+          "invariants",
+          "max_attempts"
+        ],
+        "additionalProperties": false,
+        "description": "Capabilities, protected criteria and shared invariants are derived or augmented by the server from signed admitted manifests. Supplied capability or criteria declarations confer no authority."
+      },
+      "AgentPlan": {
+        "type": "object",
+        "properties": {
+          "objective": {
+            "type": "string",
+            "maxLength": 8192
+          },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskContract"
+            },
+            "maxItems": 32
+          },
+          "missing_capabilities": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 8192
+            },
+            "maxItems": 32
+          }
+        },
+        "required": [
+          "objective",
+          "tasks",
+          "missing_capabilities"
+        ],
+        "additionalProperties": false
+      },
+      "AgentTaskResult": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "changes": {
+            "$ref": "#/components/schemas/ChangeSet"
+          },
+          "limitations": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 8192
+            },
+            "maxItems": 32
+          }
+        },
+        "required": [
+          "task_id",
+          "changes",
+          "limitations"
+        ],
+        "additionalProperties": false
+      },
+      "AgentRetainedResult": {
+        "type": "object",
+        "properties": {
+          "contract": {
+            "$ref": "#/components/schemas/TaskContract"
+          },
+          "result": {
+            "$ref": "#/components/schemas/AgentTaskResult"
+          }
+        },
+        "required": [
+          "contract",
+          "result"
+        ],
+        "additionalProperties": false
+      },
+      "AgentReview": {
+        "type": "object",
+        "properties": {
+          "candidate_digest": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "approved": {
+            "type": "boolean"
+          },
+          "findings": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 8192
+            },
+            "maxItems": 32
+          }
+        },
+        "required": [
+          "candidate_digest",
+          "approved",
+          "findings"
+        ],
+        "additionalProperties": false
+      },
+      "AgentCall": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "epoch": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4294967295
+          },
+          "role": {
+            "$ref": "#/components/schemas/AgentRole"
+          },
+          "task_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "attempt": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "job_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "registration": {
+            "$ref": "#/components/schemas/ModelRegistrationSnapshot"
+          },
+          "request_digest": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "reserved_tokens": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2000000
+          },
+          "result_digest": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "failure": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "epoch",
+          "role",
+          "task_id",
+          "attempt",
+          "job_id",
+          "registration",
+          "request_digest",
+          "reserved_tokens",
+          "result_digest",
+          "failure"
+        ],
+        "additionalProperties": false
+      },
+      "AgentMemory": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "role": {
+            "$ref": "#/components/schemas/AgentRole"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "fact",
+              "hypothesis",
+              "decision",
+              "diagnostic"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 4096
+          }
+        },
+        "required": [
+          "id",
+          "role",
+          "kind",
+          "source",
+          "revision",
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      "AgentCheckpoint": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/AgentRole"
+          },
+          "epoch": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4294967295
+          },
+          "objective": {
+            "type": "string",
+            "maxLength": 8192
+          },
+          "plan_digest": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "task_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "maxItems": 32
+          },
+          "memory_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 512
+          },
+          "call_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 128
+          },
+          "remaining_calls": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 128
+          },
+          "remaining_tokens": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2000000
+          },
+          "source_revision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "run_version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "status": {
+            "$ref": "#/components/schemas/AgentStatus"
+          },
+          "protected_criteria_digest": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "result_digests": {
+            "type": "object",
+            "maxProperties": 32,
+            "additionalProperties": {
+              "type": "string",
+              "maxLength": 64
+            }
+          },
+          "unresolved_diagnostic": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "build_job_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "role",
+          "epoch",
+          "objective",
+          "plan_digest",
+          "task_ids",
+          "memory_ids",
+          "call_ids",
+          "remaining_calls",
+          "remaining_tokens",
+          "source_revision",
+          "run_version",
+          "status",
+          "protected_criteria_digest",
+          "result_digests",
+          "unresolved_diagnostic",
+          "build_job_id",
+          "created_at"
+        ],
+        "additionalProperties": false
+      },
+      "AgentRun": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "actor_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "epoch": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4294967295
+          },
+          "environment": {
+            "type": "string",
+            "enum": [
+              "development",
+              "production"
+            ]
+          },
+          "source_revision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "snapshot": {
+            "$ref": "#/components/schemas/AppSpec"
+          },
+          "request": {
+            "$ref": "#/components/schemas/StartAgentRequest"
+          },
+          "catalogue_revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "catalogue_digest": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "protected_criteria": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "maxItems": 1024,
+            "uniqueItems": true
+          },
+          "status": {
+            "$ref": "#/components/schemas/AgentStatus"
+          },
+          "plan": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentPlan"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "calls": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentCall"
+            },
+            "maxItems": 128
+          },
+          "results": {
+            "type": "object",
+            "maxProperties": 32,
+            "additionalProperties": {
+              "$ref": "#/components/schemas/AgentTaskResult"
+            }
+          },
+          "reviews": {
+            "type": "object",
+            "maxProperties": 2,
+            "additionalProperties": {
+              "$ref": "#/components/schemas/AgentReview"
+            },
+            "propertyNames": {
+              "enum": [
+                "review",
+                "security"
+              ]
+            }
+          },
+          "retained_results": {
+            "type": "object",
+            "maxProperties": 32,
+            "additionalProperties": {
+              "$ref": "#/components/schemas/AgentRetainedResult"
+            }
+          },
+          "memory": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgentMemory"
+            },
+            "maxItems": 512
+          },
+          "checkpoints": {
+            "type": "object",
+            "maxProperties": 7,
+            "additionalProperties": {
+              "$ref": "#/components/schemas/AgentCheckpoint"
+            },
+            "propertyNames": {
+              "enum": [
+                "orchestrator",
+                "pixel",
+                "moka",
+                "kiwi",
+                "biscotte",
+                "review",
+                "security"
+              ]
+            }
+          },
+          "reserved_tokens": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2000000
+          },
+          "candidate_digest": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "integrated_revision": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "build_job_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "artifact_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "diagnostic": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "deadline": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "project_id",
+          "actor_id",
+          "version",
+          "epoch",
+          "environment",
+          "source_revision",
+          "snapshot",
+          "request",
+          "catalogue_revision",
+          "catalogue_digest",
+          "protected_criteria",
+          "status",
+          "plan",
+          "calls",
+          "results",
+          "reviews",
+          "retained_results",
+          "memory",
+          "checkpoints",
+          "reserved_tokens",
+          "candidate_digest",
+          "integrated_revision",
+          "build_job_id",
+          "artifact_id",
+          "diagnostic",
+          "deadline"
+        ],
+        "additionalProperties": false,
+        "description": "Authoritative server response only; no endpoint accepts run status, results, evidence, budget resets, provider configuration or authority. Creation currently requires development. Verified is a candidate and does not mean published."
+      },
+      "AgentMeasurement": {
+        "type": "object",
+        "properties": {
+          "call_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "role": {
+            "$ref": "#/components/schemas/AgentRole"
+          },
+          "job_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "epoch": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "attempt": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "task_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "job_status": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "contract_failure": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "effect_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "registration": {
+            "$ref": "#/components/schemas/ModelRegistrationSnapshot"
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ModelUsage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "estimated_units": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reserved_tokens": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2000000
+          },
+          "effect_elapsed_ms": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "invoiced_cost": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "call_id",
+          "role",
+          "job_id",
+          "epoch",
+          "attempt",
+          "task_id",
+          "job_status",
+          "contract_failure",
+          "effect_id",
+          "status",
+          "registration",
+          "usage",
+          "estimated_units",
+          "reserved_tokens",
+          "effect_elapsed_ms",
+          "invoiced_cost"
+        ],
+        "additionalProperties": false,
+        "description": "Provider usage may be unknown. Tariff estimates are not invoiced cost; effect_elapsed_ms is the persisted effect lifecycle, not pure model latency."
+      },
+      "AgentInstruction": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "string",
+            "maxLength": 8192,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "request"
+        ],
+        "additionalProperties": false
+      },
+      "AgentCompaction": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/AgentRole"
+          }
+        },
+        "required": [
+          "role"
         ],
         "additionalProperties": false
       }

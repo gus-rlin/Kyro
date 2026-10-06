@@ -35,6 +35,62 @@ fn standard_retention_is_explicit_and_limited_to_nano_development_chat() {
 }
 
 #[test]
+fn agent_recipe_standard_retention_requires_its_exact_development_profile() {
+    let mut registry: serde_json::Value = serde_json::from_str(NEBIUS_REGISTRY).unwrap();
+    let destination = &mut registry["destinations"][0];
+    destination["id"] = serde_json::json!("nebius-agents-recipe");
+    destination["qualified"] = serde_json::json!(true);
+    destination["nebius"]["json_schema"] = serde_json::json!(true);
+    destination["nebius"]["provider_standard_retention_accepted"] = serde_json::json!(true);
+    destination["nebius"]["retention_evidence"] =
+        serde_json::json!("https://docs.nebius.com/legal/token-factory");
+    destination["models"][0]["output_schema"]["id"] = serde_json::json!("kyro-agent-contract");
+    let parse = |value: &serde_json::Value, environment| {
+        GatewayConfig::for_admission_from_registry_json(
+            &serde_json::to_vec(value).unwrap(),
+            environment,
+            false,
+        )
+    };
+    let admitted = parse(&registry, Environment::Development).unwrap();
+    assert!(admitted.registry()[0].admissible);
+    assert_eq!(admitted.registry()[0].registration.retention_seconds, None);
+    assert!(parse(&registry, Environment::Production).is_err());
+    for (field, value) in [
+        ("id", serde_json::json!("ordinary-project")),
+        ("retention_seconds", serde_json::json!(0)),
+    ] {
+        let mut invalid = registry.clone();
+        invalid["destinations"][0][field] = value;
+        assert!(parse(&invalid, Environment::Development).is_err());
+    }
+    for (field, value) in [
+        ("output_mode", serde_json::json!("text_chat")),
+        ("protocol", serde_json::json!("embeddings")),
+    ] {
+        let mut invalid = registry.clone();
+        invalid["destinations"][0]["models"][0][field] = value;
+        assert!(parse(&invalid, Environment::Development).is_err());
+    }
+    let mut invalid = registry.clone();
+    invalid["destinations"][0]["models"][0]["output_schema"]["id"] =
+        serde_json::json!("arbitrary-output");
+    assert!(parse(&invalid, Environment::Development).is_err());
+    registry["destinations"][0]["models"][0]["output_schema"]["version"] = serde_json::json!("2");
+    registry["destinations"][0]["nebius"]["json_schema"] = serde_json::json!(false);
+    registry["destinations"][0]["nebius"]["json_object"] = serde_json::json!(true);
+    assert!(
+        parse(&registry, Environment::Development)
+            .unwrap()
+            .registry()[0]
+            .admissible
+    );
+    assert!(parse(&registry, Environment::Production).is_err());
+    registry["destinations"][0]["models"][0]["output_schema"]["version"] = serde_json::json!("1");
+    assert!(parse(&registry, Environment::Development).is_err());
+}
+
+#[test]
 fn nebius_stays_disabled_without_verified_retention_and_capabilities() {
     let mut registry: serde_json::Value = serde_json::from_str(NEBIUS_REGISTRY).unwrap();
     let disabled = GatewayConfig::from_registry_json(

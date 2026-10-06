@@ -1,0 +1,10 @@
+{
+  "root_sha256": "E44D237301FBE0E2472476FC2EA4A550A4D1170718423EB2C9729C80D20071FD",
+  "windows_chain_validated": true,
+  "windows_tls_authenticated": true,
+  "root_kind": "Existing Windows Norton SSL/TLS inspection root",
+  "private_key_exported": false,
+  "hostname": "api.tokenfactory.nebius.com",
+  "tls_verification_disabled": false,
+  "checked_at": "2026-10-06T02:20:42.5922050+02:00"
+}
