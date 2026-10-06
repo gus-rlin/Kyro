@@ -10,6 +10,7 @@
     "prepare:git": "node scripts/prepare-git.mjs",
     "predev": "npm run prepare:git",
     "dev": "node scripts/dev.mjs",
+    "dev:web": "vite --host 127.0.0.1",
     "typecheck": "tsc --noEmit",
     "build": "npm run typecheck && vite build",
     "package": "npm run prepare:git && npm run build && node scripts/package.mjs",

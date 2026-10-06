@@ -266,7 +266,7 @@ export function App() {
       <footer className="verification-bar" aria-label="État du projet">
         <span>{selectedWorkspace ? 'Dossier local ouvert' : 'Prêt à démarrer'}</span>
         <span>{selectedWorkspace ? 'Décrivez la prochaine étape dans le chat' : 'Créez un projet ou ouvrez un dossier'}</span>
-        <button className="status-details" onClick={() => setNotice({ title: 'Docs · Premiers pas', body: 'Le chat Nano est utilisable dès l’accueil lorsque le runtime Nebius et la confirmation de zéro conservation sont configurés. Seuls vos messages sont envoyés ; aucun fichier du dossier choisi n’est joint. L’historique visible disparaît au rechargement. Les traces des jobs et le budget cumulé de 1 € restent durables. L’aperçu et la publication sont en préparation.' })}>Docs <ArrowUpRight size={13} /></button>
+        <button className="status-details" onClick={() => setNotice({ title: 'Docs · Premiers pas', body: 'Le chat Nano est utilisable dès l’accueil lorsque le runtime Nebius, la politique de données du compte et le budget sont configurés. Seuls vos messages sont envoyés ; aucun fichier du dossier choisi n’est joint. L’historique visible disparaît au rechargement. Les traces des jobs et le budget cumulé de 1 € restent durables. Les plans d’agents, l’aperçu des applications générées et la publication restent à raccorder à cette interface.' })}>Docs <ArrowUpRight size={13} /></button>
       </footer>
 
       <dialog ref={dialog} className="notice-dialog" onClose={() => setNotice(null)} onClick={(event) => { if (event.target === event.currentTarget) dialog.current?.close(); }} aria-labelledby="notice-title">

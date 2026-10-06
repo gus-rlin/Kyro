@@ -2,7 +2,7 @@
 .composer-controls { flex-wrap: nowrap; gap: 4px; }
 .composer-controls > .composer-actions { gap: 4px; flex: 0 0 auto; }
 .team-picker { min-width: 0; }
-.team-trigger { display: flex; align-items: center; gap: 7px; min-height: 36px; padding: 6px 7px; list-style: none; border-radius: 10px; cursor: pointer; color: var(--muted); font-size: 12px; }
+.team-trigger { display: flex; align-items: center; gap: 7px; min-height: 36px; padding: 6px 7px; list-style: none; border-radius: 10px; cursor: pointer; color: var(--muted); font-size: 14px; }
 .team-trigger > svg { flex: 0 0 auto; }
 .team-trigger-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .team-trigger-label strong { color: var(--ink); font-weight: 650; }
@@ -40,7 +40,7 @@
   .team-role { grid-template-columns: 28px minmax(0, 1fr); gap: 10px; }
   .team-role-icon { width: 28px; height: 28px; }
   .team-capacity { margin-left: 38px; }
-  .team-trigger { gap: 5px; padding-inline: 3px; font-size: 11px; }
+  .team-trigger { gap: 5px; padding-inline: 3px; font-size: 14px; }
   .team-trigger-dot { margin-inline: 4px; }
 }
 @media (prefers-reduced-motion: no-preference) {

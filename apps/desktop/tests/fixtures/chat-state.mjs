@@ -19,7 +19,7 @@ export async function chatState() {
   const proof={checked_at:new Date().toISOString(),model:registry.destinations[0].models[0].id,endpoint:'https://api.tokenfactory.nebius.com/v1/',source:'https://docs.nebius.com/legal/token-factory',account_evidence:'SYNTHETIC FIXTURE ONLY. No claim about any Nebius account.',zero_retention_confirmed:true,max_completion_tokens_includes_reasoning:true,vault_sha256:createHash('sha256').update(vault).digest('hex')};
   for(const [name,data] of Object.entries({'models.json':registry,'qualification.json':proof,'budget.json':{ceiling_eur:1,currency:'USD',unit_scale:1e9,limit_units:600000000,eur_usd:1,fx_date:'2026-10-04',margin_fraction:.4}})) await writeFile(join(stateDir,name),JSON.stringify(data));
   await writeFile(vaultPath,vault);
-  const options={stateDir,vaultPath,origin:'http://127.0.0.1:58690',oidcOrigin:'http://127.0.0.1:59690',syntheticTest:true};
+  const options={stateDir,vaultPath,origin:process.env.KYRO_CHAT_TEST_API_ORIGIN || 'http://127.0.0.1:58690',oidcOrigin:'http://127.0.0.1:59690',syntheticTest:true};
   return {stateDir,options,chat:service.createChatService(options)};
 }
 export function dropFirstStream(chat) {

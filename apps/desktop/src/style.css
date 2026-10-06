@@ -106,7 +106,7 @@ summary::-webkit-details-marker { display: none; }
 .preview-canvas[data-device=phone] { width: 393px; max-width: 100%; height: 852px; max-height: 100%; }
 @container (max-width: 460px) {
   .preview-heading { padding: 0 14px; gap: 8px; }
-  .preview-heading > span { min-width: 0; font-size: 12px; gap: 6px; }
+  .preview-heading > span { min-width: 0; font-size: 14px; gap: 6px; }
   .preview-heading > span > svg { display: none; }
 }
 .preview-empty { text-align: center; padding: 40px 28px; margin: auto; max-width: 470px; }
@@ -288,13 +288,13 @@ summary::-webkit-details-marker { display: none; }
 }
 /* Conversation output stays plain text, with separate state and accounting notices. */
 .assistant-message { margin: 16px 0 24px; padding: 0 4px; color: #252a29; }
-.assistant-message > span { display:block; color:#6a726e; font-size:11px; margin-bottom:8px; }
+.assistant-message > span { display:block; color:#6a726e; font-size:14px; margin-bottom:8px; }
 .assistant-message p, .user-message p { white-space:pre-wrap; overflow-wrap:anywhere; }
 .assistant-message small { display:block; color:#65736a; line-height:1.6; margin-top:8px; }
-.chat-connection { font-size:11px; color:#65736a; line-height:1.5; margin:0 4px 10px; }
-.chat-connection small { display:block; margin-top:5px; font-size:10px; }
+.chat-connection { font-size:14px; color:#65736a; line-height:1.5; margin:0 4px 10px; }
+.chat-connection small { display:block; margin-top:5px; font-size:14px; }
 .chat-connection button, .chat-error button { color:#365d44; border:0; background:none; text-decoration:underline; padding:2px 6px; cursor:pointer; }
-.chat-error { font-size:12px; color:#8b4631; line-height:1.5; margin:0 4px 10px; }
+.chat-error { font-size:14px; color:#8b4631; line-height:1.5; margin:0 4px 10px; }
 .chat-error p { margin:0; }
-.chat-stop { border:1px solid #d4dcd4; background:#f6f8f3; border-radius:8px; font-size:11px; padding:8px; cursor:pointer; }
+.chat-stop { border:1px solid #d4dcd4; background:#f6f8f3; border-radius:8px; font-size:14px; padding:8px; cursor:pointer; }
 .chat-stop:disabled, .preference-field button:disabled, .composer-choice button:disabled { opacity:.5; cursor:not-allowed; }

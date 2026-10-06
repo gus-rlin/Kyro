@@ -7,17 +7,31 @@ import { execFileSync } from 'node:child_process';
 
 async function launch(profile, dev = false, scale) {
   const packaged = process.env.KYRO_TEST_EXE;
-  return electron.launch({
+  const app = await electron.launch({
     ...(packaged ? { executablePath: resolve(packaged) } : {}),
     args: [...(packaged ? [] : ['.']), `--kyro-profile=${profile}`, ...(scale ? [`--force-device-scale-factor=${scale}`] : [])],
     env: { ...process.env, KYRO_DESKTOP_DEV: dev ? '1' : '0' },
   });
+  // Window recipes cannot send paid inference, even with a running user runtime.
+  await app.evaluate(({ ipcMain }) => {
+    ipcMain.removeHandler('chat:status');
+    ipcMain.handle('chat:status', () => ({ value: { ready: false, code: 'runtime_unavailable', message: 'Chat indisponible dans cette recette de fenêtres.' } }));
+    ipcMain.removeHandler('chat:send');
+    ipcMain.handle('chat:send', () => { throw new Error('Inference forbidden in window recipes'); });
+  });
+  const page = await app.firstWindow();
+  await page.waitForLoadState('load');
+  // The initial page may already have requested the real runtime status.
+  // Reload after installing fixtures so that response cannot race this recipe.
+  await page.reload();
+  await expect(page.locator('.chat-connection')).toContainText('Chat indisponible dans cette recette de fenêtres.');
+  return app;
 }
 
 async function removeTestProfile(profile) {
   const target = resolve(profile);
   if (dirname(target) !== resolve(tmpdir()) || !basename(target).startsWith('kyro-')) throw new Error('Refusing to remove a profile outside the test temp directory');
-  await rm(target, { recursive: true, force: true });
+  await rm(target, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 }
 
 async function resizeWindow(app, page, width, height) {
@@ -65,21 +79,19 @@ test('opaque window, legacy preferences ignored and sandbox', async () => {
     await expect(page.getByRole('region', { name: 'Chat AI', exact: true })).toBeVisible();
     await expect(page.getByRole('region', { name: 'Terminal', exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Paramètres', exact: true })).toHaveCount(0);
-    await page.getByRole('button', { name: 'Une interface à imaginer', exact: false }).click();
-    await expect(page.getByRole('textbox', { name: 'Votre message' })).toHaveValue(/ses pages, sa navigation/);
+    await page.getByRole('button', { name: 'Structurer mon idée', exact: true }).click();
+    await expect(page.getByRole('textbox', { name: 'Votre message' })).toHaveValue('Aide-moi à structurer mon idée d’application.');
     await expect(page.getByRole('textbox', { name: 'Votre message' })).toBeFocused();
     await expect(page.getByRole('log')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Explorateur', exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Application', exact: true }).locator('svg')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Masquer le chat', exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Nouvelle conversation', exact: true })).toHaveCount(0);
-    await page.getByRole('button', { name: 'Décrire mon idée', exact: true }).click();
-    await expect(page.getByRole('textbox', { name: 'Votre message' })).toBeFocused();
     await page.getByRole('button', { name: 'Utilisateurs', exact: true }).click();
     await expect(page.getByRole('main').getByRole('heading', { name: 'Utilisateurs', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Utilisateurs', exact: true })).toHaveAttribute('aria-current', 'page');
     await page.getByRole('button', { name: 'Application', exact: true }).click();
-    await expect(page.getByRole('textbox', { name: 'Votre message' })).toHaveValue(/ses pages, sa navigation/);
+    await expect(page.getByRole('textbox', { name: 'Votre message' })).toHaveValue('Aide-moi à structurer mon idée d’application.');
     await expect(page.getByRole('complementary', { name: 'Explorateur de fichiers' })).toContainText('Aucun dossier ouvert');
     await expect(page.getByText('Aucun aperçu chargé')).toHaveCount(0);
     await expect(page.locator('.composer-context')).toHaveCount(0);
@@ -97,8 +109,8 @@ test('opaque window, legacy preferences ignored and sandbox', async () => {
     });
     await expect(page.getByRole('complementary', { name: 'Explorateur de fichiers' })).toContainText('App.tsx');
     await expect(page.getByRole('contentinfo', { name: 'État du projet' })).toContainText('Dossier local ouvert');
-    await page.getByRole('button', { name: 'Détails', exact: true }).click();
-    await expect(page.getByRole('dialog', { name: 'État du projet' })).toContainText('vérifications du projet ne sont pas encore connectés');
+    await page.getByRole('button', { name: 'Docs', exact: false }).click();
+    await expect(page.getByRole('dialog', { name: 'Docs · Premiers pas' })).toContainText('budget cumulé');
     await page.keyboard.press('Escape');
     await page.locator('summary').filter({ hasText: /^Modifier$/ }).click();
     await page.getByRole('button', { name: 'Effacer le brouillon' }).click();
@@ -106,10 +118,11 @@ test('opaque window, legacy preferences ignored and sandbox', async () => {
     await page.getByRole('textbox', { name: 'Votre message' }).fill('Créer une application <script>test</script>');
     await page.getByRole('textbox', { name: 'Votre message' }).press('Shift+Enter');
     await page.getByRole('textbox', { name: 'Votre message' }).press('Enter');
-    await expect(page.getByRole('log', { name: 'Conversation' })).toContainText('Créer une application <script>test</script>');
-    await expect(page.getByRole('textbox', { name: 'Votre message' })).toHaveValue('');
-    await page.getByRole('button', { name: 'Saisie vocale', exact: true }).click();
-    await expect(page.getByRole('dialog', { name: 'Saisie vocale' })).toBeVisible();
+    await expect(page.getByRole('alert')).toContainText('Votre brouillon est conservé');
+    await expect(page.getByRole('log', { name: 'Conversation' })).toHaveCount(0);
+    await expect(page.getByRole('textbox', { name: 'Votre message' })).toHaveValue(/Créer une application/);
+    await page.getByRole('button', { name: 'Dicter', exact: true }).click();
+    await expect(page.getByRole('dialog', { name: 'Dicter' })).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).not.toBeVisible();
     await page.getByRole('button', { name: 'Publier', exact: true }).click();
@@ -118,7 +131,7 @@ test('opaque window, legacy preferences ignored and sandbox', async () => {
     await page.getByRole('button', { name: 'Pages', exact: true }).click();
     await page.getByRole('button', { name: 'Application', exact: true }).click();
     await expect(page.getByRole('region', { name: 'Chat AI', exact: true })).toBeVisible();
-    await expect(page.getByRole('log', { name: 'Conversation' })).toContainText('Créer une application');
+    await expect(page.getByRole('textbox', { name: 'Votre message' })).toHaveValue(/Créer une application/);
     await expect(page.getByRole('region', { name: 'Terminal', exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Paramètres', exact: true })).toHaveCount(0);
     await page.locator('summary').filter({ hasText: /^Fichier$/ }).click();
@@ -175,7 +188,7 @@ test('minimum viewport at emulated 100% and 200% display scale', async () => {
       await expectOpaque(page, app);
       await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
       await expect(page.getByRole('textbox', { name: 'Votre message' })).toBeVisible();
-      await expect(page.getByRole('button', { name: 'Saisie vocale', exact: true })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Dicter', exact: true })).toBeVisible();
       expect(await page.evaluate(() => [...document.querySelectorAll('body *')].filter((element) => {
         const hasText = [...element.childNodes].some((node) => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
         return (hasText || element.matches('textarea')) && element.checkVisibility() && parseFloat(getComputedStyle(element).fontSize) < 14;
@@ -194,8 +207,8 @@ test('minimum viewport at emulated 100% and 200% display scale', async () => {
       const publishBounds = await page.getByRole('button', { name: 'Publier', exact: true }).boundingBox();
       const contentWidth = await page.evaluate(() => window.innerWidth);
       expect(publishBounds.x + publishBounds.width).toBeLessThanOrEqual(contentWidth - 138);
-      const startBounds = await page.getByRole('button', { name: 'Décrire mon idée' }).boundingBox();
-      expect(startBounds.y + startBounds.height).toBeLessThan(previewBounds.y + previewBounds.height);
+      const startBounds = await page.getByRole('button', { name: 'Structurer mon idée' }).boundingBox();
+      expect(startBounds.y + startBounds.height).toBeLessThan(statusBounds.y);
       expect(await page.locator('.preview-canvas').evaluate((canvas) => canvas.scrollWidth <= canvas.clientWidth)).toBe(true);
       if (scale === 1) await page.screenshot({ path: '../../docs/suivi/preuves/desktop-refined-compact-20261004.png' });
       await page.locator('summary').filter({ hasText: /^Fichier$/ }).click();
@@ -269,7 +282,7 @@ test('checkout menus select folders, create real worktrees and preserve failures
     await expect(page.getByRole('complementary', { name: 'Explorateur de fichiers' })).not.toContainText('uncommitted.txt');
     await page.locator('.checkout-picker summary').click();
     await page.getByRole('button', { name: 'checkout', exact: false }).click();
-    await expect(page.locator('.checkout-picker summary')).toContainText('main');
+    await expect(page.locator('.checkout-bar')).toContainText('main');
     await expect(page.locator('.checkout-picker')).not.toHaveAttribute('open');
     await expect(page.getByRole('complementary', { name: 'Explorateur de fichiers' })).toContainText('README.md');
     await page.locator('.checkout-picker summary').click();
@@ -291,7 +304,7 @@ test('checkout menus select folders, create real worktrees and preserve failures
     await expect(page.getByRole('textbox', { name: 'Rechercher un worktree' })).toHaveValue('');
     await expect(page.locator('.checkout-picker .workspace-options')).toContainText('feature');
     await page.screenshot({ path: 'test-results/worktree-menu.png' });
-    await page.getByRole('heading', { name: 'Vos idées, en grand.' }).click();
+    await page.locator('.chat-welcome h2').click();
     await expect(page.locator('.checkout-bar details[open]')).toHaveCount(0);
     expect(await page.locator('button').evaluateAll((buttons) => buttons.filter((button) => button.checkVisibility()).every((button) => getComputedStyle(button).boxShadow.includes('inset')))).toBe(true);
   } finally {
@@ -319,12 +332,15 @@ test('development CSS hot reload and occupied port rejection', async () => {
     const page = await app.firstWindow();
     await expectOpaque(page, app);
     expect(page.url()).toBe('http://127.0.0.1:5174/');
-    await writeFile(tokensPath, original.replace('--ink: #222627;', '--ink: #112233;'));
+    const originalInk = /--ink:\s*(#[0-9a-f]{6});/i.exec(original)?.[1];
+    expect(originalInk).toBeTruthy();
+    const originalColor = await page.evaluate(() => getComputedStyle(document.body).color);
+    await writeFile(tokensPath, original.replace(`--ink: ${originalInk};`, '--ink: #112233;'));
     await expect.poll(() => page.evaluate(() => getComputedStyle(document.body).color)).toBe('rgb(17, 34, 51)');
     // Vite's watcher throttles writes on one path for 50 ms.
     await page.waitForTimeout(100);
     await writeFile(tokensPath, original);
-    await expect.poll(() => page.evaluate(() => getComputedStyle(document.body).color)).toBe('rgb(34, 38, 39)');
+    await expect.poll(() => page.evaluate(() => getComputedStyle(document.body).color)).toBe(originalColor);
     const appPath = resolve('src/App.tsx');
     const component = await readFile(appPath, 'utf8');
     try {
@@ -362,12 +378,12 @@ test('redesign suggestions, mobile navigation, themes and reduced motion', async
     await page.getByRole('button', { name: 'Publier', exact: true }).click();
     await assertTypography();
     await page.keyboard.press('Escape');
-    await page.getByRole('button', { name: 'Un processus à simplifier', exact: false }).click();
-    await expect(page.getByRole('textbox', { name: 'Votre message' })).toHaveValue(/les données, les rôles/);
+    await page.getByRole('button', { name: 'Structurer mon idée', exact: true }).click();
+    await expect(page.getByRole('textbox', { name: 'Votre message' })).toHaveValue('Aide-moi à structurer mon idée d’application.');
     await expect(page.getByRole('button', { name: 'Nouvelle conversation', exact: true })).toHaveCount(0);
     await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
     await expect(page.locator('.app')).toHaveCSS('background-color', 'rgb(27, 32, 29)');
-    await expect(page.locator('.start-intro')).toHaveCSS('animation-name', 'none');
+    await expect(page.locator('.assistant-avatar img')).toHaveCSS('animation-name', 'none');
     await assertTypography();
     await page.screenshot({ path: '../../docs/suivi/preuves/desktop-refined-dark-20261004.png' });
     await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
@@ -401,7 +417,8 @@ test('redesign suggestions, mobile navigation, themes and reduced motion', async
     await expect(page.getByRole('textbox', { name: 'Votre message' })).toBeFocused();
     await expect(page.getByRole('textbox', { name: 'Votre message' })).toHaveValue('Aide-moi à structurer mon idée d’application.');
     await page.getByRole('textbox', { name: 'Votre message' }).press('Enter');
-    await expect(page.getByRole('log')).toContainText('Aide-moi à structurer');
+    await expect(page.getByRole('alert')).toContainText('Votre brouillon est conservé');
+    await expect(page.getByRole('textbox', { name: 'Votre message' })).toHaveValue('Aide-moi à structurer mon idée d’application.');
     await assertTypography();
     await page.screenshot({ path: '../../docs/suivi/preuves/desktop-refined-mobile-chat-20261004.png' });
     await resizeWindow(app, page, 320, 700);
@@ -427,18 +444,18 @@ test('creative atelier system reduction and home navigation', async () => {
     await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'no-preference' });
     await expect(page.getByRole('button', { name: /animations/i })).toHaveCount(0);
     await expect(page.locator('.panel-heading h1')).toHaveText('Kyro');
-    const mascot = page.locator('.idea-mascot');
+    const mascot = page.locator('.assistant-avatar img');
     await expect.poll(() => mascot.evaluate((image) => image.complete && image.naturalWidth > 0)).toBe(true);
-    await expect(mascot).toHaveCSS('animation-name', 'idea-float');
+    await expect(mascot).toBeVisible();
     await page.getByRole('textbox', { name: 'Votre message' }).fill('Une idée de test');
     await page.getByRole('button', { name: 'Données', exact: true }).click();
     await page.getByRole('link', { name: 'Kyro accueil' }).click();
-    await expect(page.getByRole('heading', { name: 'Vos idées, en grand.' })).toBeVisible();
+    await expect(page.locator('.chat-welcome')).toContainText('Et si on le');
     await expect(page.getByRole('textbox', { name: 'Votre message' })).toHaveValue('Une idée de test');
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await expect(mascot).toHaveCSS('animation-name', 'none');
     await page.emulateMedia({ reducedMotion: 'no-preference' });
-    await expect(mascot).toHaveCSS('animation-name', 'idea-float');
+    await expect(mascot).toBeVisible();
     await page.getByRole('textbox', { name: 'Votre message' }).fill('');
     await page.screenshot({ path: '../../docs/suivi/preuves/desktop-refined-electron-20261004.png' });
   } finally {
