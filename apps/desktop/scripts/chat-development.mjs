@@ -17,7 +17,7 @@ export function chatDevelopment(chat = service.createChatService(), localOrigin 
         res.once('close', () => controller.abort());
         try {
           const action = req.url?.slice(1);
-          if (!['status', 'send', 'cancel', 'watch'].includes(action)) { res.statusCode = 404; res.end('{}'); return; }
+          if (!['status', 'send', 'cancel', 'watch', 'plansProjects', 'plansStatus', 'plansList', 'plansStart', 'plansRead', 'plansExecute', 'plansCancel', 'plansUsage'].includes(action)) { res.statusCode = 404; res.end('{}'); return; }
           let body = '', bytes = 0;
           const decoder = new TextDecoder('utf-8', { fatal: true });
           for await (const chunk of req) {

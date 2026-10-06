@@ -1,5 +1,6 @@
 param([ValidateSet('Prepare','RefreshPins','RefreshTls','Start','Stop','Status')][string]$Action = 'Status',
-    [Alias('Profile')][ValidateSet('P1','Chat')][string]$RuntimeProfile = 'P1')
+    [Alias('Profile')][ValidateSet('P1','Chat')][string]$RuntimeProfile = 'P1',
+    [string]$RuntimeImage = '')
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $runtimeAction = $Action
@@ -19,7 +20,7 @@ $env:KYRO_NEBIUS_OIDC_PORT = "$oidcPort"
 $env:KYRO_NEBIUS_CONTROL_PORT = "$controlPort"
 $env:KYRO_NEBIUS_SUBNET_PREFIX = $networkPrefix
 $env:KYRO_NEBIUS_OUTBOUND_SUBNET = if ($isChat) { '10.248.76.0/24' } else { '10.248.74.0/24' }
-$env:KYRO_NEBIUS_IMAGE = if ($isChat) { 'kyro-nebius-chat:local' } else { 'kyro-nebius-p1:local' }
+$env:KYRO_NEBIUS_IMAGE = if ($RuntimeImage) { $RuntimeImage } elseif ($isChat) { 'kyro-nebius-chat:local' } else { 'kyro-nebius-p1:local' }
 $env:KYRO_NEBIUS_STATE = $state.Replace('\','/')
 $compose = Join-Path $repo 'compose.p1.nebius.yaml'
 $utf8 = [Text.UTF8Encoding]::new($false)

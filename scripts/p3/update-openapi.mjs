@@ -47,6 +47,9 @@ const operation=(operationId,method,schema,{body=null,creation=false,parameters=
 });
 const collection='/v1/projects/{project_id}/plans';
 const item=`${collection}/{run_id}`;
+s.AgentCapabilities=object({configured:{type:'boolean'},code:text(64),synthetic:{type:'boolean'},roles:array(object({role:ref('AgentRole'),model:text(256)}),7),executor_count:integer(0,4),component_count:integer(),tools:array(object({id:text(64),label:text(128),available:{type:'boolean'}}),5)});
+s.AgentCapabilities.description='Authenticated read-only runtime inventory. Configured tools confer no project permissions, budget or provider policy; mutations recheck these independently.';
+doc.paths[`${collection}/capabilities`]={parameters:[param('ProjectId')],get:operation('getAgentCapabilities','get',ref('AgentCapabilities'))};
 doc.paths[collection]={parameters:[param('ProjectId')],get:operation('listAgentRuns','get',array(ref('AgentRun'),32)),post:operation('createAgentRun','post',ref('AgentRun'),{body:'StartAgentRequest',creation:true})};
 doc.paths[item]={parameters:[param('ProjectId'),param('AgentRunId')],get:operation('getAgentRun','get',ref('AgentRun')),delete:operation('cancelAgentRun','delete',ref('AgentRun'))};
 for(const [suffix,id,body,method] of [['advance','advanceAgentRun',null,'post'],['execute','executeAgentPlan',null,'post'],['instructions','reviseAgentInstructions','AgentInstruction','post'],['compaction','compactAgentRole','AgentCompaction','post'],['contract','replaceAgentContract','AgentPlan','put']]) {

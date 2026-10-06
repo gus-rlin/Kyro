@@ -10,6 +10,7 @@ run status, results, evidence, provider keys or grants through these endpoints.
 | --- | --- | --- |
 | collection | GET | Latest 32 actor-visible runs |
 | collection | POST | Capture AppSpec revision and queue orchestration |
+| `/capabilities` | GET | Actor-visible configured roles, executor count and tools; no authority or budget is granted |
 | `/{run_id}` | GET | Current authoritative run |
 | `/{run_id}` | DELETE | Cancel active work; keep history and effects |
 | `/{run_id}/advance` | POST | One deterministic transition |

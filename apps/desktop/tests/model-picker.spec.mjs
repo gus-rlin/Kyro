@@ -22,7 +22,7 @@ test('Nano menus restrict models and tools, preserve context and support keyboar
     await expect(picker).toContainText('Nano');
     await picker.focus();
     await picker.press('Enter');
-    await expect(panel).toContainText('Sous-agents indisponibles');
+    await expect(panel).toContainText('choisissez le mode Agents');
     await expect(panel.getByRole('button', { name: 'Plus de sous-agents' })).toHaveCount(0);
     await model.press('ArrowDown');
     const nano = choices.getByRole('button', { name: /^Nemotron 3 Nano/ });

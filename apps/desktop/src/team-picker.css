@@ -1,8 +1,28 @@
 /* The composer is the anchor; disclosures stay within the chat column. */
+.agent-modes { display:flex; gap:8px; margin-bottom:20px; }
+.agent-modes button { padding:8px 14px; border:1px solid var(--line); border-radius:10px; }
+.agent-modes button[aria-pressed=true] { background:var(--lavender); color:var(--accent-text); }
+.agent-team-panel { font-size:14px; line-height:1.6; }
+.agent-team-panel p { font-size:14px; overflow-wrap:anywhere; color:var(--muted); }
+.agent-role { margin-bottom:12px; }
+.agent-team-panel ul { padding-left:20px; margin-top:8px; }
+.agent-workspace { padding:20px; font-size:14px; line-height:1.6; }
+.agent-workspace label, .composer-preferences-panel label { display:block; margin-bottom:16px; }
+.agent-workspace select, .composer-preferences-panel select { display:block; width:100%; min-width:0; margin-top:6px; padding:10px; background:var(--paper); color:var(--ink); border:1px solid var(--line); border-radius:10px; font-size:14px; }
+.agent-intro h2 { font-size:24px; margin:28px 0 12px; }
+.agent-intro p { margin-bottom:12px; color:var(--muted); }
+.agent-plan header { display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between; }
+.agent-plan p { margin:14px 0; white-space:pre-wrap; overflow-wrap:anywhere; }
+.agent-plan ol { padding-left:22px; }
+.agent-plan li { margin-bottom:12px; }
+.agent-plan small { display:block; font-size:14px; color:var(--muted); overflow-wrap:anywhere; }
+.agent-plan footer { display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
+.agent-plan footer button { border:1px solid var(--line); border-radius:10px; padding:9px 12px; }
+.composer-preferences-panel p { font-size:14px; line-height:1.6; margin-top:12px; }
 .composer-controls { flex-wrap: nowrap; gap: 4px; }
 .composer-controls > .composer-actions { gap: 4px; flex: 0 0 auto; }
 .team-picker { min-width: 0; }
-.team-trigger { display: flex; align-items: center; gap: 7px; min-height: 36px; padding: 6px 7px; list-style: none; border-radius: 10px; cursor: pointer; color: var(--muted); font-size: 12px; }
+.team-trigger { display: flex; align-items: center; gap: 7px; min-height: 36px; padding: 6px 7px; list-style: none; border-radius: 10px; cursor: pointer; color: var(--muted); font-size: 14px; }
 .team-trigger > svg { flex: 0 0 auto; }
 .team-trigger-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .team-trigger-label strong { color: var(--ink); font-weight: 650; }
@@ -40,7 +60,7 @@
   .team-role { grid-template-columns: 28px minmax(0, 1fr); gap: 10px; }
   .team-role-icon { width: 28px; height: 28px; }
   .team-capacity { margin-left: 38px; }
-  .team-trigger { gap: 5px; padding-inline: 3px; font-size: 11px; }
+  .team-trigger { gap: 5px; padding-inline: 3px; font-size: 14px; }
   .team-trigger-dot { margin-inline: 4px; }
 }
 @media (prefers-reduced-motion: no-preference) {

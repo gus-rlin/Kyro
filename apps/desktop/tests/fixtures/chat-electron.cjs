@@ -5,7 +5,7 @@ const {pathToFileURL}=require('node:url');
 const {createChatService}=require('../../electron/chat.cjs');
 const {registerChatIpc}=require('../../electron/chat-ipc.cjs');
 app.setPath('userData',process.env.KYRO_TEST_CHAT_STATE);
-const chat=createChatService({stateDir:process.env.KYRO_TEST_CHAT_STATE,vaultPath:join(process.env.KYRO_TEST_CHAT_STATE,'synthetic-vault'),origin:'http://127.0.0.1:58690',oidcOrigin:'http://127.0.0.1:59690',syntheticTest:true});
+const chat=createChatService({stateDir:process.env.KYRO_TEST_CHAT_STATE,vaultPath:join(process.env.KYRO_TEST_CHAT_STATE,'synthetic-vault'),origin:process.env.KYRO_CHAT_TEST_API_ORIGIN || 'http://127.0.0.1:58690',oidcOrigin:'http://127.0.0.1:59690',syntheticTest:true});
 let drop=true;
 const transport={...chat,async watch(job,after,onEvent,signal){
   const interruption=new AbortController();

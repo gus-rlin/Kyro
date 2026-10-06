@@ -22,6 +22,10 @@ pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/v1/projects/{project_id}/plans", get(list).post(create))
         .route(
+            "/v1/projects/{project_id}/plans/capabilities",
+            get(capabilities),
+        )
+        .route(
             "/v1/projects/{project_id}/plans/{run_id}",
             get(read).delete(cancel),
         )
@@ -112,6 +116,47 @@ fn coordinator(state: &AppState) -> std::result::Result<&kyro_agents::Coordinato
         .agents
         .as_deref()
         .ok_or_else(|| ApiError::from(Error::Unavailable))
+}
+/// Read-only inventory: model choices and tools are server-owned, never client grants.
+async fn capabilities(
+    State(state): State<AppState>,
+    actor: AuthActor,
+    ApiPath(project): ApiPath<Uuid>,
+) -> std::result::Result<Json<serde_json::Value>, ApiError> {
+    identity::authorize_project(&state, &actor, project, "read").await?;
+    let Some(coordinator) = state.agents.as_ref() else {
+        return Ok(Json(serde_json::json!({
+            "configured": false, "code": "agents_unconfigured", "synthetic": false,
+            "roles": [], "tools": [], "executor_count": 0, "component_count": 0
+        })));
+    };
+    let catalogue = coordinator.factory.current_catalogue(&state.store).await?;
+    let component_count = catalogue
+        .catalogue
+        .entries
+        .values()
+        .flat_map(|versions| versions.values())
+        .filter(|entry| entry.admission == kyro_factory::catalogue::Admission::Admitted)
+        .count();
+    let roles: Vec<_> = coordinator
+        .config
+        .roles
+        .iter()
+        .map(|(role, choice)| serde_json::json!({"role": role, "model": choice.model}))
+        .collect();
+    Ok(Json(serde_json::json!({
+        "configured": component_count > 0,
+        "code": if component_count > 0 { "configured" } else { "catalogue_empty" },
+        "synthetic": coordinator.config.synthetic, "roles": roles,
+        "executor_count": Role::EXECUTORS.len(), "component_count": component_count,
+        "tools": [
+            {"id":"plan", "label":"Planifier avec le catalogue", "available":component_count > 0},
+            {"id":"compose", "label":"Composer des changements déclaratifs", "available":component_count > 0},
+            {"id":"review", "label":"Revue et sécurité", "available":true},
+            {"id":"build", "label":"Construire et vérifier un candidat", "available":component_count > 0},
+            {"id":"publish", "label":"Publier", "available":false}
+        ]
+    })))
 }
 async fn create(
     State(state): State<AppState>,

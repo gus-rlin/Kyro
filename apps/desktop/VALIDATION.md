@@ -1,5 +1,28 @@
 # Validation de la livraison frontend — 2026-10-04
 
+## Raccordement P3 — 2026-10-06
+
+Build réussi ; suite frontend 21 réussites/quatre intégrations Chat ignorées
+en 48,7 s, puis test Electron P3 ajouté et réussi en 2,0 s. Trois recettes
+navigateur P3 utilisent un backend simulé ; la recette Electron utilise des
+handlers IPC synthétiques. Treize tests des transports Chat/P3 réussis.
+Le contrôle de l'API réelle couvre l'inventaire non configuré et les refus
+d'accès ; aucune génération réelle P3 n'est prouvée par ces essais.
+[Guide P3](../../docs/backend/partie-3/IDE.md).
+
+## Consolidation initiale — 2026-10-06
+
+La branche `gus-rlin/kyro-integration` conserve les résultats historiques
+ci-dessous et résout les six échecs desktop. Build TypeScript/Vite et huit
+tests du service de chat passent. Suite frontend complète avec PostgreSQL,
+API/worker récents et fournisseur synthétique : **22/22 réussis**, zéro échec
+ou ignoré, 89,37 s. Le détail du périmètre, du lancement et des limites est
+dans [le guide d'intégration](../../docs/backend/INTEGRATION.md).
+Après stabilisation du chargement des fixtures avec le runtime utilisateur
+actif, les six scénarios desktop passent à nouveau en 17,9 s.
+
+## Résultats historiques
+
 Branche issue de main cfbe218 ; copie des sources actuelles de notre interface, sans modification du backend. Environnement Windows x64, Node.js 24.18.0.
 
 - npm ci : réussi. Le téléchargement différé du binaire Electron échoue avec « fetch failed ». Pour la suite, réutilisation du binaire local Electron 44.5.1 déjà installé ; aucune dépendance binaire versionnée. L’installation entièrement neuve reste à vérifier sur un réseau permettant ce téléchargement.

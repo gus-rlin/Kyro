@@ -2354,6 +2354,64 @@
           }
         }
       }
+    },
+    "/v1/projects/{project_id}/plans/capabilities": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        }
+      ],
+      "get": {
+        "operationId": "getAgentCapabilities",
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Actor-scoped result; no-store",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentCapabilities"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "412": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "428": {
+            "$ref": "#/components/responses/Error"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -6815,6 +6873,89 @@
           "role"
         ],
         "additionalProperties": false
+      },
+      "AgentCapabilities": {
+        "type": "object",
+        "properties": {
+          "configured": {
+            "type": "boolean"
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "synthetic": {
+            "type": "boolean"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "role": {
+                  "$ref": "#/components/schemas/AgentRole"
+                },
+                "model": {
+                  "type": "string",
+                  "maxLength": 256
+                }
+              },
+              "required": [
+                "role",
+                "model"
+              ],
+              "additionalProperties": false
+            },
+            "maxItems": 7
+          },
+          "executor_count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4
+          },
+          "component_count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "tools": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "maxLength": 64
+                },
+                "label": {
+                  "type": "string",
+                  "maxLength": 128
+                },
+                "available": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "label",
+                "available"
+              ],
+              "additionalProperties": false
+            },
+            "maxItems": 5
+          }
+        },
+        "required": [
+          "configured",
+          "code",
+          "synthetic",
+          "roles",
+          "executor_count",
+          "component_count",
+          "tools"
+        ],
+        "additionalProperties": false,
+        "description": "Authenticated read-only runtime inventory. Configured tools confer no project permissions, budget or provider policy; mutations recheck these independently."
       }
     }
   }

@@ -19,6 +19,7 @@ Permissions, provider configuration, source code, verification criteria and
 release evidence are server-owned.
 
 - [Contracts and HTTP commands](CONTRATS.md)
+- [IDE composer and runtime inventory](IDE.md)
 - [Architecture and recovery](ARCHITECTURE.md)
 - [Operator setup and reproduction](OPERATIONS.md)
 - [Acceptance criteria and evidence boundaries](ACCEPTATION.md)

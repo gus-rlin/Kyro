@@ -1,9 +1,10 @@
+import type { PlansBridge } from './plans-api';
 export type ChatMessage = { role: 'user' | 'assistant'; content: string };
 export type ChatInput = { key: string; messages: ChatMessage[]; contextTokens: number };
 export type ChatStatus = { ready: boolean; code?: string; message: string; budget?: {spentUsd:number; reservedUsd:number; limitUsd:number} };
 export type ChatEvent = { type: 'delta' | 'complete'; id?: string; data: {text?:string; status?:string; error_code?:string; effect_status?:string; output?:{text:string;truncated:boolean}} };
 type Reply<T> = { value?: T; error?: string; code?:string };
-type NativeChat = {
+type NativeChat = PlansBridge & {
   status(): Promise<Reply<ChatStatus>>;
   send(input:ChatInput):Promise<Reply<{jobId:string}>>;
   cancel(jobId:string):Promise<Reply<unknown>>;
