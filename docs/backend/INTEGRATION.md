@@ -1,5 +1,11 @@
 # Version locale intégrée — 2026-10-06
 
+Mise à jour du composeur : modes Conversation/Agents et commandes P3 reliées
+au backend. [Parcours, configuration et validation](partie-3/IDE.md).
+Le runtime local récent utilise `kyro-composeur:local` ; il signale explicitement
+l'absence d'équipe P3 au lieu de présenter des sous-agents simulés comme actifs.
+Les contrôles ci-dessous restent ceux de la consolidation initiale.
+
 La branche `gus-rlin/kyro-integration` réunit `main` a12e1ce (frontend,
 chat corrigé et P2) et P3 avec ses corrections de revue 3ec918b. Les worktrees
 d'origine sont préservés. Les modifications historiques de desktop-glass ne
@@ -75,8 +81,9 @@ Docker automatiques étaient épuisés et Windows réservait le port de test
 
 P3 est présente côté backend. La configuration de l'équipe, de la fabrique et
 l'admission du catalogue restent des opérations distinctes décrites dans
-[P3](partie-3/OPERATIONS.md). Le composeur actuel est le chat Nano : il ne
-pilote pas encore les plans P3. L'aperçu d'une application générée et sa
+[P3](partie-3/OPERATIONS.md). Le composeur peut désormais proposer, suivre,
+exécuter et annuler les plans P3 lorsque ce runtime est configuré. Le service
+Chat actif reste sans équipe P3. L'aperçu d'une application générée et sa
 publication restent à raccorder. Aucune qualification générale de production,
 nouvelle preuve NVIDIA ou nouvelle attestation de catalogue n'est revendiquée.
 

@@ -1,6 +1,16 @@
 # Validation de la livraison frontend — 2026-10-04
 
-## Mise à jour — 2026-10-06
+## Raccordement P3 — 2026-10-06
+
+Build réussi ; suite frontend 21 réussites/quatre intégrations Chat ignorées
+en 48,7 s, puis test Electron P3 ajouté et réussi en 2,0 s. Trois recettes
+navigateur P3 utilisent un backend simulé ; la recette Electron utilise des
+handlers IPC synthétiques. Treize tests des transports Chat/P3 réussis.
+Le contrôle de l'API réelle couvre l'inventaire non configuré et les refus
+d'accès ; aucune génération réelle P3 n'est prouvée par ces essais.
+[Guide P3](../../docs/backend/partie-3/IDE.md).
+
+## Consolidation initiale — 2026-10-06
 
 La branche `gus-rlin/kyro-integration` conserve les résultats historiques
 ci-dessous et résout les six échecs desktop. Build TypeScript/Vite et huit

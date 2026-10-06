@@ -7,6 +7,8 @@ import { useTooltip } from './useTooltip';
 import { type TeamConfiguration } from './team-models';
 import { ComposerSettings, defaultPreferences, type ComposerPreferences } from './ComposerSettings';
 import { useChat } from './useChat';
+import { usePlans } from './usePlans';
+import { PlanView } from './PlanView';
 import { ProjectFlow, type ProjectRequest } from './ProjectFlow';
 import { workspaceApi } from './workspace-api';
 import mascot from './assets/kyro-spark.png';
@@ -103,6 +105,9 @@ export function App() {
   const [team, setTeam] = useState<TeamConfiguration>({orchestrator:'nano',worker:'nano',workers:0});
   const [preferences, setPreferences] = useState<ComposerPreferences>(defaultPreferences);
   const chat = useChat();
+  const [mode, setMode] = useState<'conversation' | 'agents'>('conversation');
+  const [contextBytes, setContextBytes] = useState(16384);
+  const plans = usePlans(mode === 'agents');
   const [notice, setNotice] = useState<Notice | null>(null);
   const composer = useRef<HTMLTextAreaElement>(null);
   const dialog = useRef<HTMLDialogElement>(null);
@@ -134,8 +139,13 @@ export function App() {
     };
   }, []);
 
-  function send(event: FormEvent) {
+  async function send(event: FormEvent) {
     event.preventDefault();
+    if (mode === 'agents') {
+      const submitted = draft;
+      if (await plans.start(submitted, contextBytes)) setDraft(old => old === submitted ? '' : old);
+      return;
+    }
     if (!chat.send(draft,preferences.contextTokens)) return;
     setDraft('');
     composer.current?.focus();
@@ -143,6 +153,10 @@ export function App() {
   function prepareDraft(prompt: string) {
     setDraft(prompt);
     focusComposer();
+  }
+  async function retryPlan() {
+    const request = await plans.retry();
+    if (request) setDraft(old => old.trim() === request ? '' : old);
   }
   function focusComposer() {
     setSection('Application');
@@ -247,14 +261,25 @@ export function App() {
         <section className="chat-panel" aria-label="Chat AI">
           <header className="panel-heading"><h1><span className="assistant-avatar"><img src={mascot} alt="" width="40" height="40" /></span> Kyro</h1></header>
           <div className="conversation" ref={conversation}>
+            {mode === 'agents' ? <div className="agent-workspace">
+              <label>Projet de construction<select aria-label="Projet de construction" value={plans.projectId} disabled={plans.busy || plans.uncertain} onChange={event => plans.selectProject(event.target.value)}><option value="">Choisir un projet backend</option>{plans.projects.map(project => <option key={project.id} value={project.id}>{project.name}</option>)}</select></label>
+              {plans.runs.length > 1 && <label>Plans précédents<select aria-label="Plans précédents" value={plans.run?.id || ''} disabled={plans.busy} onChange={event => plans.selectRun(plans.runs.find(run => run.id === event.target.value) || null)}>{plans.runs.map(run => <option key={run.id} value={run.id}>{run.request.slice(0,80)}</option>)}</select></label>}
+              {plans.run ? <PlanView run={plans.run} busy={plans.busy} execute={() => void plans.execute()} cancel={() => void plans.cancel()} /> : <div className="agent-intro"><h2>De l’idée au plan.</h2><p>Décrivez votre application. L’orchestrateur proposera les tâches et les blocs du catalogue avant leur exécution.</p><p>Pixel, Moka, Kiwi et Biscotte composent les changements ; deux revues précèdent la vérification du candidat.</p></div>}
+            </div> : <>
             {chat.turns.length === 0 ? <div className="chat-welcome"><span className="welcome-mark"><Sparkle size={34} weight="fill" /></span><h2>Et si on le<br />construisait ?</h2><p>Une idée en vrac, une envie précise…<br />Écrivez comme vous pensez.</p><button className="chat-suggestion" onClick={() => prepareDraft('Aide-moi à structurer mon idée d’application.')}><span>Structurer mon idée</span><ArrowUpRight size={18} /></button><span className="welcome-footnote">Les belles idées commencent par un échange.</span></div> : <div className="message-list" role="log" aria-label="Conversation">{chat.turns.map((turn) => <div key={turn.id}><article className="user-message"><span>Vous</span><p>{turn.user}</p></article><article className="assistant-message" data-state={turn.state}><span>Kyro · Nano</span><p>{turn.assistant || (turn.state==='waiting'?'En attente de Nano…':turn.state==='generating'?'Nano répond…':'')}</p>{turn.state==='generating' && <small>Génération en cours…</small>}{turn.note && <small className="chat-turn-note">{turn.note}</small>}</article></div>)}</div>}
+            </>}
           </div>
           <div className="composer-area">
+            {mode === 'agents' ? <>
+              <div className="chat-connection" role="status"><span>{!plans.projectId ? 'Choisissez le projet à construire.' : plans.status?.configured ? `Équipe ${plans.status.synthetic ? 'synthétique' : 'P3'} · ${plans.status.component_count} versions de blocs admises` : plans.status?.code === 'agents_unconfigured' ? 'Le runtime actif n’a pas encore d’équipe P3 configurée.' : plans.status?.code === 'catalogue_empty' ? 'Le catalogue ne contient aucun bloc admis.' : 'Lecture de l’équipe…'}</span>{plans.projectId && <button type="button" disabled={plans.busy} onClick={() => void plans.refresh()}>Revérifier les agents</button>}{plans.status?.budget && <small>Budget au dernier contrôle : {((plans.status.budget.limit - plans.status.budget.spent - plans.status.budget.reserved) / plans.status.budget.scale).toFixed(4)} {plans.status.budget.currency} disponibles · aucune augmentation automatique.</small>}</div>
+              {plans.error && <div className="chat-error" role="alert"><p>{plans.error}</p>{plans.uncertain && <button type="button" disabled={plans.busy} onClick={() => void retryPlan()}>Reprendre la demande de plan</button>}</div>}
+            </> : <>
             <div className="chat-connection" role="status"><span>{chat.status.message}</span>{!chat.status.ready && <button type="button" onClick={()=>void chat.refresh()}>Revérifier</button>}{chat.status.budget && <small>Plafond cumulé : 1 € · estimations tarifaires : {chat.status.budget.spentUsd.toFixed(4)} $ consommés, {chat.status.budget.reservedUsd.toFixed(4)} $ réservés / {chat.status.budget.limitUsd.toFixed(4)} $.</small>}</div>
             {chat.error && <div className="chat-error" role="alert"><p>{chat.error}</p>{chat.recoverable && <button type="button" onClick={()=>void chat.retry()}>Reprendre</button>}</div>}
+            </>}
             <form className="composer" onSubmit={send}>
               <textarea ref={composer} aria-label="Votre message" placeholder="Qu’aimeriez-vous créer ?" value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} />
-              <div className="composer-controls"><TeamPicker team={team} onChange={setTeam} chatOnly /><div className="composer-actions"><ComposerSettings preferences={preferences} onChange={setPreferences} chatOnly /><button className="icon-button voice-button" type="button" {...voiceTooltip.triggerProps} aria-label="Dicter" onClick={() => { voiceTooltip.hide(); setNotice({ title: 'Dicter', body: 'La saisie vocale n’est pas encore connectée. Vous pouvez écrire votre message dans le chat.' }); }}><Microphone size={18} /></button>{chat.busy?<button className="chat-stop" type="button" disabled={!chat.canStop} onClick={()=>void chat.stop()}>Arrêter</button>:<button className="send-button" type="submit" {...sendTooltip.triggerProps} aria-label="Envoyer le message" disabled={!draft.trim()}><ArrowUp size={18} weight="bold" /></button>}</div></div>
+              <div className="composer-controls"><TeamPicker team={team} onChange={setTeam} chatOnly mode={mode} agents={plans.status} onMode={next => { if (!plans.busy && !plans.uncertain && !chat.busy) setMode(next); }} /><div className="composer-actions">{mode === 'agents' ? <details className="composer-preferences" name="application-menu"><summary aria-label="Réglages du plan"><ShieldCheck size={18}/></summary><section className="composer-preferences-panel" aria-label="Réglages du plan"><h2>Limites du plan</h2><label>Contexte par agent<select value={contextBytes} onChange={event => setContextBytes(Number(event.target.value))}><option value={4096}>4 Ko</option><option value={8192}>8 Ko</option><option value={16384}>16 Ko</option></select></label><p>32 appels maximum, 4 096 tokens de sortie par appel, délai de 30 secondes. Le budget et les permissions du projet restent appliqués par le serveur.</p><p>Un plan est proposé avant l’exécution. Aucun accès au shell, au web ou aux fichiers locaux n’est accordé aux modèles.</p></section></details> : <ComposerSettings preferences={preferences} onChange={setPreferences} chatOnly />}<button className="icon-button voice-button" type="button" {...voiceTooltip.triggerProps} aria-label="Dicter" onClick={() => { voiceTooltip.hide(); setNotice({ title: 'Dicter', body: 'La saisie vocale n’est pas encore connectée. Vous pouvez écrire votre message dans le chat.' }); }}><Microphone size={18} /></button>{mode === 'conversation' && chat.busy?<button className="chat-stop" type="button" disabled={!chat.canStop} onClick={()=>void chat.stop()}>Arrêter</button>:<button className="send-button" type="submit" {...sendTooltip.triggerProps} aria-label={mode === 'agents' ? 'Proposer un plan' : 'Envoyer le message'} disabled={!draft.trim() || (mode === 'agents' && (plans.busy || plans.uncertain))}><ArrowUp size={18} weight="bold" /></button>}</div></div>
             </form>
             {voiceTooltip.tooltip}{sendTooltip.tooltip}<WorkspacePicker selected={selectedWorkspace} recent={recentWorkspaces} openDirectory={openDirectory} select={remember} acceptNative={acceptNative} newProject={() => setProjectRequest({ kind: 'new' })} />
           </div>
@@ -266,7 +291,7 @@ export function App() {
       <footer className="verification-bar" aria-label="État du projet">
         <span>{selectedWorkspace ? 'Dossier local ouvert' : 'Prêt à démarrer'}</span>
         <span>{selectedWorkspace ? 'Décrivez la prochaine étape dans le chat' : 'Créez un projet ou ouvrez un dossier'}</span>
-        <button className="status-details" onClick={() => setNotice({ title: 'Docs · Premiers pas', body: 'Le chat Nano est utilisable dès l’accueil lorsque le runtime Nebius, la politique de données du compte et le budget sont configurés. Seuls vos messages sont envoyés ; aucun fichier du dossier choisi n’est joint. L’historique visible disparaît au rechargement. Les traces des jobs et le budget cumulé de 1 € restent durables. Les plans d’agents, l’aperçu des applications générées et la publication restent à raccorder à cette interface.' })}>Docs <ArrowUpRight size={13} /></button>
+        <button className="status-details" onClick={() => setNotice({ title: 'Docs · Premiers pas', body: 'Choisissez Conversation pour échanger avec Nano, ou Agents pour proposer un plan sur un projet backend. Le mode Agents utilise l’équipe et le catalogue configurés dans le runtime P3. Le budget cumulé et les permissions du projet restent appliqués par le serveur. Un plan proposé peut être exécuté, suivi et annulé ici. Aucun fichier du dossier choisi n’est automatiquement joint. L’aperçu des applications générées et la publication restent à raccorder.' })}>Docs <ArrowUpRight size={13} /></button>
       </footer>
 
       <dialog ref={dialog} className="notice-dialog" onClose={() => setNotice(null)} onClick={(event) => { if (event.target === event.currentTarget) dialog.current?.close(); }} aria-labelledby="notice-title">

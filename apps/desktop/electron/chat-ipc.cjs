@@ -1,7 +1,7 @@
 // Narrow transport shared by the application and the Electron integration fixture.
 function registerChatIpc(ipcMain, chat, authorize) {
   const streams = new Map();
-  for (const action of ['status', 'send', 'cancel']) {
+  for (const action of ['status', 'send', 'cancel', 'plansProjects', 'plansStatus', 'plansList', 'plansStart', 'plansRead', 'plansExecute', 'plansCancel', 'plansUsage']) {
     ipcMain.handle(`chat:${action}`, async (event, value) => {
       authorize(event);
       try { return { value: await chat[action](value) }; }

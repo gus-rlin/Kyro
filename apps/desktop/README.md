@@ -27,7 +27,7 @@ Le chat Nano utilise un runtime local séparé. Depuis la racine, après configu
 
 Pour utiliser une image locale construite depuis cette branche, ajouter `-RuntimeImage kyro-integration:3ec918b`. Ce nom correspond à l'image locale de développement construite pendant l'intégration ; elle n'est pas publiée. Une installation neuve peut construire sa propre image depuis le Dockerfile du dépôt. Le lancement conserve le projet, les données et le budget existants ; il n'envoie pas de message modèle. L'interface indique un runtime indisponible quand ce service est arrêté.
 
-Les commandes P3 sont accessibles par API après configuration de l'équipe, de la fabrique et admission du catalogue. Le composeur actuel reste le chat Nano : il ne lance pas les plans P3. L'aperçu d'une application générée et la publication restent à raccorder.
+Le composeur propose Conversation (Nano) et Agents (P3). Le mode Agents choisit un projet backend, consulte son équipe/outils, propose un plan puis permet son exécution, son suivi et son annulation. Le runtime doit configurer l'équipe, la fabrique et admettre le catalogue ; le runtime Chat seul signale cette absence. [Parcours et validation P3](../../docs/backend/partie-3/IDE.md). L'aperçu d'une application générée et la publication restent à raccorder.
 
 ## Vérification
 
@@ -48,6 +48,6 @@ Les tests Electron nécessitent une session graphique Windows. Ils utilisent des
 - Équipe NVIDIA : sélection orchestrateur/sous-agents, effectif, comparaisons tarifaires documentées dans `src/team-models.ts`.
 - Préférences d’accès, raisonnement et contexte avec confirmation de l’accès complet.
 
-Les messages du chat sont envoyés à Nano lorsque son runtime et la politique du compte sont configurés. Aucun fichier du dossier choisi n'est automatiquement joint. Les traces et le budget sont persistés côté backend ; l'historique visible disparaît au rechargement. La capture microphone, la publication et le pilotage des plans P3 depuis le composeur ne sont pas connectés. Le choix « Accès complet » n’accorde pas de nouveaux droits système. Le paquet est non signé. Les binaires, dépendances installées et fichiers de configuration privés ne sont pas versionnés ; le lockfile, les sources et les instructions permettent leur reconstruction.
+Les messages du chat sont envoyés à Nano lorsque son runtime et la politique du compte sont configurés. Aucun fichier du dossier choisi n'est automatiquement joint. Les traces et le budget sont persistés côté backend ; l'historique visible du chat disparaît au rechargement, les plans P3 restent lisibles depuis leur projet. La capture microphone et la publication ne sont pas connectées. Le choix « Accès complet » n’accorde pas de nouveaux droits système. Le paquet est non signé. Les binaires, dépendances installées et fichiers de configuration privés ne sont pas versionnés ; le lockfile, les sources et les instructions permettent leur reconstruction.
 
 Les composants tiers et leurs conditions sont documentés dans [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

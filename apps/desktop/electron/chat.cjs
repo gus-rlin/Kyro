@@ -2,6 +2,7 @@ const { readFile, writeFile, rename, mkdir, unlink, rmdir } = require('node:fs/p
 const { join } = require('node:path');
 const { homedir } = require('node:os');
 const { createHash } = require('node:crypto');
+const { createPlansService } = require('./plans.cjs');
 
 const MODEL = 'nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -66,9 +67,15 @@ function createChatService(options = {}) {
     }
     return response;
   }
-  async function jsonRequest(path, opts) {
-    const response=await request(path,opts); const text=await response.text();
-    if(Buffer.byteLength(text)>131072) throw new Error('Response too large');
+  async function jsonRequest(path, opts, maxBytes = 131072) {
+    const response=await request(path,opts);
+    const chunks=[]; let bytes=0;
+    for await (const chunk of response.body || []) {
+      bytes+=chunk.length;
+      if(bytes>maxBytes) throw new Error('Response too large');
+      chunks.push(chunk);
+    }
+    const text=Buffer.concat(chunks).toString('utf8');
     const data=text?JSON.parse(text):null;
     if(!response.ok) { const error=new Error(failures[data?.error?.code] || 'Le service local a refusé la demande. Vérifiez le runtime puis réessayez.'); error.code=data?.error?.code; throw error; }
     return { response,data };
@@ -141,6 +148,12 @@ function createChatService(options = {}) {
     await initPromise;
   }
   return {
+    ...createPlansService({ jsonRequest, async ensureSession() {
+      if (!session) {
+        if (!renewalPromise) renewalPromise = login().finally(() => { renewalPromise = null; });
+        await renewalPromise;
+      }
+    } }),
     async close() {
       if(session?.csrf) {
         try {

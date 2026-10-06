@@ -1,5 +1,13 @@
 const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('kyroChat', {
+  plansProjects: () => ipcRenderer.invoke('chat:plansProjects'),
+  plansStatus: (projectId) => ipcRenderer.invoke('chat:plansStatus', projectId),
+  plansList: (projectId) => ipcRenderer.invoke('chat:plansList', projectId),
+  plansStart: (input) => ipcRenderer.invoke('chat:plansStart', input),
+  plansRead: (input) => ipcRenderer.invoke('chat:plansRead', input),
+  plansExecute: (input) => ipcRenderer.invoke('chat:plansExecute', input),
+  plansCancel: (input) => ipcRenderer.invoke('chat:plansCancel', input),
+  plansUsage: (input) => ipcRenderer.invoke('chat:plansUsage', input),
   status: () => ipcRenderer.invoke('chat:status'),
   send: (input) => ipcRenderer.invoke('chat:send', input),
   cancel: (jobId) => ipcRenderer.invoke('chat:cancel', jobId),
