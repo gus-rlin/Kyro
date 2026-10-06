@@ -32,6 +32,88 @@ fn plan(tasks: Vec<TaskContract>) -> Plan {
     }
 }
 #[test]
+fn resource_node_ids_follow_appspec_rules_while_task_ids_stay_restricted() {
+    let ids = [
+        "customer:profile".to_string(),
+        "client:profil-équipe".to_string(),
+        "x".repeat(65),
+        "é".repeat(64),
+        " ".to_string(),
+    ];
+    for id in ids {
+        let spec = AppSpec {
+            nodes: vec![AppNode {
+                id: id.clone(),
+                kind: "B031".into(),
+                properties: json!({"version":"0.1.2"}).as_object().unwrap().clone(),
+            }],
+            ..Default::default()
+        };
+        spec.validate().unwrap();
+        for resource in [
+            Resource::Node { id: id.clone() },
+            Resource::Property {
+                id: id.clone(),
+                key: "configuration".into(),
+            },
+        ] {
+            let mut t = task("configure", &id);
+            t.reads.insert(resource.clone());
+            t.writes = BTreeSet::from([resource]);
+            let p = plan(vec![t.clone()]);
+            p.validate(&Limits::default()).unwrap();
+            p.validate_result(
+                &t,
+                &ChangeSet {
+                    operations: vec![ChangeOperation::SetProperty {
+                        node_id: id.clone(),
+                        key: "configuration".into(),
+                        value: json!({}),
+                    }],
+                },
+                &spec,
+            )
+            .unwrap();
+        }
+        if id.len() > 64
+            || !id
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || b"._-".contains(&b))
+        {
+            assert!(
+                plan(vec![task(&id, "valid-node")])
+                    .validate(&Limits::default())
+                    .is_err()
+            );
+        }
+    }
+    for id in [
+        "".to_string(),
+        "x".repeat(129),
+        "é".repeat(65),
+        "node\n".to_string(),
+        "node\u{0085}".to_string(),
+    ] {
+        for resource in [
+            Resource::Node { id: id.clone() },
+            Resource::Property {
+                id: id.clone(),
+                key: "configuration".into(),
+            },
+        ] {
+            let mut t = task("configure", "valid-node");
+            t.reads.insert(resource.clone());
+            assert!(plan(vec![t.clone()]).validate(&Limits::default()).is_err());
+            t.reads.clear();
+            t.writes = BTreeSet::from([resource]);
+            assert!(plan(vec![t]).validate(&Limits::default()).is_err());
+        }
+    }
+    plan(vec![task(&"x".repeat(64), "valid-node")])
+        .validate(&Limits::default())
+        .unwrap();
+}
+#[test]
 fn graph_refuses_cycles_and_missing_contracts() {
     let mut a = task("a", "a");
     let mut b = task("b", "b");

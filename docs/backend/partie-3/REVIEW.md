@@ -1,5 +1,9 @@
 # Independent P3 review
 
+This independent score covers the sources published in `d265d9a151`, before
+the two subsequent [PR #6 review fixes](PR-REVIEW.md). Those fixes have targeted
+regressions and a manual diff review; no new independent score is claimed.
+
 ## PR integration review
 
 The same read-only review agent is checking the final PR against `main`

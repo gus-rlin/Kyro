@@ -191,9 +191,11 @@ impl Plan {
             }
             for r in t.reads.iter().chain(&t.writes) {
                 match r {
-                    Resource::Node { id } => label(id)?,
+                    Resource::Node { id } => crate::spec::validate_node_id(id)
+                        .map_err(|_| Error::Invalid("invalid_contract_id".into()))?,
                     Resource::Property { id, key } => {
-                        label(id)?;
+                        crate::spec::validate_node_id(id)
+                            .map_err(|_| Error::Invalid("invalid_contract_id".into()))?;
                         text(key, 128)?
                     }
                     Resource::Preference { key } => text(key, 128)?,

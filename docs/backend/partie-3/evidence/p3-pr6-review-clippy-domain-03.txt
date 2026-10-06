@@ -1,0 +1,121 @@
+    Checking smallvec v1.16.2
+    Checking percent-encoding v2.3.2
+    Checking memchr v2.8.3
+    Checking serde_core v1.0.228
+    Checking libc v0.2.190
+    Checking num-traits v0.2.19
+    Checking thiserror v2.0.18
+    Checking zerofrom v0.1.8
+    Checking yoke v0.8.3
+    Checking form_urlencoded v1.2.2
+    Checking zerovec v0.11.8
+    Checking zerotrie v0.2.5
+    Checking tinystr v0.8.4
+    Checking potential_utf v0.1.6
+    Checking icu_collections v2.3.0
+    Checking icu_locale_core v2.3.0
+    Checking getrandom v0.3.4
+    Checking icu_provider v2.3.1
+    Checking icu_normalizer v2.3.0
+    Checking icu_properties v2.3.0
+    Checking serde v1.0.228
+    Checking serde_json v1.0.149
+    Checking uuid v1.20.0
+    Checking chrono v0.4.44
+    Checking idna_adapter v1.2.2
+    Checking idna v1.1.0
+    Checking url v2.5.8
+    Checking kyro-domain v0.1.0 (/workspace/crates/kyro-domain)
+warning: this `impl` can be derived
+   --> crates/kyro-domain/src/model.rs:161:1
+    |
+161 | / impl Default for DataPolicy {
+162 | |     fn default() -> Self {
+163 | |         Self {
+164 | |             allow_unknown_provider_retention: false,
+...   |
+172 | | }
+    | |_^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#derivable_impls
+    = note: `#[warn(clippy::derivable_impls)]` on by default
+help: replace the manual implementation with a derive attribute
+    |
+146 + #[derive(Default)]
+147 | pub struct DataPolicy {
+    |
+
+warning: large size difference between variants
+   --> crates/kyro-domain/src/model.rs:674:1
+    |
+674 | / pub enum ReconciledEffectDecision {
+675 | |     Processed { response: ModelResponse },
+    | |     ------------------------------------- the largest variant contains at least 368 bytes
+676 | |     NotProcessed,
+    | |     ------------ the second-largest variant carries no data at all
+677 | | }
+    | |_^ the entire enum is at least 368 bytes
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#large_enum_variant
+    = note: `#[warn(clippy::large_enum_variant)]` on by default
+help: consider boxing the large fields or introducing indirection in some other way to reduce the total size of the enum
+    |
+675 -     Processed { response: ModelResponse },
+675 +     Processed { response: Box<ModelResponse> },
+    |
+
+warning: manual check for common ascii range
+   --> crates/kyro-domain/src/model.rs:787:12
+    |
+787 |         && matches!(value.as_bytes()[0], b'a'..=b'z')
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#manual_is_ascii_check
+    = note: `#[warn(clippy::manual_is_ascii_check)]` on by default
+help: try
+    |
+787 -         && matches!(value.as_bytes()[0], b'a'..=b'z')
+787 +         && value.as_bytes()[0].is_ascii_lowercase()
+    |
+
+warning: this `if` statement can be collapsed
+   --> crates/kyro-domain/src/task.rs:141:9
+    |
+141 | /         if object.len() == 1 {
+142 | |             if let Some(revision) = object
+143 | |                 .get("revision")
+144 | |                 .and_then(Value::as_i64)
+...   |
+149 | |         }
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#collapsible_if
+    = note: `#[warn(clippy::collapsible_if)]` on by default
+help: collapse nested if block
+    |
+141 ~         if object.len() == 1
+142 ~             && let Some(revision) = object
+143 |                 .get("revision")
+...
+147 |                 return Ok(Self::ApplyChanges { revision });
+148 ~             }
+    |
+
+warning: `kyro-domain` (lib) generated 4 warnings (run `cargo clippy --fix --lib -p kyro-domain -- --no-deps` to apply 3 suggestions)
+warning: field assignment outside of initializer for an instance created with Default::default()
+   --> crates/kyro-domain/tests/agents.rs:268:5
+    |
+268 |     limits.max_calls = 4;
+    |     ^^^^^^^^^^^^^^^^^^^^^
+    |
+note: consider initializing the variable with `kyro_domain::agents::Limits { max_calls: 4, ..Default::default() }` and removing relevant reassignments
+   --> crates/kyro-domain/tests/agents.rs:267:5
+    |
+267 |     let mut limits = Limits::default();
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#field_reassign_with_default
+    = note: `#[warn(clippy::field_reassign_with_default)]` on by default
+
+warning: `kyro-domain` (test "agents") generated 1 warning
+warning: `kyro-domain` (lib test) generated 4 warnings (4 duplicates)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.85s

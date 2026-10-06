@@ -680,13 +680,14 @@ impl Coordinator {
         // Admission mode intentionally holds no provider key. Execution availability is checked by P1's worker.
         // The gateway owns exact wire/context bounds and financial reservations. This run cap is an additional conservative byte bound.
         let reserved = gateway.reservation_tokens(&request)?;
+        // Preparation can consume the remaining run time; never raise the queue's minimum TTL.
+        let remaining = model_job_ttl(run.deadline, Utc::now())?;
         run.reserved_tokens = run
             .reserved_tokens
             .checked_add(reserved)
             .filter(|v| *v <= run.request.limits.max_tokens)
             .ok_or(Error::ResourceLimit)?;
         let call_id = Uuid::new_v4();
-        let remaining = (run.deadline - Utc::now()).num_seconds().clamp(10, 1800) as u32;
         let job = store
             .enqueue_job_in(
                 conn,
@@ -698,9 +699,14 @@ impl Coordinator {
                     request: request.clone(),
                 },
                 Some(1),
-                Some(remaining.min(300)),
+                Some(remaining),
             )
             .await?;
+        // Queue admission uses its own clock after SQL awaits. Reject before commit if it
+        // consumed the rounding margin, so no worker can observe an extended deadline.
+        if job.deadline > run.deadline {
+            return Err(Error::ResourceLimit);
+        }
         run.calls.push(Call {
             id: call_id,
             epoch: run.epoch,
@@ -960,6 +966,14 @@ fn hash(value: &impl serde::Serialize) -> Result<String> {
 fn db(_: sqlx::Error) -> Error {
     Error::Unavailable
 }
+fn model_job_ttl(deadline: chrono::DateTime<Utc>, now: chrono::DateTime<Utc>) -> Result<u32> {
+    let remaining = (deadline - now).num_seconds();
+    if remaining < 10 {
+        return Err(Error::ResourceLimit);
+    }
+    Ok(remaining.min(300) as u32)
+}
+
 fn code(e: &Error) -> &str {
     match e {
         Error::Forbidden => "permission_or_scope_denied",
@@ -1103,6 +1117,31 @@ fn semantic_invariants(id: &str) -> BTreeSet<String> {
 #[cfg(test)]
 mod syntax_tests {
     use super::*;
+    #[test]
+    fn model_job_ttl_never_extends_the_run_deadline() {
+        let now = Utc::now();
+        for millis in [-1, 0, 9999] {
+            assert!(matches!(
+                model_job_ttl(now + Duration::milliseconds(millis), now),
+                Err(Error::ResourceLimit)
+            ));
+        }
+        for (millis, ttl) in [
+            (10000, 10),
+            (10999, 10),
+            (299999, 299),
+            (300000, 300),
+            (1800000, 300),
+        ] {
+            assert_eq!(
+                model_job_ttl(now + Duration::milliseconds(millis), now).unwrap(),
+                ttl
+            );
+        }
+        let deadline = now + Duration::seconds(10);
+        assert!(model_job_ttl(deadline, now + Duration::milliseconds(1)).is_err());
+        assert!(model_job_ttl(deadline, now + Duration::seconds(11)).is_err());
+    }
     #[test]
     fn syntax_hints_distinguish_node_identity_and_property_scopes() {
         let mut task:TaskContract=serde_json::from_value(json!({"id":"storage-task","objective":"Configure storage","components":[{"id":"B081","version":"0.2.0"}],"reads":[],"writes":[{"kind":"node","id":"storage"}],"dependencies":[],"invariants":[],"max_attempts":1,"deterministic":null})).unwrap();

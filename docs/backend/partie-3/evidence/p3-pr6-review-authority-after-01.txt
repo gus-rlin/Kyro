@@ -1,0 +1,35 @@
+   Compiling kyro-agents v0.1.0 (/workspace/crates/kyro-agents)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.06s
+     Running tests/authority.rs (target/debug/deps/authority-a7f5e5b649d5f3d5)
+
+running 3 tests
+
+thread 'coordinator_progresses_with_one_connection' (46135) panicked at crates/kyro-agents/tests/authority.rs:270:5:
+assertion `left == right` failed
+  left: 0
+ right: 2
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test coordinator_progresses_with_one_connection ... FAILED
+
+thread 'metadata_planning_needs_no_write_but_integration_does' (46145) panicked at crates/kyro-agents/tests/authority.rs:132:5:
+assertion `left == right` failed
+  left: 0
+ right: 1
+test metadata_planning_needs_no_write_but_integration_does ... FAILED
+
+thread 'model_admission_refuses_less_than_minimum_run_ttl_without_effects' (46147) panicked at crates/kyro-agents/tests/authority.rs:16:5:
+assertion `left == right` failed
+  left: 0
+ right: 1
+test model_admission_refuses_less_than_minimum_run_ttl_without_effects ... FAILED
+
+failures:
+
+failures:
+    coordinator_progresses_with_one_connection
+    metadata_planning_needs_no_write_but_integration_does
+    model_admission_refuses_less_than_minimum_run_ttl_without_effects
+
+test result: FAILED. 0 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.68s
+
+error: test failed, to rerun pass `-p kyro-agents --test authority`

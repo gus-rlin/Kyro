@@ -10,6 +10,137 @@ use kyro_domain::{
 
 #[tokio::test]
 #[ignore = "requires dedicated migrated PostgreSQL API/worker/admin roles"]
+async fn model_admission_refuses_less_than_minimum_run_ttl_without_effects() {
+    let f = Fixture::new().await;
+    let run = f.start("deadline-plan", true).await;
+    assert_eq!(f.wave().await, 1);
+    let run = f
+        .coordinator
+        .advance(
+            &f.api,
+            &f.admission,
+            f.owner,
+            run.project_id,
+            run.id,
+            Some(run.version),
+        )
+        .await
+        .unwrap();
+    assert_eq!(run.status, RunStatus::Planned);
+    let run = f
+        .coordinator
+        .execute_plan(&f.api, f.owner, run.project_id, run.id, run.version)
+        .await
+        .unwrap();
+    let (mut tx, mut run, _, _) = f
+        .api
+        .begin_agent(f.owner, run.project_id, run.id, Some(run.version))
+        .await
+        .unwrap();
+    run.deadline = chrono::Utc::now() + chrono::Duration::seconds(9);
+    kyro_store::Store::save_agent_in(&mut tx, &mut run)
+        .await
+        .unwrap();
+    tx.commit().await.unwrap();
+    let before_calls = run.calls.len();
+    let before_tokens = run.reserved_tokens;
+    let before_provider_calls = f.provider.calls.load(std::sync::atomic::Ordering::SeqCst);
+    let run = f
+        .coordinator
+        .advance(
+            &f.api,
+            &f.admission,
+            f.owner,
+            run.project_id,
+            run.id,
+            Some(run.version),
+        )
+        .await
+        .unwrap();
+    assert_eq!(run.status, RunStatus::Blocked);
+    assert_eq!(run.diagnostic.as_deref(), Some("plan_resource_limit"));
+    assert_eq!(run.calls.len(), before_calls);
+    assert_eq!(run.reserved_tokens, before_tokens);
+    let jobs: i64 = sqlx::query_scalar("SELECT count(*) FROM jobs WHERE project_id=$1")
+        .bind(run.project_id)
+        .fetch_one(&f.admin.pool)
+        .await
+        .unwrap();
+    let effects: i64 = sqlx::query_scalar("SELECT count(*) FROM effects WHERE project_id=$1")
+        .bind(run.project_id)
+        .fetch_one(&f.admin.pool)
+        .await
+        .unwrap();
+    assert_eq!(jobs, 1);
+    assert_eq!(effects, 1);
+    assert_eq!(f.wave().await, 0);
+    assert_eq!(
+        f.provider.calls.load(std::sync::atomic::Ordering::SeqCst),
+        before_provider_calls
+    );
+
+    // Enough time still admits all four executors, with persisted deadlines bounded by the run.
+    let run = f.start("deadline-allowed", true).await;
+    assert_eq!(f.wave().await, 1);
+    let run = f
+        .coordinator
+        .advance(
+            &f.api,
+            &f.admission,
+            f.owner,
+            run.project_id,
+            run.id,
+            Some(run.version),
+        )
+        .await
+        .unwrap();
+    let run = f
+        .coordinator
+        .execute_plan(&f.api, f.owner, run.project_id, run.id, run.version)
+        .await
+        .unwrap();
+    let (mut tx, mut run, _, _) = f
+        .api
+        .begin_agent(f.owner, run.project_id, run.id, Some(run.version))
+        .await
+        .unwrap();
+    run.deadline = chrono::Utc::now() + chrono::Duration::seconds(30);
+    kyro_store::Store::save_agent_in(&mut tx, &mut run)
+        .await
+        .unwrap();
+    tx.commit().await.unwrap();
+    let run = f
+        .coordinator
+        .advance(
+            &f.api,
+            &f.admission,
+            f.owner,
+            run.project_id,
+            run.id,
+            Some(run.version),
+        )
+        .await
+        .unwrap();
+    assert_eq!(run.status, RunStatus::Executing);
+    assert_eq!(run.calls.len(), 5);
+    for call in run.calls.iter().skip(1) {
+        let job = f
+            .api
+            .get_job(f.owner, run.project_id, call.job_id)
+            .await
+            .unwrap();
+        assert!(job.deadline <= run.deadline);
+        assert!(job.deadline >= job.created_at + chrono::Duration::seconds(10));
+    }
+    assert_eq!(f.wave().await, 4);
+    f.coordinator
+        .cancel(&f.api, f.owner, run.project_id, run.id, run.version)
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
+#[ignore = "requires dedicated migrated PostgreSQL API/worker/admin roles"]
 async fn metadata_planning_needs_no_write_but_integration_does() {
     let f = Fixture::new().await;
     let owned = f.start("owner-setup", true).await;
@@ -187,6 +318,8 @@ async fn metadata_planning_needs_no_write_but_integration_does() {
             .status,
         RunStatus::Cancelled
     );
+    // Settle the cancelled queued job before the next scenario shares this database.
+    assert_eq!(f.wave().await, 0);
 }
 
 #[tokio::test]

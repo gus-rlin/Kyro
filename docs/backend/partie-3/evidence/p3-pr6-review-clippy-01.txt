@@ -1,0 +1,83 @@
+    Checking kyro-domain v0.1.0 (/workspace/crates/kyro-domain)
+error: this `impl` can be derived
+   --> crates/kyro-domain/src/model.rs:161:1
+    |
+161 | / impl Default for DataPolicy {
+162 | |     fn default() -> Self {
+163 | |         Self {
+164 | |             allow_unknown_provider_retention: false,
+...   |
+172 | | }
+    | |_^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#derivable_impls
+    = note: `-D clippy::derivable-impls` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::derivable_impls)]`
+help: replace the manual implementation with a derive attribute
+    |
+146 + #[derive(Default)]
+147 | pub struct DataPolicy {
+    |
+
+error: large size difference between variants
+   --> crates/kyro-domain/src/model.rs:674:1
+    |
+674 | / pub enum ReconciledEffectDecision {
+675 | |     Processed { response: ModelResponse },
+    | |     ------------------------------------- the largest variant contains at least 368 bytes
+676 | |     NotProcessed,
+    | |     ------------ the second-largest variant carries no data at all
+677 | | }
+    | |_^ the entire enum is at least 368 bytes
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#large_enum_variant
+    = note: `-D clippy::large-enum-variant` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::large_enum_variant)]`
+help: consider boxing the large fields or introducing indirection in some other way to reduce the total size of the enum
+    |
+675 -     Processed { response: ModelResponse },
+675 +     Processed { response: Box<ModelResponse> },
+    |
+
+error: manual check for common ascii range
+   --> crates/kyro-domain/src/model.rs:787:12
+    |
+787 |         && matches!(value.as_bytes()[0], b'a'..=b'z')
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#manual_is_ascii_check
+    = note: `-D clippy::manual-is-ascii-check` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::manual_is_ascii_check)]`
+help: try
+    |
+787 -         && matches!(value.as_bytes()[0], b'a'..=b'z')
+787 +         && value.as_bytes()[0].is_ascii_lowercase()
+    |
+
+error: this `if` statement can be collapsed
+   --> crates/kyro-domain/src/task.rs:141:9
+    |
+141 | /         if object.len() == 1 {
+142 | |             if let Some(revision) = object
+143 | |                 .get("revision")
+144 | |                 .and_then(Value::as_i64)
+...   |
+149 | |         }
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.96.0/index.html#collapsible_if
+    = note: `-D clippy::collapsible-if` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::collapsible_if)]`
+help: collapse nested if block
+    |
+141 ~         if object.len() == 1
+142 ~             && let Some(revision) = object
+143 |                 .get("revision")
+...
+147 |                 return Ok(Self::ApplyChanges { revision });
+148 ~             }
+    |
+
+error: could not compile `kyro-domain` (lib) due to 4 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `kyro-domain` (lib test) due to 4 previous errors

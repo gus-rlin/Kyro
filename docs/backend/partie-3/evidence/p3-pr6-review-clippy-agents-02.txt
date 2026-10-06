@@ -1,0 +1,9 @@
+    Checking kyro-domain v0.1.0 (/workspace/crates/kyro-domain)
+    Checking kyro-gateway v0.1.0 (/workspace/crates/kyro-gateway)
+    Checking kyro-store v0.1.0 (/workspace/crates/kyro-store)
+    Checking kyro-app v0.1.0 (/workspace/crates/kyro-app)
+    Checking kyro-factory v0.1.0 (/workspace/crates/kyro-factory)
+    Checking kyro-agents v0.1.0 (/workspace/crates/kyro-agents)
+    Checking kyro-worker v0.1.0 (/workspace/crates/kyro-worker)
+    Checking kyro-api v0.1.0 (/workspace/crates/kyro-api)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.64s

@@ -2,7 +2,20 @@
 
 All results are local. The PR incorporates P2 fixes from `main`
 `a12e1ced89854bc5716b50ca4bbd1c10a8d81ee5`; the original and updated runtime
-subjects are distinguished below. See the [current 61-file inventory](evidence/p3-pr-source-01.json).
+subjects are distinguished below. See the [historical 61-file inventory](evidence/p3-pr-source-01.json).
+
+## PR #6 review fixes, 2026-10-06
+
+The resource-ID and cumulative-deadline defects reported on `d265d9a151` are
+corrected with before/after regressions. Current checks: 155 workspace tests
+pass (111 service recipes explicitly ignored), all three PostgreSQL authority
+tests pass, and the coordinator/recovery recipe passes in 15.81 s. Agents strict
+Clippy, worker build and formatting pass. Domain Clippy completes with existing
+warnings; its strict invocation is retained as a failure. See the
+[fix report, reproduction commands and retained failures](PR-REVIEW.md).
+No real-provider or protected factory campaign was rerun for these changed
+runtime bytes; the NVIDIA signatures and independent scores below remain
+historical evidence of their original snapshots.
 
 ## Checks after integrating main, 2026-10-06
 
