@@ -17,7 +17,7 @@ Electron 44.5.1 télécharge son binaire au premier import. Si ce téléchargeme
 
 ## Backend et chat
 
-P1, P2 et P3 sont réunies dans la branche `gus-rlin/kyro-integration`, avec les corrections P3 de `3ec918b`. Les contrats et opérations se trouvent dans [P1](../../docs/backend/partie-1/OPERATIONS.md), [P2](../../docs/backend/partie-2/OPERATIONS.md) et [P3](../../docs/backend/partie-3/README.md).
+P1, P2 et P3, ainsi que leur raccordement au composeur, sont réunies dans `main`. Les contrats et opérations se trouvent dans [P1](../../docs/backend/partie-1/OPERATIONS.md), [P2](../../docs/backend/partie-2/OPERATIONS.md) et [P3](../../docs/backend/partie-3/README.md). Les contrôles de consolidation sont décrits dans le [rapport GitHub](../../docs/backend/CONSOLIDATION.md).
 
 Le chat Nano utilise un runtime local séparé. Depuis la racine, après configuration du compte, de sa politique de données et de son budget :
 
@@ -25,7 +25,7 @@ Le chat Nano utilise un runtime local séparé. Depuis la racine, après configu
 ./scripts/nebius-runtime.ps1 -Profile Chat -Action Start
 ```
 
-Pour utiliser une image locale construite depuis cette branche, ajouter `-RuntimeImage kyro-integration:3ec918b`. Ce nom correspond à l'image locale de développement construite pendant l'intégration ; elle n'est pas publiée. Une installation neuve peut construire sa propre image depuis le Dockerfile du dépôt. Le lancement conserve le projet, les données et le budget existants ; il n'envoie pas de message modèle. L'interface indique un runtime indisponible quand ce service est arrêté.
+Pour utiliser une image locale construite depuis `main`, ajouter `-RuntimeImage <nom-de-votre-image>`. Le guide Chat décrit sa construction et les autres images requises. Les images `kyro-integration:3ec918b` et `kyro-composeur:local` citées dans l'historique sont des images de développement locales non publiées. Le lancement conserve le projet, les données et le budget existants ; il n'envoie pas de message modèle. L'interface indique un runtime indisponible quand ce service est arrêté.
 
 Le composeur propose Conversation (Nano) et Agents (P3). Le mode Agents choisit un projet backend, consulte son équipe/outils, propose un plan puis permet son exécution, son suivi et son annulation. Le runtime doit configurer l'équipe, la fabrique et admettre le catalogue ; le runtime Chat seul signale cette absence. [Parcours et validation P3](../../docs/backend/partie-3/IDE.md). L'aperçu d'une application générée et la publication restent à raccorder.
 

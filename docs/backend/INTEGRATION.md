@@ -1,4 +1,10 @@
-# Version locale intégrée — 2026-10-06
+# Intégration locale historique — 2026-10-06
+
+Les commits de cette intégration sont désormais réunis dans `main`. Les noms
+d'images, empreintes et résultats ci-dessous décrivent leurs essais d'origine,
+pas une installation neuve ni une nouvelle qualification. Consulter le
+[README](../../README.md) pour la présentation actuelle et le
+[rapport de consolidation](CONSOLIDATION.md) pour les contrôles de cette livraison.
 
 Mise à jour du composeur : modes Conversation/Agents et commandes P3 reliées
 au backend. [Parcours, configuration et validation](partie-3/IDE.md).
