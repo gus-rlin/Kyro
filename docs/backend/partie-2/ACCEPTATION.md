@@ -4,7 +4,7 @@
 - Base documentaire : d782341e4102e13274ef7adb79a7db30d1ad92c6.
 - Portée : les 147 IDs P2 du [manifeste](MANIFESTE.md).
 - Statut : critères définis; aucune recette fonctionnelle P2 n'est exécutée ou déclarée PASS par ce document.
-- Les matrices v1 et les critères exécutables v2 définissent le périmètre de recette. Leurs exemples de provider, VM KVM et benchmark ne constituent pas des résultats observés. La validation du catalogue 0.1.2 est décrite dans [VALIDATION.md](VALIDATION.md), sans réutilisation des signatures historiques.
+- Les matrices v1 et les critères exécutables v2 définissent le périmètre de recette. Leurs exemples de provider, VM KVM et benchmark ne constituent pas des résultats observés. La validation du catalogue 0.1.3 est décrite dans [VALIDATION.md](VALIDATION.md), sans réutilisation des signatures historiques.
 
 ## Environnement, données et statut de preuve
 

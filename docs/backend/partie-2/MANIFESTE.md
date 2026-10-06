@@ -4,7 +4,7 @@
 - État de départ : worktree isolé `gus-rlin/p2-contracts-exec-20261005`, créé propre depuis `d782341e4102e13274ef7adb79a7db30d1ad92c6`.
 - Sources de portée : manifeste P1 et périmètre backend explicité ci-dessous. Les exports personnels de conception ne font pas partie du dépôt public.
 - Nature : périmètre et critères avant recette. La présence d'une ligne ne prouve aucune implémentation.
-- État de livraison : 147 capacités implémentées ; catalogue 0.1.2, nouvelle qualification protégée et admission requises. La correction des reçus est vérifiée séparément ; aucune signature de campagne antérieure ni score de revue >=9 ne qualifie ces sources. Voir [VALIDATION.md](VALIDATION.md) pour les contrôles et leurs limites.
+- État de livraison : 147 capacités implémentées ; catalogue 0.1.3, nouvelle qualification protégée et admission requises. La correction des reçus est vérifiée séparément ; aucune signature de campagne antérieure ni score de revue >=9 ne qualifie ces sources. Voir [VALIDATION.md](VALIDATION.md) pour les contrôles et leurs limites.
 - L'architecture de réalisation autorisée pour cette contribution est explicitée dans [ARCHITECTURE.md](ARCHITECTURE.md). Les contrats attendus restent une cible à confronter au code intégré dans [CONTRATS.md](CONTRATS.md); les statuts et critères de recette sont dans [ACCEPTATION.md](ACCEPTATION.md) et le [rapport de livraison](VALIDATION.md).
 
 ## Portée exacte

@@ -218,7 +218,15 @@ impl AppCore {
 
     pub(crate) async fn begin_authority_change(&self, actor: Actor) -> AppResult<AppTx> {
         self.check_composition_scope(&actor)?;
-        Ok(self.apply_preferences(AppTx::begin_with_mode(&self.pool, actor, false, true).await?))
+        Ok(self.apply_preferences(
+            AppTx::begin_with_mode(&self.pool, actor, false, true, false).await?,
+        ))
+    }
+
+    pub(crate) async fn begin_global_authority_change(&self, actor: Actor) -> AppResult<AppTx> {
+        self.check_composition_scope(&actor)?;
+        Ok(self
+            .apply_preferences(AppTx::begin_with_mode(&self.pool, actor, false, true, true).await?))
     }
 
     fn apply_preferences(&self, mut tx: AppTx) -> AppTx {
@@ -599,11 +607,11 @@ pub struct AppTx {
 
 impl AppTx {
     pub async fn begin(pool: &PgPool, actor: Actor) -> AppResult<Self> {
-        Self::begin_with_mode(pool, actor, false, false).await
+        Self::begin_with_mode(pool, actor, false, false, false).await
     }
 
     pub async fn begin_read(pool: &PgPool, actor: Actor) -> AppResult<Self> {
-        Self::begin_with_mode(pool, actor, true, false).await
+        Self::begin_with_mode(pool, actor, true, false, false).await
     }
 
     async fn begin_with_mode(
@@ -611,6 +619,7 @@ impl AppTx {
         mut actor: Actor,
         read_only: bool,
         authority_change: bool,
+        global_authority_change: bool,
     ) -> AppResult<Self> {
         if actor.tenant_id.is_nil()
             || actor.application_id.is_nil()
@@ -635,11 +644,14 @@ impl AppTx {
         Self::set_context(&mut transaction, &actor).await?;
         // Revocation and role changes acquire the exclusive fence before row locks.
         // Ordinary transactions may run concurrently, but cannot outlive a completed revocation.
-        sqlx::query(
-            "SELECT pg_advisory_xact_lock_shared(hashtextextended('app-authority-global:v1',0))",
-        )
-        .execute(&mut *transaction)
-        .await?;
+        // Tenant-wide principal writes must acquire exclusive global authority
+        // first; two transactions cannot safely upgrade shared locks later.
+        let global_fence = if global_authority_change {
+            "SELECT pg_advisory_xact_lock(hashtextextended('app-authority-global:v1',0))"
+        } else {
+            "SELECT pg_advisory_xact_lock_shared(hashtextextended('app-authority-global:v1',0))"
+        };
+        sqlx::query(global_fence).execute(&mut *transaction).await?;
         let fence = if authority_change {
             "SELECT pg_advisory_xact_lock(hashtextextended('app-authority:'||$1::text||':'||$2::text,0))"
         } else {
@@ -1673,7 +1685,9 @@ impl OperationDispatcher {
                         && request.payload.get("operations").and_then(Value::as_array)
                             .is_some_and(|operations| operations.iter().any(|operation|
                                 operation.get("operation").and_then(Value::as_str) == Some("delete"))));
-                if authority_change {
+                if request.component_id == "B007" && request.action == "service.create" {
+                    core.begin_global_authority_change(actor).await?
+                } else if authority_change {
                     core.begin_authority_change(actor).await?
                 } else {
                     core.begin(actor).await?

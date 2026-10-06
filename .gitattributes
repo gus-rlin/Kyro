@@ -1,2 +1,10 @@
+* text=auto eol=lf
+# SQLx checksums must retain the bytes already exercised by the local P2 schema.
+crates/kyro-app/migrations/*.sql -text whitespace=cr-at-eol
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.pdf binary
 # Preserve measured evidence bytes and their published SHA-256 digests.
-docs/backend/partie-3/evidence/** -text
+docs/backend/partie-3/evidence/** -text whitespace=cr-at-eol

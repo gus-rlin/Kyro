@@ -1473,6 +1473,67 @@ async fn payment_outbox_is_atomic_unique_amount_bound_and_does_not_confirm_payme
 
 #[tokio::test]
 #[ignore = "requires disposable PostgreSQL and test-support loopback transport"]
+async fn subscriptions_refuse_unpublished_products_without_queuing_effects() {
+    let f = Fixture::new().await;
+    let product = f.op("B121", "create", json!({"sku":"subscription-publication","name":"Synthetic recurring product","inventory_tracked":false}), None).await.unwrap();
+    let price = f.op("B122", "set_price", json!({"product_id":id(&product),"currency":"EUR","amount_minor":500,"interval_unit":"month","interval_count":1,"effective_at":"2020-01-01T00:00:00Z"}), None).await.unwrap();
+    let customer = f.actor.principal_id();
+    let h = Harness::with_fixture(
+        f,
+        vec![Provider::Stripe {
+            api_version: "2025-09-30.clover".into(),
+            customers: BTreeMap::from([(customer, "cus_synthetic".into())]),
+            prices: BTreeMap::from([(id(&price), "price_synthetic".into())]),
+        }],
+    )
+    .await;
+    let counts = || async {
+        sqlx::query_as::<_, (i64,i64,i64,i64,i64,i64)>("SELECT (SELECT count(*) FROM app_records WHERE tenant_id=$1 AND kind='commerce.subscription'), (SELECT count(*) FROM app_connector_calls WHERE tenant_id=$1), (SELECT count(*) FROM app_record_history WHERE tenant_id=$1), (SELECT count(*) FROM app_outbox WHERE tenant_id=$1), (SELECT count(*) FROM app_idempotency WHERE tenant_id=$1), (SELECT COALESCE(sum(reserved_value),0)::bigint FROM app_quotas WHERE tenant_id=$1)").bind(h.f.actor.tenant_id()).fetch_one(&h.f.admin).await.unwrap()
+    };
+    for status in ["draft", "archived"] {
+        if status == "archived" {
+            h.f.op("B121", "publish", json!({"id":id(&product)}), Some(1))
+                .await
+                .unwrap();
+            let subscription = h
+                .op(
+                    &h.f.actor,
+                    "B126",
+                    "subscribe",
+                    json!({"price_id":id(&price),"connector_id":h.profiles[0].id}),
+                    None,
+                )
+                .await
+                .unwrap();
+            assert_eq!(subscription["data"]["status"], "pending");
+            h.f.op("B121", "archive", json!({"id":id(&product)}), Some(2))
+                .await
+                .unwrap();
+        }
+        let before = counts().await;
+        assert_eq!(
+            h.op(
+                &h.f.actor,
+                "B126",
+                "subscribe",
+                json!({"price_id":id(&price),"connector_id":h.profiles[0].id}),
+                None
+            )
+            .await,
+            Err(AppError::NotFound),
+            "{status}"
+        );
+        assert_eq!(
+            counts().await,
+            before,
+            "refusal leaves no durable command or financial effect"
+        );
+        assert!(h.provider.calls.lock().await.is_empty());
+    }
+}
+
+#[tokio::test]
+#[ignore = "requires disposable PostgreSQL and test-support loopback transport"]
 async fn subscription_and_refund_protocols_bind_price_customer_amount_and_revalidate_receipts() {
     let f = Fixture::new().await;
     let product = f.op("B121", "create", json!({"sku":"subscription-protocol","name":"Synthetic recurring product","inventory_tracked":false}), None).await.unwrap();

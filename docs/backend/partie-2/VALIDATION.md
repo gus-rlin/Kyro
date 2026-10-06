@@ -36,11 +36,11 @@ before the fix. No provider or model call is required for these tests.
 
 ## Version and installation
 
-The catalogue version is **0.1.2**. Existing 0.1.0 and 0.1.1 attestations belong to
+The catalogue version is **0.1.3**. Existing 0.1.0, 0.1.1 and 0.1.2 attestations belong to
 their original source digests and do not admit this source tree. Generated entries
 remain pending until a new protected qualification and operator admission.
 
-The application schema contains migrations 0001–0037. Migration 0037 takes the
+The application schema contains migrations 0001–0038. Migration 0037 takes the
 global transaction fence and invalidates pre-fix responses once, keeping their
 durable idempotency keys and business effects. An isolated upgrade test reproduces
 an unsafe pre-fix receipt and checks refusal, unchanged effect counters and
@@ -53,7 +53,7 @@ Factory pilotage migration
 `main` chat, provider retention policy, secret filtering and streaming behavior are
 retained when adding the embeddings protocol.
 
-## Verification
+## Historical verification at 30f36318a9
 
 Local verification uses Rust 1.96.1, PostgreSQL 18.6 and isolated Docker test
 databases. The external PostgreSQL fixture uses TLS and SCRAM with synthetic data
@@ -107,3 +107,54 @@ node scripts/check-openapi.mjs
 
 Ignored Docker recipes require the separate protected environment described in the
 operations guide. A normal workspace test run does not qualify their behavior.
+
+## PR review corrections (2026-10-06)
+
+- OIDC accepts an audience list containing the configured client ID and requires
+  a matching authorized party (`azp`) when the list has multiple entries. Missing
+  or foreign clients/authorized parties, empty lists, nonce failures and replay
+  remain refused. The signed synthetic HTTP flow covers these cases. Reference:
+  [OpenID Connect Core ID Token validation](https://openid.net/specs/openid-connect-core-1_0.html#IDTokenValidation), consulted 2026-10-06.
+- Enabling draft inventory tracking creates a zero balance in the same transaction.
+  Disabling and re-enabling preserve existing stock and version. Migration 0038
+  also repairs balances missing from already published products and takes the
+  existing global maintenance fence; it preserves existing reservations and does
+  not emit external effects. Stop the old runtime before upgrading.
+- Service account creation and signup-enabled OIDC callbacks acquire exclusive
+  global authority before application authority or business locks. PostgreSQL lock
+  observations check that they wait without holding shared global authority.
+  The original review's INSERT deadlock description is not reproduced: the
+  principal trigger covers qualifying UPDATE and DELETE, not INSERT. The explicit
+  lock order is hardened without changing migrations 0001–0037.
+- Channel owners can deactivate members after application membership revocation
+  or principal disablement, reclaiming the 64-member capacity. Activation still
+  requires current membership, and owner removal stays refused.
+- Subscriptions require a published parent product before recording or queuing
+  a financial effect. Draft and archived products leave durable command/effect
+  counters and reserved quotas unchanged.
+- One-time quotes and order-time validation only select `one_time` prices.
+  Monthly/yearly prices cannot be converted through a pre-fix persisted quote.
+
+Current verification results are recorded below. Historical results
+above belong to the previous commit and remain separate. Protected catalogue
+qualification and admission, independent review, production and live provider
+qualification are still pending for 0.1.3.
+
+| Current check | Observed result |
+| --- | --- |
+| Review regression suites | 27 passed, no failed or ignored tests (included in the complete application suite) |
+| Complete application suite with `test-support` | 123 passed, no failed or ignored tests |
+| Default workspace tests | 136 passed, no failures; 104 integration/protected recipes explicitly ignored |
+| Receipt confidentiality and historical upgrade | 10 passed, no failed or ignored tests |
+| Factory contracts, artifacts and registry | 24 passed, no failed or ignored tests |
+| Fresh application install, 0037→0038 upgrade and replay | Passed; exact SQLx checksums, restricted runtime roles and forced RLS |
+| Format, locked workspace all-targets check, scoped strict Clippy with test support, all workspace binaries | Passed |
+| Docker build context | Three required embedded drivers present; unrelated scripts, docs and `.env` excluded |
+| Complete pinned runtime image build locally | Blocked before compilation by rustup `UnknownIssuer`; TLS verification remains enabled |
+
+The earlier CI image failure was caused by `.dockerignore` omitting the three
+factory drivers used by `include_bytes!`. The context exceptions now include only
+those files and their parent directories. Offline workspace compilation and the
+real context checks pass; the full remote image build needs a new CI result.
+
+The frozen 0.1.3 runtime subject is `f013c08426b03e88730197a3a4ef77583bae3ea6ef069485faa2d65deaad2aae` (175 files), with working bytes matching staged Git blobs. Its previous catalogue attestations remain inapplicable.
