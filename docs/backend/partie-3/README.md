@@ -24,13 +24,17 @@ release evidence are server-owned.
 - [Acceptance criteria and evidence boundaries](ACCEPTATION.md)
 - [Executed validation and limitations](VALIDATION.md)
 - [Real NVIDIA campaign and retained failures](NVIDIA.md)
-- [Independent review: 9.5/10](REVIEW.md)
+- [Independent review and source bindings](REVIEW.md)
 - [Versioned OpenAPI](../partie-1/openapi.v1.json)
 
 P3 currently creates development candidates. Publication and production
 promotion belong to P4. A `verified` plan is not a deployment.
 
 The isolated implementation starts from P2 commit
-`30f36318a9b2812d17f381ced739dd8b8a565484`. Concurrent P2 review fixes were not
-copied. P3 runtime changes require new catalogue subjects: version **0.2.0**
-starts pending. Historical P2 admissions do not qualify these source bytes.
+`30f36318a9b2812d17f381ced739dd8b8a565484`. Before PR publication it incorporates
+the later P2 corrections from `main` at
+`a12e1ced89854bc5716b50ca4bbd1c10a8d81ee5`, including additive application
+migration 0038 and all three protected Docker drivers. Validation before and
+after that integration is recorded separately. P3 runtime changes require new
+catalogue subjects: version **0.2.0** starts pending. Historical P2 admissions
+do not qualify these source bytes.

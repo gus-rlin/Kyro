@@ -7,4 +7,4 @@ crates/kyro-app/migrations/*.sql -text whitespace=cr-at-eol
 *.webp binary
 *.pdf binary
 # Preserve measured evidence bytes and their published SHA-256 digests.
-docs/backend/partie-3/evidence/** -text whitespace=cr-at-eol
+docs/backend/partie-3/evidence/** -text whitespace=cr-at-eol,-blank-at-eof

@@ -13,7 +13,7 @@ deployment are separate evidence levels.
 | P3-05 | Sourced memory, targeted search, compaction, forced restart without blind replay | coordinator, killed worker process |
 | P3-06 | New instruction/revocation during an emitted call, compatible retention, conflicting and harmless edits | coordinator |
 | P3-07 | False success, missing proof, rejection, malicious fields and repeated failure cannot validate or exceed caps | HTTP/domain/coordinator; P2 evidence verification |
-| P3-08 | Covered request produces a verified artifact with real NVIDIA models within authorized cost | PASS: seven roles34.18s; NVIDIA protected B031 factory319.85s, eleven checks, signed artifact |
+| P3-08 | Covered request produces a verified artifact with real NVIDIA models within authorized cost | PASS: original seven roles34.18s; current main-integrated NVIDIA B031 factory406.95s, eleven checks, signed artifact; conservative cumulative provision0.2189EUR |
 
 Independent review rubric: functional coverage 2 points, correctness and atomic
 state 2, authority/evidence boundaries 2, concurrency/recovery 2, tests and

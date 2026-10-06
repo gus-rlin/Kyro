@@ -1,0 +1,6 @@
+   Compiling kyro-app v0.1.0 (/workspace/crates/kyro-app)
+   Compiling kyro-factory v0.1.0 (/workspace/crates/kyro-factory)
+   Compiling kyro-agents v0.1.0 (/workspace/crates/kyro-agents)
+   Compiling kyro-api v0.1.0 (/workspace/crates/kyro-api)
+   Compiling kyro-worker v0.1.0 (/workspace/crates/kyro-worker)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 16.30s

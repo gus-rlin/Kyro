@@ -1,0 +1,19 @@
+{
+  "ceiling_eur": 1,
+  "currency": "USD",
+  "unit_scale": 1000000000,
+  "limit_units": 672240000,
+  "fx_date": "2026-10-05",
+  "usd_per_eur": 1.1204,
+  "known_estimated_units": 35362260,
+  "unknown_effect_reservations": 192184320,
+  "first_call_missing_archive_provision": 17694720,
+  "conservative_committed_units": 245241300,
+  "conservative_committed_eur": 0.2188872724027133166726169225,
+  "available_units": 426998700,
+  "invoiced_cost": null,
+  "infrastructure_cost": null,
+  "codex_cost": null,
+  "method": "All observed phase tariff estimates plus full unknown/missing-archive provisions; all thirteen phase databases fenced; no duplicate counting",
+  "checked_at": "2026-10-06T03:51:48.6983300+02:00"
+}

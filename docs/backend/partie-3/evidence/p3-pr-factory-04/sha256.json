@@ -1,0 +1,31 @@
+{
+  "phase": "factory-04",
+  "checked_at": "2026-10-06T03:51:45.0722726+02:00",
+  "files": [
+    {
+      "name": "artifact.json",
+      "bytes": 47465,
+      "sha256": "a40859b9a29838bd19c269a0e5bc2cfb7b6dec4a8c855c911c9b6bddae5e7bdd"
+    },
+    {
+      "name": "public-trust.json",
+      "bytes": 2056,
+      "sha256": "6c3697b16fb0d4e9698abb344d18e4c6637a0d51461c8ca62513bb08c6305fb7"
+    },
+    {
+      "name": "report.json",
+      "bytes": 5663,
+      "sha256": "19920ca14b996a3a212e8b4ed69ea232a5b9b0da302867c9d1b3d24dba029d95"
+    },
+    {
+      "name": "run.json",
+      "bytes": 14674,
+      "sha256": "cafe48ecb363b9555c827f68242488b5c28694207da705136c1defbf0044edd5"
+    },
+    {
+      "name": "sources-and-candidate.tar",
+      "bytes": 72325120,
+      "sha256": "50b2f998888aec17272941bad95318ba6f46d79a87f311416ee989049dd823f0"
+    }
+  ]
+}

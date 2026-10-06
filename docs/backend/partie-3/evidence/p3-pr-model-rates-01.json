@@ -1,0 +1,27 @@
+{
+  "checked_at": "2026-10-06T03:37:26.5687228+02:00",
+  "source": "https://api.tokenfactory.nebius.com/v1/models?verbose=true",
+  "provider": "nebius",
+  "models": [
+    {
+      "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+      "input_units_per_million_tokens": 60000000,
+      "output_units_per_million_tokens": 240000000,
+      "context_tokens": 262144,
+      "currency": "USD",
+      "unit_scale": 1000000000,
+      "weights_version": null
+    },
+    {
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "input_units_per_million_tokens": 300000000,
+      "output_units_per_million_tokens": 900000000,
+      "context_tokens": 262144,
+      "currency": "USD",
+      "unit_scale": 1000000000,
+      "weights_version": null
+    }
+  ],
+  "match_reserved_tariffs": true,
+  "model_inferences": 0
+}

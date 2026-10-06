@@ -10,6 +10,62 @@ later P2 corrections on `main`. Its [49-file inventory](evidence/p3-final-live-s
 has SHA-256 `a4acc505d8c4ce96ba562ae2be74dcf401da93d6c3ff2f279b9313556a801173`.
 Updated integration results must be recorded separately when those bytes change.
 
+## PR integration qualification
+
+Before publication, P3 incorporates `main`
+`a12e1ced89854bc5716b50ca4bbd1c10a8d81ee5`, including the later P2 fixes.
+The [61-file PR inventory](evidence/p3-pr-source-01.json) identifies those inputs.
+[Fresh-database integration tests](VALIDATION.md) pass separately from the
+original campaign.
+
+[Factory03](evidence/p3-pr-nvidia-factory-03.json) failed before construction in
+36.25 s. All four responses were known; general review approved, but Security
+reported a branding violation and a manufacturing quota without grounding them
+in the supplied manifest/scopes/limits/criteria. The rejection was enforced.
+Its [SQL closure](evidence/p3-pr-nvidia-factory-03-seal.json) records 2419860
+nano-USD spent and zero held reserves.
+
+The synthetic acceptance brief was then clarified to request concrete findings
+against the supplied criteria. Approval logic, reviewer authority and protected
+gates did not change. Factory04 uses a fresh database, separate persistent
+intent and four-call reservation. Its two reviews approved the same minimal
+B031 declarations. [Factory04 passed](evidence/p3-pr-nvidia-factory-04.txt) in
+**406.95 s**, with eleven protected checks, signed Evidence/Release, artifact
+read with pool size one and a reconnect without another call or build.
+The log retains a worker `lease_conflict` warning; terminal acceptance and
+artifact checks passed. The warning's precise cause is not established here.
+
+Current [artifact](evidence/p3-pr-factory-04/artifact.json),
+[public trust](evidence/p3-pr-factory-04/public-trust.json),
+[report](evidence/p3-pr-factory-04/report.json),
+[run](evidence/p3-pr-factory-04/run.json) and
+[checksums](evidence/p3-pr-factory-04/sha256.json) bind the integrated source:
+
+- Source: `a9e3af328fd1fa38d4936b7917dc18427529967cba7e6c2bb85f3662ce5f76f6`.
+- Image: `sha256:882569357bc2293e035216b2a3fd1a5292064da10a8448f891b94738e1f273de`.
+- Release: `71fcc4a89cb303302f2597592e78e9bd49f59742511faa654a3c24ee2420fcaf`.
+- Exact archive: 72325120 bytes, SHA-256
+  `50b2f998888aec17272941bad95318ba6f46d79a87f311416ee989049dd823f0`.
+
+The exact tar is retained by the operator outside Git at
+`Kyro_v2-p3-releases/pr-20261006/sources-and-candidate.tar`, next to this
+project's directory. It is not downloadable from the PR. Request that archive
+and verify the checksum before independent source/OCI inspection.
+
+The [updated financial summary](evidence/p3-pr-budget-01.json) covers the entire
+campaign: known tariff estimate **0.03536226 USD**, unknown reserves
+**0.19218432 USD**, missing first archive provision **0.01769472 USD**.
+Conservative commitment is **0.24524130 USD**, about **0.2189 EUR**, below the
+cumulative authorized ceiling of 1 EUR. Invoices remain unknown.
+[Terminal state](evidence/p3-pr-terminal-state-01.json) confirms all thirteen
+phase databases are fenced, no active job/effect remains, unknown reserves
+are retained and the temporary provider credential is absent.
+The [updated effects inventory](evidence/p3-pr-effects-01.json) has 43 known
+runtime responses, seven unknown effects and the original unsent TLS failure;
+six historical wire probes are additional. No new inference was needed for
+archiving or review. [Current rates](evidence/p3-pr-model-rates-01.json) were
+checked through the provider catalogue before the added phases.
+
 ## Provider and limits
 
 | Role | Model | USD per million input/output tokens |
@@ -31,7 +87,7 @@ before reclaiming capacity that was never engaged.
 
 The user's cumulative ceiling is **1 EUR**. The dated ECB rate is 1.1204 USD/EUR;
 a 40% margin gives an internal ceiling of 0.67224 USD. The
-[financial summary](evidence/p3-nvidia-budget-final-01.json) includes every failed
+[original financial summary](evidence/p3-nvidia-budget-final-01.json) includes every failed
 trial, wire probe and unknown effect:
 
 - Known tariff estimate: **0.02886972 USD**.
@@ -58,12 +114,12 @@ unknown. No comparative cost, quality or performance gain is claimed.
 | factory01 | Ten-component plan received, executor response lost; no build and unknown reserve retained |
 | [factory02](evidence/p3-nvidia-factory-final-02/report.json) | B031, four real calls, two reviews, protected construction and signed verified artifact |
 
-Numbered supplier logs and all eleven SQL receipts are in `evidence/`. The
-[final effects inventory](evidence/p3-nvidia-effects-final-01.json) contains
+Historical numbered supplier logs and all eleven original SQL receipts are in
+`evidence/`. The [original effects inventory](evidence/p3-nvidia-effects-final-01.json) contains
 35 known runtime responses, seven unknown effects and one definitely unsent TLS
 failure. Six HTTP-200 wire probes are additional; a billed call count is unknown.
 
-## Verified artifact
+## Original verified artifact
 
 The [artifact](evidence/p3-nvidia-factory-final-02/artifact.json),
 [public trust](evidence/p3-nvidia-factory-final-02/public-trust.json),
