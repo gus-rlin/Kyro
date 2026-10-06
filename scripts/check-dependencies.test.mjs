@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { classifyDependencyAudit } from "./check-dependencies.mjs";
 
-const rootNames = ["kyro-api", "kyro-domain", "kyro-gateway", "kyro-store", "kyro-worker", "kyro-app", "kyro-factory"];
+const rootNames = ["kyro-api", "kyro-domain", "kyro-gateway", "kyro-store", "kyro-worker", "kyro-app", "kyro-factory", "kyro-agents"];
 const rsaId = "registry+https://github.com/rust-lang/crates.io-index#rsa@0.9.10";
 const registry = "registry+https://github.com/rust-lang/crates.io-index";
 
@@ -25,10 +25,10 @@ function metadata() {
   };
 }
 
-function tree({ activeRsa = false } = {}) {
-  return rootNames.map((name, index) => {
+function tree({ activeRsa = false, vulnerableRoot = "kyro-api" } = {}) {
+  return rootNames.map((name) => {
     const root = `${name} v0.1.0 (C:\\private\\workspace\\crates\\${name})`;
-    return index === 0 && activeRsa ? `${root}\nrsa v0.9.10` : root;
+    return name === vulnerableRoot && activeRsa ? `${root}\nrsa v0.9.10` : root;
   }).join("\n\n");
 }
 
@@ -72,6 +72,20 @@ test("an active vulnerable package is refused", () => {
     { id: "RUSTSEC-2023-0071", package: "rsa", version: "0.9.10" },
   ]);
   assert.deepEqual(result.summary.inactiveLockAdvisories, []);
+});
+
+test("an active vulnerability reached through the P3 agents crate is refused", () => {
+  const result = classify({ treeText: tree({ activeRsa: true, vulnerableRoot: "kyro-agents" }) });
+  assert.equal(result.exitCode, 1);
+  assert.equal(result.summary.status, "active_vulnerabilities_found");
+  assert.deepEqual(result.summary.activeVulnerabilities, [
+    { id: "RUSTSEC-2023-0071", package: "rsa", version: "0.9.10" },
+  ]);
+});
+
+test("an incomplete P3 workspace tree fails closed", () => {
+  const incompleteTree = tree().split("\n\n").filter(group => !group.startsWith("kyro-agents ")).join("\n\n");
+  assert.throws(() => classify({ treeText: incompleteTree }), error => error.code === "workspace_roots_mismatch");
 });
 
 test("a locked but inactive advisory is classified without claiming cargo audit passed", () => {
