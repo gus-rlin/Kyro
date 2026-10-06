@@ -1,0 +1,259 @@
+{
+  "base": "30f36318a9b2812d17f381ced739dd8b8a565484",
+  "branch": "gus-rlin/backend-p3",
+  "checked_at": "2026-10-06T03:21:05.1583674+02:00",
+  "files": [
+    {
+      "path": ".dockerignore",
+      "bytes": 294,
+      "sha256": "9b65b8fae666a2ba6a0d007061befaf43da877692e55922ec535f8233e775d4f"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "bytes": 9876,
+      "sha256": "1f067f28636f115583e2a0d75c836e038aa7c77180bff15b2a64004c3e9474f1"
+    },
+    {
+      "path": "Cargo.lock",
+      "bytes": 85465,
+      "sha256": "79c9e9d1567d81d53e0c13b1c0f659e3ce025c390e7070102ab625b9a7279810"
+    },
+    {
+      "path": "Cargo.toml",
+      "bytes": 1801,
+      "sha256": "4aea865a98414bbb66d4fe83764ecef7658eabd9a6f6f98621df0e3241eaa1a4"
+    },
+    {
+      "path": "crates/kyro-agents/Cargo.toml",
+      "bytes": 717,
+      "sha256": "6ab1586aad3e07755f320b3eb60c38eba441e19cb41f75c4ba797c29d1508278"
+    },
+    {
+      "path": "crates/kyro-agents/src/config.rs",
+      "bytes": 5688,
+      "sha256": "2c385dd1792734824c7cdc734c7be767b9b856a0c28cf627f2133f760c8124f1"
+    },
+    {
+      "path": "crates/kyro-agents/src/contract-v2.schema.json",
+      "bytes": 13626,
+      "sha256": "e556aeadd63579d1e559311f1f4840ab54d098628452f662211c8ac93a0921f0"
+    },
+    {
+      "path": "crates/kyro-agents/src/engine.rs",
+      "bytes": 48708,
+      "sha256": "2788136e8e801ff2551297a5bc37a40714c7a695c60ff52e76a8f475d2edb8be"
+    },
+    {
+      "path": "crates/kyro-agents/src/lib.rs",
+      "bytes": 269,
+      "sha256": "a1924d273979c7cbec41d56324edfe0dfb02f9454e88cb6964422b7246b734f3"
+    },
+    {
+      "path": "crates/kyro-agents/src/measurements.rs",
+      "bytes": 2717,
+      "sha256": "c3f3c89a1e6f94a88f0fda3d1b16840805288d00f88008f5e79c0547ba64e290"
+    },
+    {
+      "path": "crates/kyro-agents/src/memory.rs",
+      "bytes": 4681,
+      "sha256": "6ba197e0e01fee710db00e7b60fa0ff4f5a9b6c853aedeabd5c4430f019dbd07"
+    },
+    {
+      "path": "crates/kyro-agents/src/protocol.rs",
+      "bytes": 2564,
+      "sha256": "94e1cee8d809dcad8befc3ad4e5cdf8090eb30d9e9e8fd45988080ff500acaf7"
+    },
+    {
+      "path": "crates/kyro-agents/tests/authority.rs",
+      "bytes": 7815,
+      "sha256": "f65b180e8832e821d8723579a9eb824e713817ef3cd957231e89dc90a3cc8555"
+    },
+    {
+      "path": "crates/kyro-agents/tests/config.rs",
+      "bytes": 3355,
+      "sha256": "6f363463a990a25b731718510d669870a231399802379faa235653a2c0dd2afe"
+    },
+    {
+      "path": "crates/kyro-agents/tests/coordinator.rs",
+      "bytes": 24538,
+      "sha256": "3c0e4b67a9bb502bc9a0c6853010d20b78e4b5a5b41d72cac794d6637c43189e"
+    },
+    {
+      "path": "crates/kyro-agents/tests/factory.rs",
+      "bytes": 532,
+      "sha256": "99636d938d04520474b2117fd7283cd095a44b3de027cb9584a9ed525acf14f2"
+    },
+    {
+      "path": "crates/kyro-agents/tests/nvidia.rs",
+      "bytes": 4856,
+      "sha256": "0729a1599f09668c760bca0ed65379cea739e9775c0df57f6ae0432f18549b36"
+    },
+    {
+      "path": "crates/kyro-agents/tests/support/candidate.rs",
+      "bytes": 6556,
+      "sha256": "7ef4bbc7cbdd5aa9bc2649d0f23f6af1952bb574704a469aafcf00524c2646eb"
+    },
+    {
+      "path": "crates/kyro-agents/tests/support/fixture.rs",
+      "bytes": 37143,
+      "sha256": "226597702e52d5be1b4880d40d0318097e6053a2c3e78922b86c2751d215cab9"
+    },
+    {
+      "path": "crates/kyro-api/Cargo.toml",
+      "bytes": 771,
+      "sha256": "bb5172cd5af161da8801be4235347fbb0fed54dde6789ceadfd36531fb1d7809"
+    },
+    {
+      "path": "crates/kyro-api/src/agents.rs",
+      "bytes": 10848,
+      "sha256": "ef660e25c952003a59e1c638b3cb947b7a7559458d645c58aca301c7dc2553e2"
+    },
+    {
+      "path": "crates/kyro-api/src/lib.rs",
+      "bytes": 25256,
+      "sha256": "c56cb305280f01cebf8fc82dbc4dd9c771c713a10746c3ca7d389c70985c0ee5"
+    },
+    {
+      "path": "crates/kyro-api/src/main.rs",
+      "bytes": 1552,
+      "sha256": "6ede0f390708399c85c529ae354c282e8941e57bfe3929826c76b8e0cd29865d"
+    },
+    {
+      "path": "crates/kyro-domain/src/agents.rs",
+      "bytes": 20168,
+      "sha256": "fb928452f2f2552d2456589eb24678fce23a57ffc5e46782d053ee87cfbaf3e9"
+    },
+    {
+      "path": "crates/kyro-domain/src/lib.rs",
+      "bytes": 284,
+      "sha256": "4c68bf0b1e528ac2202a43ddf558ac7e8b6de2d78662aba5a8c9e78876f37ba9"
+    },
+    {
+      "path": "crates/kyro-domain/src/model.rs",
+      "bytes": 37709,
+      "sha256": "ddca2612c84fbd6381fe798a6f36a4899649a8a9c6a82fa53dd77e8bcbc5164f"
+    },
+    {
+      "path": "crates/kyro-domain/tests/agents.rs",
+      "bytes": 7449,
+      "sha256": "f661f88d175bc8d08f31b4756cf2dca9ef4bf0edb6a4b2463cae8be3b2832de5"
+    },
+    {
+      "path": "crates/kyro-factory/src/assembler.rs",
+      "bytes": 21939,
+      "sha256": "3d2aa05c7ec46a66a3db43afae9effea175b8ad3563583dcf6229865f7926fa1"
+    },
+    {
+      "path": "crates/kyro-factory/src/builtins.rs",
+      "bytes": 10973,
+      "sha256": "7f942e44fe55527040ac3a3fa77aa510f50955fe75d496620bc81e7b7e068356"
+    },
+    {
+      "path": "crates/kyro-gateway/src/client.rs",
+      "bytes": 52392,
+      "sha256": "641938aafb516940f957617571b262b882fac8487bb36cb49d541931f0c97161"
+    },
+    {
+      "path": "crates/kyro-gateway/src/config.rs",
+      "bytes": 47994,
+      "sha256": "e065a89eb2abe06187e190bda2b032b3db69b3e2b18c9b927ae5cd54f1dd5fd0"
+    },
+    {
+      "path": "crates/kyro-gateway/tests/admission.rs",
+      "bytes": 4407,
+      "sha256": "09981e8b901c2f10c506fcba3f173987ffebd2b73e42c3883c3463e9d24f3480"
+    },
+    {
+      "path": "crates/kyro-gateway/tests/config.rs",
+      "bytes": 14630,
+      "sha256": "cab791bec0edd4600387430c20f99b8531f8d865d09a09a34e1907bc6af759c7"
+    },
+    {
+      "path": "crates/kyro-gateway/tests/mock_http.rs",
+      "bytes": 31262,
+      "sha256": "8ee920437a9907c2c214afaa9fa6bd982195c2ab33e673bd908f41173913372a"
+    },
+    {
+      "path": "crates/kyro-store/build.rs",
+      "bytes": 166,
+      "sha256": "2eddccd0b49d66ad09335d1ad915566e33a35661a52b8aa0bc8df1af30ce06a5"
+    },
+    {
+      "path": "crates/kyro-store/migrations/0020_agent_plans.sql",
+      "bytes": 5039,
+      "sha256": "5ed34eafb073be12b8889b24ed670b12c6cae38addde682ad1ddff8029bcd857"
+    },
+    {
+      "path": "crates/kyro-store/migrations/0021_agent_revocation.sql",
+      "bytes": 2273,
+      "sha256": "3d54a6f9e07eaf98ee6dd4b3554f9c76131600e50290db718c380ec2eb5cfb92"
+    },
+    {
+      "path": "crates/kyro-store/migrations/0022_agent_poll_fairness.sql",
+      "bytes": 1357,
+      "sha256": "bb1909912bafdf85790210d467b6ecca03e0af4acba3364084d18cc673c969dc"
+    },
+    {
+      "path": "crates/kyro-store/migrations/0023_agent_metadata_events.sql",
+      "bytes": 2396,
+      "sha256": "b782fe41b7f677c282cb540e49ff59bfe11155110d4297d114ce7d0dc0064a29"
+    },
+    {
+      "path": "crates/kyro-store/src/agents.rs",
+      "bytes": 8307,
+      "sha256": "5e6d9480cba9af8d0118d5c469dfb26f78abdda88e5939495843e0e7952da4d6"
+    },
+    {
+      "path": "crates/kyro-store/src/budget.rs",
+      "bytes": 69530,
+      "sha256": "203fd84779cf2069a0fdcaaf67f992fff0c7b4adf193cc413db8298a2f89dac9"
+    },
+    {
+      "path": "crates/kyro-store/src/factory.rs",
+      "bytes": 8582,
+      "sha256": "7052594cb48cbf469758e7c968551c7cd7c0e809961d462b8ea82a5f18a3f040"
+    },
+    {
+      "path": "crates/kyro-store/src/lib.rs",
+      "bytes": 207,
+      "sha256": "e62ed132f0abd57eb53c9892d4cbd4b1b8a4aec521161487d51f0f8d8e3c7814"
+    },
+    {
+      "path": "crates/kyro-store/src/queue.rs",
+      "bytes": 108522,
+      "sha256": "33e1f71fdb925fa75fbaa0df5b5800a0a5de5d83071f37a2f88a6f2078474906"
+    },
+    {
+      "path": "crates/kyro-store/tests/queue.rs",
+      "bytes": 41124,
+      "sha256": "923e3ca3df4be70bf016aaf1c694ab7c0b1227498c51c33698be07dbc37d45ee"
+    },
+    {
+      "path": "scripts/p3/nebius-campaign.ps1",
+      "bytes": 32132,
+      "sha256": "e9bc00eefe88653700d85f616c06d6a255b8f72f2e68cdce0b17093d636e614f"
+    },
+    {
+      "path": "scripts/p3/test-campaign.ps1",
+      "bytes": 6941,
+      "sha256": "e6aa3a96556609f24b746d825b0be997bd2b341a510745035e234652c63b4cfb"
+    },
+    {
+      "path": "scripts/p3/update-openapi.mjs",
+      "bytes": 9152,
+      "sha256": "14e40fcfd2ff8e938d616586be814a8d235e8579af38d102dfcee793b3ec9a5a"
+    },
+    {
+      "path": "scripts/p3/update-schema.mjs",
+      "bytes": 3285,
+      "sha256": "0eac41e098bd71492a21ccc1d8f0ed1d338d313c054c0917f8ff96d82a30f955"
+    }
+  ],
+  "scope": "All current changed/untracked non-documentation files; review also includes ignored docs/suivi reports and public proofs",
+  "previous_inventory": "p3-final-live-source-05.json",
+  "changes_since_previous": [
+    "scripts/p3/nebius-campaign.ps1",
+    "scripts/p3/test-campaign.ps1"
+  ],
+  "protected_runtime_changed": false
+}

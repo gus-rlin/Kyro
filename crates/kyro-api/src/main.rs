@@ -23,13 +23,18 @@ async fn main() -> Result<(), Error> {
     let bind: SocketAddr = config.bind;
     let factory = kyro_api::factory::FactoryApi::from_env()?;
     let state = AppState::new(store, config, auth, gateway).with_factory(factory);
+    let agents = kyro_api::agents::from_env(&state)?;
+    let state = state.with_agents(agents);
+    let coordinator = tokio::spawn(kyro_api::agents::background(state.clone()));
 
     let listener = tokio::net::TcpListener::bind(bind)
         .await
         .map_err(|_| Error::Unavailable)?;
     tracing::info!(address = %bind, "api_listener_ready");
-    axum::serve(listener, router(state))
+    let result = axum::serve(listener, router(state))
         .with_graceful_shutdown(shutdown_signal())
         .await
-        .map_err(|_| Error::Unavailable)
+        .map_err(|_| Error::Unavailable);
+    coordinator.abort();
+    result
 }

@@ -8,6 +8,7 @@ members = [
     "crates/kyro-worker",
     "crates/kyro-app",
     "crates/kyro-factory",
+    "crates/kyro-agents",
 ]
 
 [workspace.package]

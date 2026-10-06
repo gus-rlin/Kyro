@@ -148,6 +148,10 @@ pub struct DataPolicy {
     /// Absent/false keeps the historical fail-closed rule.
     #[serde(default, skip_serializing_if = "is_false")]
     pub allow_unknown_provider_retention: bool,
+    /// Separate, explicit opt-in for agent purposes; historical chat consent never enables them.
+    /// An empty set preserves the refusal of providers whose retention is unknown.
+    #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
+    pub accepted_unknown_retention_purposes: BTreeSet<ModelPurpose>,
     pub allowed_destinations: BTreeSet<String>,
     pub allowed_categories: BTreeSet<DataCategory>,
     pub allowed_purposes: BTreeSet<ModelPurpose>,
@@ -158,6 +162,7 @@ impl Default for DataPolicy {
     fn default() -> Self {
         Self {
             allow_unknown_provider_retention: false,
+            accepted_unknown_retention_purposes: Default::default(),
             allowed_destinations: BTreeSet::new(),
             allowed_categories: BTreeSet::new(),
             allowed_purposes: BTreeSet::new(),
@@ -176,6 +181,18 @@ impl DataPolicy {
                 .iter()
                 .any(|id| !valid_registry_id(id, MAX_DESTINATION_ID_BYTES))
             || self.allowed_categories.contains(&DataCategory::Secret)
+            || !self
+                .accepted_unknown_retention_purposes
+                .is_subset(&self.allowed_purposes)
+            || self
+                .accepted_unknown_retention_purposes
+                .iter()
+                .any(|purpose| {
+                    !matches!(
+                        purpose,
+                        ModelPurpose::Planning | ModelPurpose::Generation | ModelPurpose::Review
+                    )
+                })
         {
             return Err(Error::Invalid("politique de données invalide".into()));
         }
@@ -210,8 +227,11 @@ impl DataPolicy {
             Some(seconds)
                 if seconds <= self.limits.max_retention_seconds
                     && seconds <= MAX_RETENTION_SECONDS => {}
-            None if self.allow_unknown_provider_retention
-                && request.input.purpose == ModelPurpose::Conversation => {}
+            None if (self.allow_unknown_provider_retention
+                && request.input.purpose == ModelPurpose::Conversation)
+                || self
+                    .accepted_unknown_retention_purposes
+                    .contains(&request.input.purpose) => {}
             _ => return Err(Error::Forbidden),
         }
         Ok(())
@@ -890,6 +910,7 @@ mod tests {
     fn policy() -> DataPolicy {
         DataPolicy {
             allow_unknown_provider_retention: false,
+            accepted_unknown_retention_purposes: Default::default(),
             allowed_destinations: ["synthetic-local".into()].into_iter().collect(),
             allowed_categories: [DataCategory::UserRequest].into_iter().collect(),
             allowed_purposes: [ModelPurpose::Planning].into_iter().collect(),
@@ -956,6 +977,48 @@ mod tests {
             policy.authorize_request(&input, 100, 100, None),
             Err(Error::Forbidden)
         );
+    }
+
+    #[test]
+    fn agent_retention_opt_in_is_scoped_and_never_relabels_retention_as_zero() {
+        let mut policy = policy();
+        let input = request();
+        assert_eq!(
+            policy.authorize_request(&input, 100, 100, None),
+            Err(Error::Forbidden)
+        );
+        policy
+            .accepted_unknown_retention_purposes
+            .insert(ModelPurpose::Planning);
+        assert!(policy.authorize_request(&input, 100, 100, None).is_ok());
+        assert_eq!(
+            policy.authorize_request(&input, 100, 100, Some(1)),
+            Err(Error::Forbidden)
+        );
+        let mut other = input.clone();
+        other.input.purpose = ModelPurpose::Generation;
+        policy.allowed_purposes.insert(ModelPurpose::Generation);
+        assert_eq!(
+            policy.authorize_request(&other, 100, 100, None),
+            Err(Error::Forbidden)
+        );
+        other.input.categories.insert(DataCategory::Secret);
+        policy
+            .accepted_unknown_retention_purposes
+            .insert(ModelPurpose::Generation);
+        assert_eq!(
+            policy.authorize_request(&other, 100, 100, None),
+            Err(Error::Forbidden)
+        );
+        policy
+            .accepted_unknown_retention_purposes
+            .insert(ModelPurpose::Translation);
+        assert!(policy.validate().is_err());
+        policy
+            .accepted_unknown_retention_purposes
+            .remove(&ModelPurpose::Translation);
+        policy.allowed_purposes.remove(&ModelPurpose::Planning);
+        assert!(policy.validate().is_err());
     }
 
     #[test]

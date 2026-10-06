@@ -1,0 +1,12 @@
+{
+  "database": "kyro_p1_test_p3_live_factory_01",
+  "project_id": "7eedeba7-8b16-47a3-bb57-40a2ec0a0f43",
+  "configuration_version": 2,
+  "currency": "USD",
+  "unit_scale": 1000000000,
+  "spent_units": 2277000,
+  "reserved_units": 17694720,
+  "limit_units": 19971720,
+  "external_sends_disabled": true,
+  "sealed_at": "2026-10-06T02:55:24.943883+02:00"
+}

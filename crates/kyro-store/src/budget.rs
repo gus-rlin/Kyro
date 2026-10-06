@@ -184,16 +184,41 @@ impl Store {
         effect_id: Uuid,
     ) -> Result<EffectRecordView> {
         let mut transaction = self.begin_actor(actor_id).await?;
-        Store::authorize_in(
-            &mut *transaction,
-            actor_id,
-            project_id,
-            Action::Read.as_str(),
-        )
-        .await?;
-        let row = load_effect_view(&mut *transaction, project_id, Some(effect_id)).await?;
+        let effect = self
+            .get_effect_in(&mut transaction, actor_id, project_id, effect_id)
+            .await?;
         transaction.commit().await.map_err(database_error)?;
+        Ok(effect)
+    }
+    /// Reuse the caller's actor-scoped transaction during coordinator transitions.
+    pub async fn get_effect_in(
+        &self,
+        conn: &mut PgConnection,
+        actor_id: Uuid,
+        project_id: Uuid,
+        effect_id: Uuid,
+    ) -> Result<EffectRecordView> {
+        Store::authorize_in(&mut *conn, actor_id, project_id, Action::Read.as_str()).await?;
+        let row = load_effect_view(&mut *conn, project_id, Some(effect_id)).await?;
         row.ok_or(Error::NotFound)
+    }
+
+    /// An effect can be known even when its job was cancelled and has no result reference.
+    pub async fn get_effect_for_job(
+        &self,
+        actor: Uuid,
+        project: Uuid,
+        job: Uuid,
+    ) -> Result<Option<EffectRecordView>> {
+        let mut tx = self.begin_actor(actor).await?;
+        Self::authorize_in(&mut *tx, actor, project, Action::Read.as_str()).await?;
+        let id:Option<Uuid>=sqlx::query_scalar("SELECT id FROM effects WHERE project_id=$1 AND job_id=$2 ORDER BY generation DESC LIMIT 1")
+            .bind(project).bind(job).fetch_optional(&mut *tx).await.map_err(database_error)?;
+        tx.commit().await.map_err(database_error)?;
+        match id {
+            Some(id) => Ok(Some(self.get_effect(actor, project, id).await?)),
+            None => Ok(None),
+        }
     }
 
     pub async fn list_effects(

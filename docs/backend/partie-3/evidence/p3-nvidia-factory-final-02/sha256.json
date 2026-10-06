@@ -1,0 +1,27 @@
+[
+  {
+    "file": "artifact.json",
+    "bytes": 47121,
+    "sha256": "9e38720adf2287b41ab6190028be7d3a34d1b2cc1116759a91b32049fa7ad5ae"
+  },
+  {
+    "file": "public-trust.json",
+    "bytes": 2056,
+    "sha256": "9c9174baf04fdc420b0e7efcd502b07d34173379c2e439200e452c0c7b572552"
+  },
+  {
+    "file": "report.json",
+    "bytes": 5660,
+    "sha256": "1dfeb69fba3c9fa58945eafa6172834eb405af630497cab84494978c4752522c"
+  },
+  {
+    "file": "run.json",
+    "bytes": 13195,
+    "sha256": "3b68ce23dfb42e501134686250aeff3da5e33ebd41d648b57a100d0b74adc04b"
+  },
+  {
+    "file": "sources-and-candidate.tar",
+    "bytes": 72263680,
+    "sha256": "705deacdd728c56437ea21586c21268850ce2669571f97d70c91cba7e72f047c"
+  }
+]

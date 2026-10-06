@@ -10,4 +10,13 @@ apps/desktop
 *.sql.gz
 docs
 scripts
+!scripts/
+scripts/*
+!scripts/p2/
+scripts/p2/*
+!scripts/p2/sandbox/
+scripts/p2/sandbox/*
+!scripts/p2/sandbox/build.sh
+!scripts/p2/sandbox/verify-records.mjs
+!scripts/p2/sandbox/resource-probe.mjs
 tests

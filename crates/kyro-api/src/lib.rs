@@ -27,6 +27,7 @@ use tower_http::cors::CorsLayer;
 use tracing::Instrument;
 use uuid::Uuid;
 
+pub mod agents;
 pub mod budgets;
 mod chat;
 pub mod error;
@@ -69,6 +70,7 @@ pub struct AppState {
     pub gateway: Arc<Gateway>,
     pub http: Arc<HttpControls>,
     pub factory: Option<Arc<factory::FactoryApi>>,
+    pub agents: Option<Arc<kyro_agents::Coordinator>>,
 }
 
 impl AppState {
@@ -85,10 +87,15 @@ impl AppState {
             gateway,
             http: Arc::new(HttpControls::default()),
             factory: None,
+            agents: None,
         }
     }
     pub fn with_factory(mut self, factory: Option<Arc<factory::FactoryApi>>) -> Self {
         self.factory = factory;
+        self
+    }
+    pub fn with_agents(mut self, agents: Option<Arc<kyro_agents::Coordinator>>) -> Self {
+        self.agents = agents;
         self
     }
 }
@@ -208,6 +215,7 @@ pub fn router(state: AppState) -> Router {
         .merge(projects::routes())
         .merge(jobs::routes())
         .merge(factory::routes())
+        .merge(agents::routes())
         .merge(budgets::routes())
         .route_layer(middleware::from_fn_with_state(
             state.http.clone(),

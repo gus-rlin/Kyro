@@ -72,6 +72,7 @@ pub(crate) struct Destination {
     pub(crate) models: Vec<RegisteredModel>,
     pub(crate) wire_overhead_tokens: u32,
     pub(crate) context_tokens: Option<u32>,
+    pub(crate) json_object: bool,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -97,6 +98,7 @@ pub struct RegistryModelView {
 pub struct GatewayConfig {
     pub(crate) execution_enabled: bool,
     pub(crate) destinations: Vec<Destination>,
+    pub(crate) tls_root_certificate: Option<reqwest::Certificate>,
 }
 
 #[derive(Clone, Copy)]
@@ -135,6 +137,8 @@ struct NebiusQualification {
     #[serde(default)]
     provider_standard_retention_accepted: bool,
     json_schema: bool,
+    #[serde(default)]
+    json_object: bool,
     bounded_completion: bool,
     retention_evidence: Option<String>,
     wire_overhead_tokens: u32,
@@ -212,13 +216,20 @@ impl GatewayConfig {
             }
         }
         let loopback_opt_in = env::var(LOOPBACK_OPT_IN_ENV).is_ok_and(|value| value == "1");
-        Self::from_registry_json_mode(
+        let mut config = Self::from_registry_json_mode(
             &registry,
             environment,
             loopback_opt_in,
             api_key.as_ref().map(|key| key.as_str()),
             mode,
-        )
+        )?;
+        if matches!(mode, GatewayMode::Execution) {
+            if let Some(path) = env::var_os("KYRO_MODEL_TLS_ROOT_CERTIFICATE_FILE") {
+                config.tls_root_certificate =
+                    Some(read_tls_root_certificate(&PathBuf::from(path))?);
+            }
+        }
+        Ok(config)
     }
 
     /// Entrée serveur/test pour parser un registre fiable. Les handlers HTTP ne doivent pas recevoir cette valeur.
@@ -298,6 +309,7 @@ impl GatewayConfig {
         Ok(Self {
             execution_enabled: matches!(mode, GatewayMode::Execution),
             destinations,
+            tls_root_certificate: None,
         })
     }
 
@@ -316,6 +328,35 @@ impl GatewayConfig {
             })
             .collect()
     }
+}
+
+// An operator may explicitly trust an existing local TLS inspection root.
+// This adds one certificate; hostname, chain, pinned address and HTTPS checks stay active.
+fn read_tls_root_certificate(path: &std::path::Path) -> Result<reqwest::Certificate> {
+    if !path.is_absolute() {
+        return Err(Error::Invalid("chemin absolu de certificat requis".into()));
+    }
+    let metadata = fs::symlink_metadata(path).map_err(|_| Error::Unavailable)?;
+    if !metadata.is_file()
+        || metadata.file_type().is_symlink()
+        || metadata.len() == 0
+        || metadata.len() > 16384
+    {
+        return Err(Error::Invalid("fichier de certificat invalide".into()));
+    }
+    let bytes = fs::read(path).map_err(|_| Error::Unavailable)?;
+    let pem = std::str::from_utf8(&bytes)
+        .map_err(|_| Error::Invalid("certificat PEM requis".into()))?
+        .trim();
+    if !pem.starts_with("-----BEGIN CERTIFICATE-----")
+        || !pem.ends_with("-----END CERTIFICATE-----")
+        || pem.matches("-----BEGIN CERTIFICATE-----").count() != 1
+        || pem.contains("PRIVATE KEY")
+    {
+        return Err(Error::Invalid("certificat public unique requis".into()));
+    }
+    reqwest::Certificate::from_pem(pem.as_bytes())
+        .map_err(|_| Error::Invalid("certificat PEM invalide".into()))
 }
 
 fn read_execution_secret() -> Result<Option<Zeroizing<String>>> {
@@ -375,9 +416,27 @@ fn parse_destination(
             && file.models.len() == 1
             && file.models[0].output_mode == ModelOutputMode::TextChat
             && file.models[0].id == "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B";
-        if qualification.provider_standard_retention_accepted && !standard_chat {
+        let standard_agents = qualification.provider_standard_retention_accepted
+            && environment == Environment::Development
+            && file.id == "nebius-agents-recipe"
+            && file.retention_seconds.is_none()
+            && file.models.iter().all(|model| {
+                model.output_mode == ModelOutputMode::StructuredJson
+                    && model.protocol == kyro_domain::model::ModelProtocol::Chat
+                    && model.output_schema.id == "kyro-agent-contract"
+                    && matches!(model.output_schema.version.as_str(), "1" | "2")
+            });
+        if qualification.provider_standard_retention_accepted && !standard_chat && !standard_agents
+        {
             return Err(Error::Invalid(
-                "acceptation de conservation hors conversation de développement".into(),
+                "acceptation de conservation hors profil de développement autorisé".into(),
+            ));
+        }
+        if qualification.json_object
+            && (!standard_agents || file.models.iter().any(|m| m.output_schema.version != "2"))
+        {
+            return Err(Error::Invalid(
+                "mode JSON objet hors recette native de développement".into(),
             ));
         }
         if file.kind != ModelProviderKind::Cloud
@@ -385,8 +444,9 @@ fn parse_destination(
             || file.allowed_host != "api.tokenfactory.nebius.com"
             || file.secret_ref.as_deref() != Some("file:KYRO_MODEL_API_KEY_FILE")
             || (file.qualified
-                && ((file.retention_seconds != Some(0) && !standard_chat)
+                && ((file.retention_seconds != Some(0) && !standard_chat && !standard_agents)
                     || (!qualification.json_schema
+                        && !qualification.json_object
                         && file
                             .models
                             .iter()
@@ -543,6 +603,10 @@ fn parse_destination(
             .nebius
             .as_ref()
             .map(|qualification| qualification.context_tokens),
+        json_object: file
+            .nebius
+            .as_ref()
+            .is_some_and(|qualification| qualification.json_object),
     })
 }
 
@@ -620,6 +684,18 @@ fn validate_instance_node(schema: &Value, instance: &Value, depth: usize) -> Res
         ));
     }
     let definition = schema.as_object().ok_or_else(|| Error::Internal)?;
+    if let Some(branches) = definition.get("anyOf").and_then(Value::as_array) {
+        return if branches
+            .iter()
+            .any(|branch| validate_instance_node(branch, instance, depth).is_ok())
+        {
+            Ok(())
+        } else {
+            Err(Error::Invalid(
+                "sortie incompatible avec l'union du schéma".into(),
+            ))
+        };
+    }
     if let Some(expected) = definition.get("const") {
         if expected != instance {
             return Err(Error::Invalid("sortie incompatible avec le schéma".into()));
@@ -656,7 +732,16 @@ fn validate_instance_node(schema: &Value, instance: &Value, depth: usize) -> Res
                 .get("properties")
                 .and_then(Value::as_object)
                 .ok_or_else(|| Error::Internal)?;
-            if value.len() != properties.len() {
+            let additional = definition
+                .get("additionalProperties")
+                .ok_or(Error::Internal)?;
+            if value.len() < properties.len()
+                || (additional == &Value::Bool(false) && value.len() != properties.len())
+                || definition
+                    .get("maxProperties")
+                    .and_then(Value::as_u64)
+                    .is_some_and(|maximum| value.len() as u64 > maximum)
+            {
                 return Err(Error::Invalid("propriétés de sortie incorrectes".into()));
             }
             for (name, child_schema) in properties {
@@ -664,6 +749,13 @@ fn validate_instance_node(schema: &Value, instance: &Value, depth: usize) -> Res
                     .get(name)
                     .ok_or_else(|| Error::Invalid("propriété de sortie manquante".into()))?;
                 validate_instance_node(child_schema, child, depth + 1)?;
+            }
+            if additional.is_object() {
+                for (name, child) in value {
+                    if !properties.contains_key(name) {
+                        validate_instance_node(additional, child, depth + 1)?;
+                    }
+                }
             }
         }
         Some("array") => {
@@ -724,6 +816,83 @@ fn validate_instance_node(schema: &Value, instance: &Value, depth: usize) -> Res
 mod numeric_tests {
     use super::*;
     use serde_json::json;
+
+    #[test]
+    fn operator_tls_root_rejects_relative_redirected_private_and_oversized_inputs() {
+        assert!(read_tls_root_certificate(std::path::Path::new("relative.pem")).is_err());
+        let dir = std::env::temp_dir().join(format!("kyro-gateway-ca-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir(&dir).unwrap();
+        assert!(read_tls_root_certificate(&dir).is_err());
+        let path = dir.join("root.pem");
+        for bytes in [
+            Vec::new(),
+            vec![b'a'; 16385],
+            b"-----BEGIN PRIVATE KEY-----\ninvented fixture\n-----END PRIVATE KEY-----".to_vec(),
+            b"-----BEGIN CERTIFICATE-----\n%%%invalid%%%\n-----END CERTIFICATE-----".to_vec(),
+        ] {
+            std::fs::write(&path, bytes).unwrap();
+            // reqwest stores some PEM inputs opaquely until the TLS backend is
+            // built; the execution boundary must still reject those inputs.
+            if let Ok(certificate) = read_tls_root_certificate(&path) {
+                assert!(
+                    crate::Gateway::new(GatewayConfig {
+                        execution_enabled: true,
+                        destinations: vec![],
+                        tls_root_certificate: Some(certificate)
+                    })
+                    .is_err()
+                );
+            }
+        }
+        #[cfg(unix)]
+        {
+            let link = dir.join("redirect.pem");
+            std::os::unix::fs::symlink(&path, &link).unwrap();
+            assert!(read_tls_root_certificate(&link).is_err());
+            std::fs::remove_file(link).unwrap();
+        }
+        std::fs::remove_file(path).unwrap();
+        std::fs::remove_dir(dir).unwrap();
+    }
+
+    #[test]
+    fn bounded_native_unions_validate_dynamic_json_without_opening_closed_objects() {
+        let schema: Value = serde_json::from_str(include_str!(
+            "../../kyro-agents/src/contract-v2.schema.json"
+        ))
+        .unwrap();
+        validate_output_schema(&schema).unwrap();
+        let good = json!({"contract":{"task_id":"records","changes":{"operations":[{"op":"add_node","node":{"id":"records","kind":"B031","properties":{"version":"0.2.0","configuration":{"values":[1,true,null,"quoted \" value"]},"depends_on":[],"bindings":{}}}}]},"limitations":[]}});
+        validate_schema_instance(&schema, &good).unwrap();
+        let mut unknown = good.clone();
+        unknown["contract"]["changes"]["operations"][0]["node"]["authority"] = json!("admin");
+        assert!(validate_schema_instance(&schema, &unknown).is_err());
+        assert!(
+            validate_schema_instance(&schema, &json!({"contract":good["contract"].to_string()}))
+                .is_err()
+        );
+        let mut deep = good.clone();
+        deep["contract"]["changes"]["operations"][0]["node"]["properties"]["configuration"] =
+            json!({"a":{"b":{"c":{"d":1}}}});
+        assert!(validate_schema_instance(&schema, &deep).is_err());
+        let mut oversized = good;
+        oversized["contract"]["changes"]["operations"][0]["node"]["properties"] = json!(
+            (0..129)
+                .map(|i| (i.to_string(), json!(true)))
+                .collect::<serde_json::Map<_, _>>()
+        );
+        assert!(validate_schema_instance(&schema, &oversized).is_err());
+        for unsafe_schema in [
+            json!({"type":"object","properties":{},"required":[],"additionalProperties":true}),
+            json!({"type":"object","properties":{},"required":[],"additionalProperties":{"type":"string","maxLength":128}}),
+            json!({"type":"object","properties":{"v":{"anyOf":[{"type":"null"}]}},"required":["v"],"additionalProperties":false}),
+            json!({"type":"object","properties":{"v":{"anyOf":[{"type":"null"},{"type":"boolean"}],"type":"boolean"}},"required":["v"],"additionalProperties":false}),
+            json!({"type":"object","properties":{"a":{"type":"null"},"b":{"type":"null"}},"required":["a","a"],"additionalProperties":false}),
+            json!({"type":"object","properties":{"v":{"$ref":"attacker"}},"required":["v"],"additionalProperties":false}),
+        ] {
+            assert!(validate_output_schema(&unsafe_schema).is_err());
+        }
+    }
 
     #[test]
     fn schema_bounds_preserve_large_signed_unsigned_and_float_written_integers() {
@@ -823,6 +992,8 @@ fn validate_schema_node(schema: &Value, depth: usize, nodes: &mut usize, root: b
         "minimum",
         "maximum",
         "description",
+        "anyOf",
+        "maxProperties",
     ];
     if object.keys().any(|key| !ALLOWED.contains(&key.as_str())) {
         return Err(Error::Invalid(
@@ -834,6 +1005,30 @@ fn validate_schema_node(schema: &Value, depth: usize, nodes: &mut usize, root: b
         .is_some_and(|value| !value.as_str().is_some_and(|text| text.len() <= 512))
     {
         return Err(Error::Invalid("description de schéma invalide".into()));
+    }
+    // Closed bounded unions keep provider schemas native without admitting references
+    // or recursive definitions. Every branch counts toward the existing resource caps.
+    if let Some(branches) = object.get("anyOf") {
+        if root
+            || object
+                .keys()
+                .any(|key| !matches!(key.as_str(), "anyOf" | "description"))
+        {
+            return Err(Error::Invalid("union de schéma invalide".into()));
+        }
+        let branches = branches
+            .as_array()
+            .filter(|v| (2..=8).contains(&v.len()))
+            .ok_or_else(|| Error::Invalid("union de schéma non bornée".into()))?;
+        for branch in branches {
+            // A union selects a type at the same JSON depth. Nested unions have
+            // to be flattened so schema-only recursion cannot evade the depth cap.
+            if branch.get("anyOf").is_some() {
+                return Err(Error::Invalid("union de schéma imbriquée".into()));
+            }
+            validate_schema_node(branch, depth, nodes, false)?;
+        }
+        return Ok(());
     }
     let kind = object
         .get("type")
@@ -894,19 +1089,44 @@ fn validate_schema_node(schema: &Value, depth: usize, nodes: &mut usize, root: b
             .get("properties")
             .and_then(Value::as_object)
             .ok_or_else(|| Error::Invalid("propriétés d'objet requises".into()))?;
-        if properties.is_empty() || properties.len() > MAX_SCHEMA_PROPERTIES {
+        if properties.len() > MAX_SCHEMA_PROPERTIES {
             return Err(Error::ResourceLimit);
         }
-        if object.get("additionalProperties") != Some(&Value::Bool(false)) {
-            return Err(Error::Invalid(
-                "additionalProperties doit être false".into(),
-            ));
+        match object.get("additionalProperties") {
+            Some(Value::Bool(false)) => {
+                if object.contains_key("maxProperties") {
+                    return Err(Error::Invalid("borne objet dynamique hors contexte".into()));
+                }
+            }
+            Some(additional) if additional.is_object() => {
+                if !object
+                    .get("maxProperties")
+                    .and_then(Value::as_u64)
+                    .is_some_and(|maximum| {
+                        maximum <= MAX_SCHEMA_PROPERTIES as u64
+                            && maximum >= properties.len() as u64
+                    })
+                {
+                    return Err(Error::Invalid("objet dynamique non borné".into()));
+                }
+                validate_schema_node(additional, depth + 1, nodes, false)?;
+            }
+            _ => {
+                return Err(Error::Invalid(
+                    "additionalProperties doit être fermé ou borné".into(),
+                ));
+            }
         }
         let required = object
             .get("required")
             .and_then(Value::as_array)
             .ok_or_else(|| Error::Invalid("liste required requise".into()))?;
         if required.len() != properties.len()
+            || required
+                .iter()
+                .collect::<std::collections::HashSet<_>>()
+                .len()
+                != required.len()
             || required.iter().any(|entry| {
                 entry
                     .as_str()
@@ -921,6 +1141,7 @@ fn validate_schema_node(schema: &Value, depth: usize, nodes: &mut usize, root: b
     } else if object.contains_key("properties")
         || object.contains_key("required")
         || object.contains_key("additionalProperties")
+        || object.contains_key("maxProperties")
     {
         return Err(Error::Invalid(
             "clés object appliquées à un autre type".into(),
